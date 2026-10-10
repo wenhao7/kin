@@ -1,0 +1,63 @@
+# Default role × category policy (docs/03-privacy-boundaries.md).
+# Levels: read | write | summary | none. `write` implies read. `own` restricts to records the
+# principal created. Editable per family by the admin; this file is the demo default.
+
+roles: [admin, family, carer, viewer]
+
+categories:
+  [medical, medication, appointments, tasks, observations, finance, legal, admin, notes]
+
+# Categories that trigger a share request instead of a plain refusal when a role has `none`.
+share_request_on_none: [finance, legal]
+
+matrix:
+  medical:
+    admin: write
+    family: summary
+    carer: summary
+    viewer: none
+  medication:
+    admin: write
+    family: read
+    carer: read
+    viewer: read
+  appointments:
+    admin: write
+    family: read
+    carer: read
+    viewer: none
+  tasks:
+    admin: write
+    family: read
+    carer: write:own
+    viewer: write:own
+  observations:
+    admin: read
+    family: read
+    carer: write:own
+    viewer: write:own
+  finance:
+    admin: write
+    family: none
+    carer: none
+    viewer: none
+  legal:
+    admin: write
+    family: none
+    carer: none
+    viewer: none
+  admin:
+    admin: write
+    family: read
+    carer: read:emergency_contacts
+    viewer: read:emergency_contacts
+  notes:
+    admin: write
+    family: read:shared+own
+    carer: read:own
+    viewer: none
+
+# Where restricted answers are delivered. `dm` = only to the asker in a private chat.
+delivery:
+  restricted_answers: dm
+  group_never_receives: [finance, legal]

@@ -1,0 +1,41 @@
+# Singapore locale pack (docs/06-synthetic-data.md). Swapping the locale replaces this folder.
+id: sg
+name: Singapore
+timezone: Asia/Singapore
+languages:
+  default: en
+  supported: [en, zh]
+
+# Public lookup allow-list for Tavily `include_domains`. No family data is ever placed in queries.
+lookup_allow_domains:
+  - aic.sg
+  - moh.gov.sg
+  - cpf.gov.sg
+  - healthhub.sg
+  - chas.sg
+  - gov.sg
+
+# Terms the intake classifier and answer composer should recognise as local vocabulary.
+terms:
+  polyclinic: "public primary-care clinic"
+  MC: "medical certificate"
+  helper: "live-in domestic worker who provides daily care"
+  CHAS: "Community Health Assist Scheme (subsidised GP/dental care)"
+  MediSave: "national medical savings account"
+  Home Caregiving Grant: "monthly cash grant for caregivers of persons with permanent moderate disability"
+  LPA: "Lasting Power of Attorney"
+  Pioneer Generation: "benefits scheme for citizens born ≤1949"
+  Merdeka Generation: "benefits scheme for citizens born 1950–1959"
+
+# Document types the intake pipeline expects, with the fields to extract.
+document_types:
+  discharge_summary: [hospital, admission_date, discharge_date, diagnoses, medications_before, medications_after, follow_up]
+  medication_label: [drug, strength, directions, quantity, dispensed_date, pharmacy]
+  appointment_slip: [clinic, department, date, time, instructions]
+  lab_report: [clinic, date, tests]
+  clinic_memo: [clinic, date, clinician, notes, medication_changes]
+  referral_letter: [from, to, date, reason]
+  medical_certificate: [clinic, date, days, for_whom]
+  invoice: [provider, date, amount, items]
+  insurance_letter: [insurer, date, claim_ref, status, amount]
+  carer_note: [date, observations]
