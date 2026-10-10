@@ -1,0 +1,58 @@
+[project]
+name = "kin"
+version = "0.0.1"
+description = "Private, always-on family care coordinator with role-based boundaries enforced at retrieval."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10,<3.14"
+authors = [{ name = "Kin contributors" }]
+dependencies = [
+  "openai>=1.60",
+  "httpx>=0.27",
+  "pydantic>=2.7",
+  "pydantic-settings>=2.3",
+  "pyyaml>=6.0",
+  "tavily-python>=0.5",
+  "mcp>=1.2",
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.29",
+  "typer>=0.12",
+  "rich>=13.7",
+]
+
+[project.optional-dependencies]
+# Synthetic document generation (docs/06-synthetic-data.md). WeasyPrint needs system libs:
+#   Debian/Ubuntu: apt install libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0
+data = [
+  "jinja2>=3.1",
+  "weasyprint>=62",
+]
+
+[project.scripts]
+kin = "kin.cli:app"
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0",
+  "pytest-asyncio>=0.23",
+  "ruff>=0.5",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["kin"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["B008"]  # typer.Option/Argument in defaults is the documented typer style
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
