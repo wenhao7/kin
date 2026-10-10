@@ -77,6 +77,8 @@ Storage: SQLite + file store on the sandbox volume, partitioned by visibility cl
 
 Served via Token Factory (OpenAI-compatible API).
 
+Omni modality contingency: the Token Factory catalog lists `Nemotron-3-Nano-Omni` with modality "Text-to-text" on the public endpoint. `kin check` sends one image to it. If image/audio input is rejected on the public endpoint, the options in order are: a Token Factory **dedicated endpoint** for Nano Omni (tenant-isolated, matches the privacy story; cost per hour); another vision-capable model on Token Factory for extraction only, with Nemotron doing classification and answers (still satisfies "at least one NVIDIA open model" but weakens the Nemotron story); text-only intake from PDFs for the demo while the video shows the design. The outcome is recorded in ROADMAP D0.
+
 ## Integrations
 
 - **Telegram Bot API** — group + DMs; group privacy mode disabled for the family group.

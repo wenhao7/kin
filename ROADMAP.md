@@ -9,7 +9,7 @@ Sequential deliverables. Each is sized for one working burst and leaves the repo
 ### D0 · Spike: runtime and models
 - [ ] Telegram bot created; test group with two test accounts.
 - [ ] Hermes Agent running; replies in the group and in DM; memory persists across restarts.
-- [ ] Nemotron Nano Omni accepts an image and an audio file through Token Factory; Super answers a text call.
+- [ ] Nemotron Nano Omni accepts an image and an audio file through Token Factory (`make check` sends one image); Super answers a text call. If the public endpoint is text-only, apply the contingency in `docs/05-architecture.md` and note the choice here.
 - [ ] OpenShell/NemoClaw: Hermes runs inside the sandbox with network allow-list (Telegram, Token Factory, Tavily). If this does not work within the burst, continue without it and revisit at D7.
 - [ ] GitHub repo created; Apache-2.0 visible in About.
 

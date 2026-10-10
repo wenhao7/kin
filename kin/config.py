@@ -7,7 +7,7 @@ from pathlib import Path
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-TOKEN_FACTORY_BASE_URL = "https://api.tokenfactory.nebius.com/v1/"
+TOKEN_FACTORY_BASE_URL = "https://api.tokenfactory.nebius.com/v1"
 
 
 class Settings(BaseSettings):

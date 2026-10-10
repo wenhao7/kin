@@ -35,7 +35,7 @@ make check          # keys · policy/locale · model IDs · one Omni vision call
 make models         # exact Nemotron IDs; fix .env if a model shows "not found"
 make policy         # prints and validates the role × category matrix
 ```
-`Telegram getMe` must show `can_read_all_group_messages=True`.
+`Telegram getMe` must show `can_read_all_group_messages=True`. `omni:vision` decides whether photo intake can use the public Omni endpoint; a FAIL triggers the contingency in `docs/05-architecture.md` (D0 note).
 
 ## 8. Hermes runtime (ROADMAP D0)
 ```bash
