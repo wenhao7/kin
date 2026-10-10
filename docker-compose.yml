@@ -11,10 +11,10 @@ services:
       - ./data:/app/data
     ports:
       - "${KIN_MCP_PORT:-8765}:8765"
-    # `kin serve` lands in ROADMAP D2/D3; until then run checks:
-    #   docker compose run --rm kin check --no-spend
-    command: ["serve"]
-    restart: unless-stopped
+    # Until `kin serve` exists (ROADMAP D2/D3) the service runs the self-check and exits.
+    # At D3: command: ["serve"] and restart: unless-stopped.
+    command: ["check", "--no-spend"]
+    restart: "no"
 
   hermes:
     build: ./docker/hermes
