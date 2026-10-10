@@ -1,0 +1,28 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# family data (synthetic demo data lives in synthetic/, not here)
+data/*
+!data/.gitkeep
+
+# hermes runtime home (bind-mounted into the container)
+hermes/home/
+
+# logs / editors / os
+*.log
+.vscode/
+.idea/
+.DS_Store
