@@ -1,0 +1,33 @@
+services:
+  kin:
+    build: .
+    image: kin:dev
+    env_file: .env
+    environment:
+      KIN_DATA_DIR: /app/data
+      KIN_MCP_HOST: 0.0.0.0
+      KIN_MCP_PORT: "8765"
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "${KIN_MCP_PORT:-8765}:8765"
+    # `kin serve` lands in ROADMAP D2/D3; until then run checks:
+    #   docker compose run --rm kin check --no-spend
+    command: ["serve"]
+    restart: unless-stopped
+
+  hermes:
+    build: ./docker/hermes
+    image: kin-hermes:dev
+    env_file: .env
+    environment:
+      HERMES_HOME: /opt/data
+    volumes:
+      - ./hermes/home:/opt/data          # persistent: install, config.yaml, .env, state.db, memory, skills
+      - ./hermes/config.yaml:/seed/config.yaml:ro
+    depends_on:
+      - kin
+    restart: unless-stopped
+    # First start installs Hermes (a few minutes), seeds config.yaml, then runs the gateway.
+    # One-off commands: docker compose run --rm hermes doctor
+    #                   docker compose run --rm hermes shell

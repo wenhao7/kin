@@ -1,0 +1,23 @@
+# Hermes Agent config template for Kin. Copied to $HERMES_HOME/config.yaml on the container's
+# first start (or by `make hermes-init`). Secrets come from the environment (.env via compose):
+# NEBIUS_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_ALLOWED_USERS, TELEGRAM_GROUP_ALLOWED_CHATS,
+# TELEGRAM_HOME_CHANNEL. Reference: https://hermes-agent.nousresearch.com/docs/
+
+model:
+  provider: "nebius"                              # alias of nebius-token-factory
+  default: "nvidia/nemotron-3-super-120b-a12b"    # reasoning/drafting; Omni/Nano are called by the kin service
+
+# Kin's policy-enforced memory and intake, exposed to Hermes as MCP tools (mcp_kin_<tool>).
+# Enable once `kin serve` exists (ROADMAP D3). `kin` resolves inside docker-compose.
+mcp_servers:
+  kin:
+    url: "http://kin:8765/mcp"
+    enabled: false
+    timeout: 60
+
+telegram:
+  require_mention: false        # Kin is a participant; needs BotFather Group Privacy OFF
+  reply_to_mode: first
+
+terminal:
+  backend: local                # Kin does not use Hermes' terminal tools; keep the default minimal
