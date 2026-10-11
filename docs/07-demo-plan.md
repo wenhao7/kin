@@ -1,40 +1,38 @@
 # 07 · Demo plan
 
-Show the functioning minimum in real Telegram DMs/group chats. All records, identities used in fixture content and documents are synthetic. Record model/latency evidence; disclose cuts/time compression rather than imply instant processing.
+Real Telegram DMs and group, Kin responding live; all data synthetic. Cuts for time are disclosed; no implied instant latency.
 
 ## Preconditions
 
-- D0–D5 passed, including a qualified image model, isolated context/tools, confirmation, supersession/retry tests and one persistent reusable skill.
-- Eight-document fixture and role/language roster loaded; all private recipients have started a DM with the bot.
-- Admin, Family and Carer views and approved source crops prepared. Group roster is verified; mixed originals and restricted answers stay in DM.
-- Monday skill configured/confirmed and shown surviving restart. Audio, teaching new skills and a data map are optional and excluded from the minimum script.
+- D0–D5 passed: chosen extractor, isolated contexts, confirmation and supersession, one persistent skill.
+- Eight-document fixture and roster loaded; every member has opened a DM with the bot.
+- Monday skill confirmed and shown surviving a restart.
 
-## Video target: 2:50
+## Video (target 2:50)
 
-| Time | Scene | On screen / spoken point |
+| Time | Scene | On screen / spoken |
 |---|---|---|
-| 0:00–0:15 | The task | Synthetic discharge letter, pill boxes and family chat. Explain repeated paperwork and coordination; use only checked, population-qualified statistics. |
-| 0:15–0:55 | Private intake and confirmation | Admin sends photo in DM; draft includes source excerpt and uncertain fields. Explicit confirmation activates the verified schedule. Name the actual extractor, NVIDIA Nemotron and Nebius Token Factory. |
-| 0:55–1:15 | Authorized reminder/summary | Carer DM receives the confirmed reminder; group sees only approved English/Mandarin summary. State: Kin organizes documented instructions and does not provide clinical advice. |
-| 1:15–1:40 | Grounded recall | Family asks what changed at the last visit; answer shows allowed facts and approved Month −4 memo crop, not a full mixed record. |
-| 1:40–2:10 | Controlled sharing | Finance question gets neutral acknowledgment; Admin DM approves exact view/version/recipient “Just this once”; requester receives DM. Show denial/revocation or audit evidence briefly. |
-| 2:10–2:30 | Personal AI skill | `/skills` and persistent Monday trigger/task, with recipient authorization. Show stored record continuity or restart evidence. |
-| 2:30–2:50 | Try it and data flow | Public licensed repo and free self-service judge instructions. State self-hosted records, Telegram transport, approved Nebius inference inputs and actually deployed isolation. |
+| 0:00–0:15 | The task | Synthetic discharge letter, pill boxes, the family chat; one in four adults is a caregiver, Singapore is super-aged this year |
+| 0:15–0:55 | Intake and confirmation | Admin sends the photo in DM; draft with source excerpt and one uncertain field; Admin confirms; schedule active. Name the extractor, Nemotron and Token Factory |
+| 0:55–1:15 | Reminder and summary | Siti's DM shows the reminder with its excerpt; the group gets the confirmed summary in English and Mandarin. Safety line |
+| 1:15–1:40 | Recall | Wei Jie asks what changed at the last visit; answer with the Month −4 memo excerpt, not the whole document |
+| 1:40–2:10 | Sharing | Finance question → neutral group reply → Mei Ling's DM: Yes / No / Just this once → Wei Jie's DM gets the answer; `/who-saw` glance |
+| 2:10–2:30 | Personal AI | `/skills`, the Monday trigger, restart evidence |
+| 2:30–2:50 | Try it and data flow | Public repo, judge instructions; records self-hosted, Telegram transport, Nebius inference, deployed isolation |
 
-Use readable replies/fonts and no copyrighted music. Do not include interaction warnings, auto-activated schedules, unconfirmed audio changes or full restricted source images. Optional scenes can replace a segment only after their gates pass and while retaining core proof; total video stays under three minutes.
+Readable fonts, no copyrighted music. Optional scenes (audio, data map) replace a segment only after their gates pass.
 
 ## Judge access
 
-Judges need both Admin and Family interactions to complete the sharing flow, plus supplied intake photos and expected results. Provide entrant-funded synthetic sessions with instructions for DM `/start`, trusted enrollment, confirmation, reminder, recall, one-shot sharing, `/skills` and authorized audit. No judge should wait for an entrant to manually grant the demo share.
-
-Implement an independent reset and isolate judge sessions. If a role switch or auto-approver is provided, it applies only to the disposable synthetic fixture and never grants production-family authority. Supply test credentials/enrollment instructions where needed; unknown real identities remain denied outside that fixture.
-
-Verify access from a clean judge session through both sides of sharing and reset. Keep the bot, endpoint, budgets and test build available through **16 Dec 2026, 04:00 SGT**. A read-only data map is optional and does not replace the functioning agent.
+- Disposable synthetic fixture with the bot running; the judge joins via invite link and uses `/demo admin` / `/demo family` to act as either role (fixture-only command), so one person can complete both sides of sharing.
+- Test script in the README: supplied intake photo, confirmation, recall question, finance question and share decision, `/skills`, `/who-saw`, with expected results.
+- Reset command restores the fixture between judges; sessions are isolated. Entrant-funded; no API key needed.
+- Bot, endpoints and budget stay available through 16 Dec 2026, 04:00 SGT.
 
 ## Must work
 
-1. Private photo intake → exact-version confirmation → authorized reminder and bilingual summary.
-2. Grounded recall with an approved source excerpt/crop.
-3. Controlled sharing including denial, one-shot behavior and DM delivery.
-4. Persistent memory and one reusable scheduled skill with current permissions.
-5. Minimum privacy/safety tests and access/delivery audit, with public-only Tavily lookup in the main workflow if entering its bonus.
+1. Private photo intake → confirmation → reminder and bilingual summary.
+2. Recall with an approved excerpt.
+3. Sharing: neutral reply, Admin decision, private answer, audit.
+4. Persistent memory and the Monday skill after restart.
+5. Minimum privacy and safety tests; one public-only Tavily lookup.

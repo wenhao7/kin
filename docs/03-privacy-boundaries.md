@@ -1,64 +1,46 @@
 # 03 · Privacy boundaries
 
-Required design and acceptance gates. `config/policy.yaml` currently describes a matrix, and `kin/policy.py` validates its shape. Neither implements the controls below. The present Hermes/Compose templates also do not establish isolation, authenticated MCP access or filtered history.
+`config/policy.yaml` holds the matrix and `kin/policy.py` validates its shape; enforcement is implemented at D2. The compose and Hermes templates do not establish isolation by themselves.
 
-## Trusted identity and context
+## Minimum boundary (D2)
 
-The trusted gateway verifies Telegram sender, family, enrolled chat and role. It creates a request identity bound to the current chat/destination and policy version. The Kin service derives the principal from that authenticated envelope; a model cannot choose a principal by tool argument. Reject forged IDs, forwarded-message identities, unknown/expired roles and cross-family requests.
+- **Identity** comes from the gateway's authenticated Telegram sender, chat and roster. The model never supplies a principal. Forwarded messages, display names and unknown or expired members carry no authority.
+- **Retrieval** goes through one function, `retrieve(query, principal)`, which applies the matrix and field projection before any text reaches the model. Unknown category or qualifier fails closed.
+- **Hermes isolation**: native memory injection, session search and file/terminal tools are disabled over family data; group and DM contexts are built separately. Instructing Hermes to "use Kin retrieval" is not isolation.
+- **Delivery**: restricted answers go to the requester's DM; the group receives only Admin-confirmed summaries. Destination permission is re-checked immediately before sending, including excerpts and translations.
+- **Sharing**: a grant is per record and per grantee. Yes = standing until revoked; Just this once = one answer. Decisions and deliveries are audited; `/who-saw` is Admin-only. Refusals do not reveal whether a hidden record exists.
+- **Documents**: a mixed original stays Admin-only; derived records reference approved excerpts; an excerpt that includes adjacent restricted text is replaced by a source card.
+- **Kin MCP** is reachable only from the Hermes container on the compose network.
 
-Authenticate Kin MCP transport and bind its tools to that request. Keep it private to the gateway network or protected local access; public unauthenticated MCP is not acceptable. Model tools receive scoped capabilities, never general database/filesystem access to family records.
-
-## Enforcement before context and before delivery
-
-- `retrieve(query, principal)` is the internal read boundary; the principal is server-derived. Select allowed partitions, relationship filters and field projections before text enters model context. A partition name alone is not authorization.
-- Apply the same rules to chat history, persistent notes, session search, compaction summaries, caches, skills, attachments and logs. Unknown categories/qualifiers fail closed.
-- Hermes injects native memory and exposes session search. Disable unfiltered memory/user-profile injection and search/file/terminal tools over family stores, or demonstrate equivalent per-request isolation. Merely instructing Hermes to use Kin retrieval is insufficient. [Hermes memory](https://hermes-agent.nousresearch.com/docs/user-guide/features/memory)
-- Separate group and DM contexts. Prevent Admin tool results from entering another member's history or a shared bot memory. A policy or role change invalidates relevant cached projections and starts/rebuilds permitted context; previously disclosed messages cannot be retracted reliably.
-- Reauthorize each destination immediately before delivery, including source excerpts, translations, reminders and digests. Skills' execution identity does not grant their recipients that identity's view.
-- Log model-visible record/field references and accepted delivery outcomes. Audit access is itself restricted; raw queries and private excerpts must not become lower-role logs.
-
-## Target role matrix and field constraints
+## Matrix and field constraints
 
 | Category | Admin | Family | Carer | Viewer (optional) |
 |---|---|---|---|---|
-| medical | read/write | approved summary | approved care instructions | none |
+| medical | read/write | confirmed summary | care instructions | none |
 | medication | read/write | read | confirmed schedule | confirmed schedule |
 | appointments | read/write | read | involved appointments | none |
-| tasks | read/write | read | read/write assigned | read/write assigned |
-| observations | read | read | read/write own | read/write own |
-| finance | read/write | none; scoped share request | none | none |
-| legal | read/write | none; scoped share request | none | none |
-| admin | read/write | contacts/logistics | emergency contacts | emergency contacts |
+| tasks | read/write | read | assigned | assigned |
+| observations | read | read | own | own |
+| finance | read/write | none → share request | none | none |
+| legal | read/write | none → share request | none | none |
+| admin | read/write | contacts and logistics | emergency contacts | emergency contacts |
 | notes | read/write | shared and own | own | none |
 
-For tasks, `own` means assigned to the principal; for observations/notes it means authored by the principal. The current YAML level `write:own` implies reading one's own permitted records. Category-only `read` is still narrowed by the field rules above; implementing these projections and relationships is D2 work, not a claimed property of today's YAML.
-
-`summary` is a defined projection: an Admin-confirmed overview, documented care instructions and permitted source spans, excluding omitted diagnoses, identifiers and raw text. Generate wording only from this allowed projection; labelling an unrestricted model summary does not make it safe.
-
-## Documents and derived artifacts
-
-A document can contain several categories. Its original file/extracted text inherits the most restrictive contained information and remains Admin-only in the minimum product. Each derived record references an approved crop/text span and its version. A permitted medication record never grants access to an unrestricted discharge letter.
-
-Authorize attachment fetching separately. Validate referenced spans and generated output against the allowed fields; use a safe source card when a crop includes adjacent restricted text. Translation, thumbnails, search indexes and cached summaries inherit source restrictions. Low-confidence extraction/category/visibility stays quarantined until confirmed.
-
-## Group delivery
-
-Compute the permitted field intersection for the current verified roster, not only the asking member. Unknown members, stale roster state or an unsupported role block private group content. Restricted responses and sources go to DM. A Viewer joining can remove medical-summary access from the group; queue a neutral status or separate DMs instead. Do not claim that the bot can conceal a document a member already uploaded to the group.
-
-## Sharing and revocation
-
-A grant binds record/version, permitted fields/source spans, grantee, destination, scope and approving Admin. Yes is standing until revoked; Just this once reserves one bounded answer transactionally. Concurrent requests cannot consume it twice. Retries refer to the same answer/delivery ID; uncertain Telegram delivery stays reserved until reconciled, rather than permitting a fresh answer. Expiry/revocation is checked on retrieval and delivery. Record changes require renewed approval for the new version.
-
-Category-wide grants and arbitrary ACL editing are outside minimum scope. Reject fabricated callbacks and approval tokens; recheck Admin authority. Share refusals and blocked retrievals must not reveal hidden titles, counts or record existence.
+`own` = assigned to (tasks) or authored by (observations, notes) the principal. `summary` is the Admin-confirmed overview plus care instructions and permitted excerpts, not a model paraphrase of the whole record. The YAML level sets the ceiling; field projections narrow it.
 
 ## Data fields
 
-- Member: family ID, Telegram ID, role, language, DM readiness, optional expiry, policy version.
-- Record: ID/version, category, status, permitted fields, creator/assignee relationships, approved source spans, timestamps, superseded version.
-- Document: restricted storage reference, category set, approved derived spans and retention state.
-- Grant: record/version, projection, grantee/destination, scope, approval, revocation/consumption and answer ID.
-- Audit: request/principal, policy version, records/fields exposed to the model, decision, destination, delivery ID/outcome and time.
+- Member: family ID, Telegram ID, role, language, DM opened, optional expiry.
+- Record: ID and version, category, status (extracted → confirmed → active → superseded), permitted fields, creator/assignee, approved excerpt, timestamps, superseded-by.
+- Document: restricted storage reference, categories, approved excerpts.
+- Event: stable ID, record version, assignee, due time and timezone, status.
+- Grant: record and version, grantee, scope (once | standing), approver, consumed/revoked.
+- Audit: principal, chat, records and fields exposed, decision, destination, delivery outcome, time.
 
-## Minimum adversarial acceptance tests
+## Minimum tests (D2, through the real gateway path)
 
-Use synthetic fixtures to verify forged principal/MCP calls, direct store access, shared Hermes memory/session recall, role changes and revoked grants, concurrent one-shot requests, mixed-source attachment leakage, unsafe translations, unknown/group membership and Admin-scheduled messages to lower roles. Also verify that secret/private query content cannot reach Tavily. Tests must exercise service/gateway behavior, not only matrix loading.
+Forged principal in a tool call; direct store access from a model tool; Hermes memory or session recall of another role's data; unknown sender in group and DM; Family asking for finance (neutral reply, share flow, denial); revoked grant; mixed original requested by Carer; translation of a restricted field; family data in a Tavily query.
+
+## Hardening (D7, optional)
+
+Grants bound to record version, projection and destination; transactional one-shot consumption under concurrency; roster-intersection check for group posts; cache and context invalidation on policy change; delivery reconciliation for uncertain Telegram sends; viewer expiry at retrieval and delivery; deletion across files, extracted text, records, indexes and history; OpenShell network and credential isolation.

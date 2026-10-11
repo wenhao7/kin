@@ -24,11 +24,8 @@ Platform documentation:
 - Telegram Bot API: https://core.telegram.org/bots/api
 - Tavily: https://docs.tavily.com/
 
-Review and design references:
-
 - Hackathon FAQ and schedule: https://nebiusglobalaihackathon.devpost.com/details/faqs · https://nebiusglobalaihackathon.devpost.com/details/dates
-- Caring Village: existing role permissions: https://help.caringvillage.com/hc/en-us/articles/218121268-What-do-the-member-roles-mean
-- Nebius model deployment availability: Nano Omni dedicated-only: https://nebius.com/services/token-factory/models/nvidia-nemotron-models-inference
-- Hermes injected persistent memory and session search: https://hermes-agent.nousresearch.com/docs/user-guide/features/memory
-- Hermes stored sessions and compression limits: https://hermes-agent.nousresearch.com/docs/user-guide/sessions/
-- Telegram bot DM initiation constraints: https://core.telegram.org/bots
+- Caring Village member roles: https://help.caringvillage.com/hc/en-us/articles/218121268-What-do-the-member-roles-mean
+- Nemotron public endpoints and prices; Nano Omni dedicated-only: https://nebius.com/services/token-factory/models/nvidia-nemotron-models-inference
+- Hermes memory and session search: https://hermes-agent.nousresearch.com/docs/user-guide/features/memory · sessions: https://hermes-agent.nousresearch.com/docs/user-guide/sessions/
+- Telegram bots cannot initiate DMs: https://core.telegram.org/bots
