@@ -1,51 +1,52 @@
 # 02 · Product
 
+Target specification. Current code loads configuration/policy and performs setup checks; serving, storage, retrieval and delivery are not implemented.
+
 ## Scope
 
-**In:** one family, one care recipient; Telegram group + DMs; photo/PDF/audio intake; medication and appointment schedule with reminders; grounded Q&A; role × category boundaries with share requests and audit; appointment prep and debrief; weekly digest; skills taught by chat; allow-listed public lookups; Singapore locale pack (English + Mandarin).
+**Minimum:** one synthetic family and care recipient; verified Admin, Family and Carer Telegram identities; private photo intake; confirmed medication/appointment records; one reminder; English/Mandarin authorized summaries; grounded recall; controlled sharing; an access/delivery audit; one reusable scheduled skill; one public-only lookup.
 
-**Out:** multiple care recipients; WhatsApp; clinic/pharmacy/EHR integrations; wearables; payments; per-item ACLs and time-bound grants (design hook only); anything clinical.
+**Optional:** PDF/audio intake, consultation prep/debrief, natural-language skill creation, weekly digests, Viewer expiry, full six-month data and a data-map page. These cannot weaken minimum controls.
 
-## Roles
+**Out:** multiple recipients, WhatsApp, EHR/clinic/pharmacy integrations, wearables, payments and clinical advice. Fine-grained arbitrary ACL editing is out of scope; narrowly scoped approved sharing is part of the minimum.
 
-| Role | Demo member | Sees | Does |
+## Roles and onboarding
+
+| Role | Demo member | Permitted view | Actions |
 |---|---|---|---|
-| **Admin** (primary caregiver) | Mei Ling, daughter | Everything | Assigns roles, approves shares, edits records, teaches skills |
-| **Family** | Wei Jie, son (overseas); Bee Lian, aunt | Medical summary, medication, appointments; finance/legal only when shared | Asks, receives digests, adds notes |
-| **Carer** | Siti, domestic helper | Today's tasks, medication times, what to watch for, emergency contacts | Confirms tasks, reports observations (photo/text/voice) |
-| **Viewer** | Respite carer | Medication schedule and own tasks; `expires_at` set | Confirms tasks |
+| Admin | Mei Ling | All family records | Assign roles, confirm intake/schedules, authorize shares |
+| Family | Wei Jie / Bee Lian | Approved medical summary, medication, appointments and shared notes | Ask, add own notes, request sharing |
+| Carer | Siti | Confirmed schedule, assigned tasks, approved care instructions and emergency contacts | Confirm own tasks, submit observations |
+| Viewer (optional) | Respite carer | Confirmed schedule and assigned tasks while valid | Confirm assigned tasks |
 
-Roles are assigned by the admin in DM; Telegram user IDs map to roles.
+Every member must start a DM with Kin before private delivery is enabled. Admin assignment uses a verified Telegram ID and enrolled family/chat; names, forwarded text and model-supplied IDs never establish identity. Unknown or expired members receive no private information. Viewer access stays disabled until expiry enforcement exists.
 
-## Data categories
+## Records and permitted views
 
-`medical` · `medication` · `appointments` · `tasks` · `observations` · `finance` · `legal` · `admin` (contacts, logistics) · `notes`
+Categories: `medical`, `medication`, `appointments`, `tasks`, `observations`, `finance`, `legal`, `admin`, `notes`. Each record carries a version, category, permitted field projection, source spans, creator and timestamps. The policy matrix sets the maximum access level; [03-privacy-boundaries.md](03-privacy-boundaries.md) defines narrower fields, relationships, history and delivery controls.
 
-Every record carries a category, visibility derived from policy, a source (document/photo/message/audio) and timestamps. Policy matrix: [03-privacy-boundaries.md](03-privacy-boundaries.md).
+## Minimum flows
 
-## Flows
+**Private intake.** Caregiver sends a photo to Kin in DM. The D0-selected extraction model proposes fields and source spans; Nano helps classify them. Mixed-category documents are split into typed records while the original stays restricted. Admin reviews categories, uncertain text and conflicts, then explicitly confirms schedule details and any group summary. Only confirmed records create events. Uploading into the group already discloses the original to its members; Kin cannot reverse that disclosure. Group intake is limited to deliberately shared updates.
 
-**Intake.** Photo/PDF/audio sent to group or DM → fields and text extracted (Nano Omni) → category classified; admin confirms low-confidence classifications in DM → conflict check against existing records (e.g., dose change) → one clarifying question if needed → record + source stored → schedule/events updated → role-appropriate summaries posted (group: medical summary; DM: restricted items).
+**Schedule and reminders.** Preserve the clinician's recorded instructions without inferring dose changes or choosing times absent from the source. Admin confirms times, timezone, assignee and start/end details. Conflicts block activation. Superseding a schedule cancels its future events. Delivery checks the assignee's current permission; an outbox and stable event ID handle restart/retry without creating duplicate reminders. Explain the reminder using an authorized source excerpt.
 
-**Schedule and reminders.** Medication times, refills computed from quantity, appointments, physio. Reminder goes to the responsible person when it matters: Siti at 8 am for morning meds; Mei Ling the evening before an appointment, with the prep list.
+**Grounded ask.** Gateway-authenticated identity and destination define the request. Retrieval supplies only allowed records/fields and source excerpts; Super composes an answer from that projection. Validate references and destination permission before sending. A Family summary does not include the entire medical document. If no permitted source supports the answer, say it is unknown; never disclose whether a hidden record exists.
 
-**Ask.** Natural-language question → retrieval limited to records the asker's role may see → answer with source attached (photo crop or excerpt with date). If the answer needs records outside the asker's view, Kin says so and offers a share request.
+**Share request.** A finance/legal question gets a neutral group acknowledgment without record details. The requester receives a private request status. Admin sees the requester, exact fields/source excerpt, record version and destination in DM, then chooses Yes, No or Just this once. Yes is a revocable standing grant for that scoped item/view; Just this once authorizes one bounded answer. Neither grants the entire finance/legal category implicitly. Answers go privately to the named requester; a failed delivery cannot expand the audience.
 
-**Share request.** Family member asks about a `finance` item in the group → group receives "I've asked Mei Ling to share that" → admin DM: "Wei Jie asked about the insurance claim. Share the summary? [Yes] [No] [Just this once]" → grant stored and logged → asker answered or told no.
+**Reusable skill.** One preconfigured instruction survives restart: “Every Monday remind Siti to refill the pill organiser and send Mei Ling a confirmation.” Admin confirms trigger, assignee, recipients and timezone. The trigger creates a bounded task/reminder; retrieval and each recipient's view are independently authorized at execution. `/skills` displays only an allowed description. Teaching arbitrary skills through chat is optional.
 
-**Appointment prep and debrief.** Before: question list compiled from the period (carer observations, medication changes, pending results), posted to the attendee. After, with consent captured in chat: recording transcribed and summarised (Nano Omni) → medication changes become superseding records → action items assigned → next appointment captured → per-role summaries.
+**Public lookup.** Kin can retrieve public scheme rules or clinic hours. Build the Tavily query from a validated public topic and allow-listed public institution; exclude family names, IDs, medical details and private record text. Domain filtering alone does not sanitize a query. Return the public source; do not decide personal eligibility.
 
-**Weekly digest.** Sunday evening: admin gets the full digest; Family the overview; Carer next week's tasks and new things to watch for. In each member's language.
+## Optional flows
 
-**Skills.** "Every Monday remind Siti to refill the pill organiser and send me a photo." "Before each cardiology visit, prepare the question list." "If Siti reports a fall, message me and Wei Jie immediately." Kin confirms in plain language, stores, runs on schedule or trigger. Admin lists and edits via `/skills`.
-
-**Local lookups.** "Is Ah Ma eligible for the Home Caregiving Grant?" "What time does the clinic pharmacy close?" → Tavily restricted to the locale allow-list → answer with public source. Queries contain no record content.
+Consultation audio needs separately validated modality support and recorded consent before processing. Transcripts become draft records with source segments; changes require Admin confirmation before superseding schedules. Weekly digests use fresh per-recipient authorized projections, never an Admin digest that is subsequently redacted. Teach-by-chat yields a structured, confirmed skill, not unrestricted code or tool authority.
 
 ## Chat conventions
 
-- Natural language first; admin commands `/help`, `/roles`, `/skills`, `/who-saw`, `/export`.
-- One clarifying question at a time.
-- Every factual answer carries a source; every reminder carries "why" ("from discharge letter, 3 Oct").
-- Group messages short; detail in DM or an attached card.
-- Language per member; group posts in English with a Mandarin version for members who prefer it.
-- Group privacy mode disabled for the family group so Kin sees all messages (per-family setting).
+- Short group posts use the intersection of current verified members' views; unknown membership blocks sensitive group delivery. Changes in membership recheck authorization.
+- Detailed answers and sensitive intake use DM. Group language variants use the same permitted fields; translation cannot add facts.
+- One clarification at a time. Grounded answers/reminders carry a dated, permitted excerpt; raw document/file access is never implied.
+- `/roles`, `/who-saw` and `/export` are Admin-only; `/skills` is role-filtered. `/who-saw` reports retrieval/delivery, not proof a human read a message.
+- Disable Telegram group privacy mode only for the enrolled demo group if full-message processing is needed; enforce identity and context policy on those messages.

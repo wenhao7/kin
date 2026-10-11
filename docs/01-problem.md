@@ -17,6 +17,8 @@ Family caregiving is a multi-person, multi-year, medically demanding coordinatio
 | Work is disrupted | 55% of working caregivers left work for a doctor visit in the past 6 months; 68% took leave | Duke-NUS research brief |
 | Who carries it | 66% adult children; 73% women; over half aged 60+ | Duke-NUS |
 
+Treat figures above as research context, not measured Kin outcomes. Recheck each original source, publication date, population and denominator before putting statistics into Devpost/video; US caregiver findings and Singapore projections are not interchangeable.
+
 ## How the work happens
 
 - Coordination in a WhatsApp/Telegram family group.
@@ -38,22 +40,22 @@ Family caregiving is a multi-person, multi-year, medically demanding coordinatio
 | AI + human coordination (US) | Hera ($27M Series A, Jun 2026; nurses + AI; 1,000 families) | Service-heavy; US; health-system distribution |
 | Employer care concierge | Cariloop ($40M), Wellthy ($35M) | Human coaches sold to HR |
 | Paid family caregiving | Abby Care ($45M raised) | Medicaid-driven |
-| Consumer coordination apps | Caring Village (AI "Julia"), ianacare, Carely, Lotsa Helping Hands, CaringBridge | Cloud SaaS; separate app; no role boundaries |
+| Consumer coordination apps | Caring Village (AI "Julia"), ianacare, Carely, Lotsa Helping Hands, CaringBridge | Cloud coordination apps; Caring Village already has role permissions. Compare source-grounded chat memory and field/source sharing, not the mere existence of roles |
 | Elder-facing devices | ElliQ, Sensi.ai | For the elder, not the family |
 | Singapore | Homage, Jaga-Me; AIC caregiver resources | Supply of care, not coordination |
-| Default | WhatsApp, Notes, ChatGPT | No memory boundaries, no privacy, no persistence |
+| Default | WhatsApp, Notes, ChatGPT | Fragmented context and documents; the intended cross-person permission/recall workflow needs explicit controls |
 
-No player offers a private, self-hosted, memory-first agent in the family's existing chat with per-role visibility.
+Kin targets a combined workflow rather than claiming unique role permissions: chat-based intake, confirmed schedules, durable source-grounded memory, reusable skills and auditable recipient-specific sharing. Validate competitor capabilities before using absolute novelty claims. [Caring Village member roles](https://help.caringvillage.com/hc/en-us/articles/218121268-What-do-the-member-roles-mean)
 
 ## Differentiation
 
-1. Private by construction: sandboxed agent, open models, data stays in the tenant.
-2. Multimodal intake from paper and audio.
+1. Self-hosted domain records with explicit policy controls; Telegram carries messages and Nebius receives approved inference inputs. The deployed boundary must be tested.
+2. Qualified photo intake from paper; audio debrief is optional.
 3. Lives in the group chat the family already uses.
 4. Memory across years, grounded to source documents.
-5. Role-based boundaries enforced at retrieval, with audit.
-6. Skills taught once in plain language.
-7. Appointment prep and debrief.
+5. Field/relationship boundaries enforced at retrieval, history/tools and delivery, with audit.
+6. One durable reusable scheduled skill; arbitrary teach-by-chat is optional.
+7. Confirmed scheduling in the minimum; appointment prep and audio debrief follow later.
 8. Local context from allow-listed public sources.
 
 Sources: [sources.md](sources.md).

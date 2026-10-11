@@ -1,88 +1,83 @@
 # 05 · Architecture
 
-## Constraints
-
-- Always-on; one family; Telegram.
-- Single retrieval chokepoint; store partitioned by visibility; fails closed.
-- Inference via Nebius Token Factory; a dedicated Nebius endpoint is supported for tenant isolation.
-- Hackathon credits ≈ $50: Nano/Omni for volume; Super for answers; Ultra capped.
+Target design. Current configuration, policy validation, setup checks and container templates are preparation; the service, authenticated retrieval and confirmed scheduling are not implemented.
 
 ## Components
 
 ```mermaid
 flowchart TB
-    subgraph Telegram
-        G[Family group]
-        D[DMs per member]
-    end
-    subgraph Sandbox["OpenShell / NemoClaw sandbox — always-on"]
-        GW[Gateway<br/>Telegram ↔ events]
-        AG[Kin agent<br/>Hermes Agent runtime<br/>skills · scheduler]
-        IN[Intake pipeline<br/>extract · classify · conflict check]
-        PE[Policy engine<br/>role × category · grants · audit]
-        RET["retrieve(query, principal)"]
-        MEM[(Memory store<br/>records · documents · events<br/>partitioned by visibility)]
-        LOC[Locale pack<br/>languages · allow-list · templates]
-    end
-    subgraph Nebius
-        TF[(Token Factory<br/>Nemotron 3 Nano Omni · Nano · Super)]
-        SE[Serverless Job / Endpoint<br/>weekly digest · optional data-map page]
-    end
-    TV[(Tavily · allow-listed domains)]
-
-    G & D <--> GW <--> AG
-    AG --> IN --> MEM
-    AG --> RET --> PE --> MEM
-    AG <--> TF
+    TG[Telegram group and private chats] <--> GW[Trusted gateway: sender, roster, destination]
+    GW --> ID[Authenticated request identity and policy version]
+    ID --> IN[Private intake: extract, classify, confirm]
+    ID --> RET[Scoped retrieval and permitted history]
+    IN --> DB[Kin store: typed versioned records and restricted originals]
+    RET <--> PE[Policy: relationships, fields, grants and source spans]
+    PE <--> DB
+    RET --> AG[Hermes/Nemotron: bounded answer or skill]
+    AG --> OUT[Source validation and per-destination authorization]
+    OUT --> GW
+    DB --> EV[Confirmed events and durable outbox]
+    EV --> OUT
+    AG <--> TF[Token Factory inference]
     IN <--> TF
-    AG --> TV
-    AG --> LOC
-    AG -.-> SE
+    ID --> Q[Public-topic query validation]
+    Q --> TV[Tavily with locale domain allow-list]
+    TV --> OUT
 ```
 
-## Data model
+Hermes supplies runtime/chat/skill facilities, but Kin owns domain memory and policy. OpenShell/NemoClaw can isolate the runtime after qualification; it does not implement family-role authorization. A separate Nebius Serverless digest/data-map service is optional.
 
-- **Member**: `telegram_id`, `name`, `role`, `language`, `expires_at?`
-- **Record**: `id`, `category`, `visibility`, `fields` (typed per category, e.g. medication {name, dose, frequency, start, end, prescriber}), `source_ref`, `created_by`, `created_at`, `supersedes?`
-- **Document**: `id`, `type` (photo | pdf | audio), `storage_ref`, `extracted_text`, `pages/segments`, `created_at`
-- **Event**: reminders, appointments, tasks — `assignee`, `due_at`, `status`, `record_ref`
-- **Grant**: `record_or_category`, `grantee`, `scope`, `granted_by`, `at`
-- **Audit**: `principal`, `query`, `records_shown`, `decision`, `at`
-- **Skill**: `trigger` (cron | event), `principal`, `instruction`, `last_run`
+## Model/deployment gate
 
-Storage: SQLite + file store on the sandbox volume, partitioned by visibility class.
+[Nebius's current model page](https://nebius.com/services/token-factory/models/nvidia-nemotron-models-inference) lists Nano Omni as dedicated-only. Do not assume `KIN_MODEL_OMNI` on the shared endpoint supports photos or audio. D0 chooses and records an actual extraction path:
 
-## Flows
+1. Confirm dedicated Nano Omni availability, image request shape, endpoint URL, pricing and available budget; approve only the compute actually needed for the demo period.
+2. If unavailable or unaffordable, qualify an available vision model on Token Factory for extraction, with Nemotron Nano/Super doing classification and grounded text answers. Disclose the extraction model explicitly; this retains the required NVIDIA runtime use.
+3. If only text intake is possible, update the scope, D0 gate, README and video to the actual capability before claiming a submittable product. A design animation is not evidence of working photo intake.
 
-**Intake.** Media message → Gateway → Intake: Nano Omni extracts fields/text → Nano classifies category → conflict check → clarifying question if confidence low → Record + Document stored (visibility from policy) → Events created → role-appropriate posts.
+Audio is independently optional; an accepted image call does not qualify transcription. The current `make check` tests configured model IDs and one image only. Implementing the chosen provider/configuration is part of D0; documentation does not fix its current defaults or make the probe pass.
 
-**Ask.** Message → intent → `retrieve(query, principal)` (policy applied before context) → Super composes answer with source references → Gateway attaches source crop/excerpt → Audit entry.
+## Minimum data and events
 
-**Share request.** `retrieve` reports a policy block → admin DM with options → Grant stored → asker answered or declined → Audit.
+SQLite holds family members, versioned typed records, grants, confirmed events, skills, requests and outbox/audit entries. Restricted files and approved crops live in a private file store. Relationships and projections are specified in [03-privacy-boundaries.md](03-privacy-boundaries.md).
 
-**Debrief.** Audio + consent flag → Nano Omni transcription and summary → superseding medication Records → Events → per-role posts.
+- Record states: extracted, confirmed, active, superseded; source spans and exact confirmation version are retained.
+- Event: stable ID, record/version, assignee, due time/timezone, status and authorized destination.
+- Skill: structured trigger, execution identity, task/recipients, confirmed instruction, version and last-run key. One reusable scheduled skill is minimum; arbitrary code generation is outside that path.
+- Outbox: request/event ID, payload/projection hash, recipient, current policy version, delivery state and transport receipt. Retries reuse IDs; uncertain delivery cannot be represented as a fresh successful send.
 
-**Skills.** Hermes skill store; scheduler fires with the skill's principal; output passes through the policy path.
+Transactions enforce confirmation/supersession, event deduplication and one-shot grant reservation. Reauthorize queued work at send time; policy changes invalidate cached projections and queued restricted output.
 
-**Digest.** Weekly job (Hermes scheduler or Nebius Serverless Job) renders per-role digests per language.
+## End-to-end flows
 
-## Models
+**Intake:** authenticate private sender → quarantine media → extract fields/source spans → classify/split → show source-supported draft → Admin confirms schedule and sharing → commit confirmed records/events → per-destination permitted summary. Mixed originals remain Admin-only.
 
-| Task | Model |
-|---|---|
-| Photo/PDF/audio understanding; field extraction; translation | Nemotron 3 Nano Omni |
-| Category classification; conflict detection; short answers | Nemotron 3 Nano 30B-A3B |
-| Grounded answers; appointment prep; digests; skill interpretation | Nemotron 3 Super 120B-A12B |
-| Hard record conflicts (capped) | Nemotron 3 Ultra 550B-A55B |
+**Ask:** authenticate identity/destination → construct permitted history → retrieve authorized field/source projection → Super answers → validate citations/fields → recheck destination → deliver and audit. The model never chooses another identity or reads raw files directly.
 
-Served via Token Factory (OpenAI-compatible API).
+**Sharing:** neutral acknowledgment → scoped request/approved view in Admin DM → authenticated callback binds record/version, grantee and destination → reserve grant → bounded answer → delivery reconciliation/audit. No implicit category-wide grant.
 
-Omni modality contingency: the Token Factory catalog lists `Nemotron-3-Nano-Omni` with modality "Text-to-text" on the public endpoint. `kin check` sends one image to it. If image/audio input is rejected on the public endpoint, the options in order are: a Token Factory **dedicated endpoint** for Nano Omni (tenant-isolated, matches the privacy story; cost per hour); another vision-capable model on Token Factory for extraction only, with Nemotron doing classification and answers (still satisfies "at least one NVIDIA open model" but weakens the Nemotron story); text-only intake from PDFs for the demo while the video shows the design. The outcome is recorded in ROADMAP D0.
+**Scheduled skill:** durable trigger/last-run ID → authorized record reads → new task/event → independently projected recipient messages. The Admin execution identity does not elevate Carer recipients.
 
-## Integrations
+**Lookup:** validate public topic/institution before Tavily → domain-filtered results → cited public response. No family record text enters outbound queries.
 
-- **Telegram Bot API** — group + DMs; group privacy mode disabled for the family group.
-- **Hermes Agent** — runtime, memory interface, skills, gateway. Policy engine and `retrieve` are the only memory access path.
-- **OpenShell / NemoClaw** — sandbox, credential proxying, network allow-list (Telegram API, Token Factory, Tavily, locale allow-list domains).
-- **Tavily** — `search`/`extract` with `include_domains` from the locale pack; no record content in queries.
-- **Locale pack** — folder: languages, lookup allow-list, document templates and label formats, local terms. Swapping the locale replaces the folder.
+## Hermes and service hardening gate
+
+The seed config currently uses shared Hermes home/state and leaves Kin MCP disabled; `kin serve` exits as a placeholder and Compose runs a self-check. D2 must implement serving and authenticated request binding before enabling MCP. Keep the server internal or protect local access; current exposed Compose ports are not evidence of transport authorization.
+
+Native Hermes memory is injected into context and session search can access stored messages. Disable or isolate all unfiltered memory/history/file paths over family data. Construct group and member DM contexts separately, and invalidate them appropriately after policy changes. Do not rely on terminal backend selection or a prompt to disable tool access. Verify the actual installed/pinned Hermes tool set and background memory/skill behavior. [Memory documentation](https://hermes-agent.nousresearch.com/docs/user-guide/features/memory)
+
+Restrict the process to required volumes, scopes and outbound destinations; never mount raw family storage into model-accessible tools. Secrets stay outside generated prompts/logs. Qualify OpenShell network/credential integration at D7 if added; record the actual deployed boundary. The minimum privacy tests apply whether OpenShell is present or deferred.
+
+## Models, failure behavior and budgets
+
+- Selected vision extractor: draft fields only; category/meaning decisions and confirmations remain explicit.
+- Nemotron Nano: classification and bounded text tasks; Super: grounded wording and skill interpretation. Discover exact IDs with `make models`; do not copy stale Nano IDs between repos.
+- Ultra is optional for non-clinical reasoning and cannot decide medical conflicts or permissions.
+- Declare request output/action/token/spend limits and timeouts; accept structured schemas, reject malformed calls and use bounded retries. D0 qualifies the model/tool loop, not only a smoke reply.
+- Cache public lookups; cache private results by family, principal, field projection, record and policy versions. Translation caches carry the same restrictions.
+- On model/extraction failure preserve drafts and existing confirmed schedules, report the incomplete result, and do not create new reminders.
+- Reserve actual account credits for judge access. Confirm dedicated pricing and total operating cost separately from per-token estimates.
+
+## External data flow
+
+Telegram carries source messages/media; the Kin store is self-hosted; approved context/extraction inputs go to Nebius; Tavily sees validated public-only topics. A dedicated endpoint remains remote inference. The README/video must identify those crossings and the actually deployed isolation, rather than claim all information stays local.
