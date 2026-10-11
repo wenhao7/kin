@@ -1,55 +1,67 @@
 # Kickoff checklist
 
-One-time setup on the development host (a Debian server that stays on; the Hermes gateway is long-lived). The scaffold (`uv` environment, Docker images, compose stack, `.env.example`, `make check` self-tests) is in the repo; items marked **YOU** need the human. Done when `make check` passes and `make up` leaves the gateway running.
+One-time setup on the intended development/demo host. The repository has setup probes and container templates; `kin serve` and domain flows are not implemented. Kickoff qualifies D0, not the whole product. Keep real family information out of the environment.
 
-Fixed dates: submission closes **Fri 30 Oct 2026, 10:00 PDT (Sat 31 Oct, 01:00 SGT)**; judging 1–15 Dec 2026. The demo Telegram group must stay up until judging ends.
+Submission closes **30 Oct 2026, 10:00 PDT (31 Oct, 01:00 SGT)**. Judge access must remain free and available through **16 Dec 2026, 04:00 SGT**.
 
-## 1. Devpost — **YOU**
-- [ ] Join the hackathon: https://nebiusglobalaihackathon.devpost.com/ → **Join hackathon** (same account as the Upgradient entry).
+## 1. Devpost — YOU
 
-## 2. Nebius Token Factory — **YOU**
-- [ ] Console https://tokenfactory.nebius.com → **API keys** → `NEBIUS_API_KEY` (the Upgradient key can be reused).
-- [ ] Credits as per the Upgradient kickoff (promo code `NEBIUS-DEVPOST-GLOBAL26`; Builders Program).
+- [ ] Join the [hackathon](https://nebiusglobalaihackathon.devpost.com/) with the same account as Upgradient. The two entries must be substantially different.
 
-## 3. Tavily — **YOU**
-- [ ] API key at https://app.tavily.com → `TAVILY_API_KEY`.
+## 2. Nebius Token Factory — YOU
 
-## 4. Telegram — **YOU**
-- [ ] @BotFather → `/newbot` → token → `TELEGRAM_BOT_TOKEN`.
-- [ ] @BotFather → `/mybots` → the bot → **Bot Settings → Group Privacy → Turn off**. Remove and re-add the bot to any group it already joined (Telegram caches the setting). Alternative: make the bot a group admin.
-- [ ] Your numeric user ID (message @userinfobot) → `KIN_ADMIN_TELEGRAM_ID` and `TELEGRAM_ALLOWED_USERS`.
-- [ ] Create the test group "Tan Family"; add the bot and a second account. Post one message, then read the chat ID (starts with `-100`) from `https://api.telegram.org/bot<TOKEN>/getUpdates` → `TELEGRAM_GROUP_ALLOWED_CHATS` and `TELEGRAM_HOME_CHANNEL`.
+- [ ] Create an API key at [Token Factory](https://tokenfactory.nebius.com); store it only in `.env`/deployment secrets.
+- [ ] Confirm credited balance and expiry; budget both submissions together, including judge-period operation.
+- [ ] Confirm Nano Omni dedicated endpoint availability and pricing before starting paid compute. If unsuitable, qualify an available Token Factory image model plus NVIDIA Nemotron text as described in [architecture](docs/05-architecture.md).
+- [ ] Record exact endpoint/model IDs, request format and an image result. Audio needs a separate optional test. Upgradient's pending Sandboxes beta approval does not qualify or block this model path.
 
-## 5. Host tools — **YOU**
-- [ ] `uv`, Docker Engine + Compose v2, `git`, `make`. For synthetic-document generation (`make setup-data`): `apt install libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0`.
+## 3. Tavily — YOU
 
-## 6. Environment
+- [ ] Obtain a key at [Tavily](https://app.tavily.com); use validated public-only topics and the locale allow-list. Never send family record text as a search query.
+
+## 4. Telegram — YOU
+
+- [ ] Use @BotFather to create the bot; store `TELEGRAM_BOT_TOKEN` privately.
+- [ ] Configure group privacy/admin settings only as needed for the enrolled synthetic group. Enforce verified sender and membership restrictions independently of that setting.
+- [ ] Set verified numeric Admin/user/group IDs and the `TELEGRAM_*` allow-lists in `.env`; never take authority from a display name or model-generated ID.
+- [ ] Enroll Admin, Family and Carer test identities and languages. Each person starts a private chat with the bot before any DM delivery test.
+- [ ] Use synthetic DMs for sensitive intake; a group upload has already exposed the original. Check unknown-member behavior before group summaries.
+
+Do not paste a token-bearing Telegram API URL into docs, logs or screenshots. The bot cannot initiate a private conversation with a user who has not started it. [Telegram bot guidance](https://core.telegram.org/bots)
+
+## 5. Host tools — YOU
+
+- [ ] `uv`, Docker Engine + Compose v2, `git`, `make`. For optional synthetic render tooling (`make setup-data`), install the Pango libraries required by the selected renderer.
+
+## 6. Local environment and checks
+
 ```bash
-make setup          # .venv + deps; creates data/ and hermes/home/; copies .env.example → .env if missing
-$EDITOR .env        # NEBIUS_API_KEY, TAVILY_API_KEY, TELEGRAM_BOT_TOKEN, KIN_ADMIN_TELEGRAM_ID, TELEGRAM_* allow-lists
+make setup          # dependencies; example .env; data/ and hermes/home/
+$EDITOR .env        # keys, verified IDs, endpoint/model configuration
+make policy         # validates matrix shape, not runtime enforcement
+make lint
+make test
+make models         # discover actual Nemotron IDs visible to the account
+make check          # live probes, including configured image request
 ```
 
-## 7. Self-check
-```bash
-make check          # keys · policy/locale · model IDs · one Omni vision call · Telegram getMe · Tavily (allow-listed)
-make models         # exact Nemotron IDs; fix .env if a model shows "not found"
-make policy         # prints and validates the role × category matrix
-```
-`Telegram getMe` must show `can_read_all_group_messages=True`. `omni:vision` decides whether photo intake can use the public Omni endpoint; a FAIL triggers the contingency in `docs/05-architecture.md` (D0 note).
+`make check-nospend` skips paid inference but still requires credentials/network; it is not an offline validation mode. Current `make check` uses the scaffold's configured Omni probe. Selecting an alternative extractor requires a later D0 implementation/config change, not merely changing this documentation. Preserve failed access/modality evidence without declaring model inability from a connectivity failure.
 
-## 8. Hermes runtime (ROADMAP D0)
+## 7. Hermes/runtime spike
+
 ```bash
 make docker-build
-make up             # kin service + hermes gateway; first hermes start installs Hermes into ./hermes/home
-make logs           # watch the install, config seeding, gateway start
+make up             # starts scaffold services; does not implement kin serve
+make logs
 make hermes-doctor
 ```
-Then send the bot a message in the test group. If the containerised install misbehaves, fall back to a host install (`curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash`, `hermes setup` with provider **Nebius Token Factory**, `hermes gateway setup` for Telegram, `hermes gateway install && hermes gateway start`); the `kin` service stays in Docker either way. Record which path worked in `ROADMAP.md` D0.
 
-## 9. Community — **YOU**
-- [ ] Nebius Discord: https://discord.gg/ZdC3rXMJH. Hermes docs: https://hermes-agent.nousresearch.com/docs/.
+Qualify synthetic group/DM replies and inspect the installed Hermes version, tools and persistent history. Before enabling Kin MCP or ingesting domain data, D2 must bind trusted identity, protect the service and disable/isolate unrestricted native memory/history/files. A shared persistent Hermes home is not proof of role isolation. Do not weaken volume, credential or tool boundaries merely to make setup pass.
+
+OpenShell/NemoClaw can be qualified later, but the minimum policy boundary cannot be deferred. Record the deployed runtime and outstanding gaps in ROADMAP. No external support messages are sent without the owner's authorization.
 
 ## Working rhythm
-Each burst: open `ROADMAP.md`, take the next unchecked deliverable, finish it to its "done when", tick it, commit (conventional commits), push to `main`. Secrets stay in `.env`; `data/` and `hermes/home/` never enter git.
 
-Order across repos: Upgradient to its minimum submittable product first; Kin D1 (synthetic documents) can be done in any spare burst because it needs no infrastructure.
+Read ROADMAP, finish one evidence gate, update its status and make a focused conventional commit; product deliverables follow repository push conventions. Documentation-only work uses the recorded credential-free validation exception. `.env`, `data/`, Hermes home and runtime logs stay out of Git.
+
+While Upgradient beta approval is pending, Kin D0/D1 and deterministic Upgradient preparation can progress independently. A fixture or setup probe never completes an application gate.

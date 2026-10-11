@@ -1,41 +1,40 @@
 # 07 · Demo plan
 
-Real Telegram chat, Kin responding live (phone over-the-shoulder for the kitchen scene; Telegram Desktop screen recording for the rest).
+Show the functioning minimum in real Telegram DMs/group chats. All records, identities used in fixture content and documents are synthetic. Record model/latency evidence; disclose cuts/time compression rather than imply instant processing.
 
-## Pre-conditions
+## Preconditions
 
-- Demo family loaded through Week 0 ([06-synthetic-data.md](06-synthetic-data.md)).
-- Group "Tan Family" with Mei Ling, Wei Jie, Bee Lian, Siti, Kin; privacy mode disabled.
-- Languages: Bee Lian → zh; others → en.
-- Skills pre-taught: Monday pill-organiser reminder; cardiology prep.
-- Default policy matrix.
-- Consult audio pre-recorded (synthetic); processing runs live.
+- D0–D5 passed, including a qualified image model, isolated context/tools, confirmation, supersession/retry tests and one persistent reusable skill.
+- Eight-document fixture and role/language roster loaded; all private recipients have started a DM with the bot.
+- Admin, Family and Carer views and approved source crops prepared. Group roster is verified; mixed originals and restricted answers stay in DM.
+- Monday skill configured/confirmed and shown surviving restart. Audio, teaching new skills and a data map are optional and excluded from the minimum script.
 
-## Video (≤ 3:00)
+## Video target: 2:50
 
-| Time | Scene | On screen | Voice-over |
-|---|---|---|---|
-| 0:00–0:20 | Kitchen table | Discharge letter and pill boxes; one photo sent to the group | One in four adults is a caregiver; Singapore is super-aged this year; this is the job: paper, pill boxes, a group chat |
-| 0:20–1:10 | Intake | Kin posts: medication table before/after; "two of these may interact — worth asking the pharmacist"; "reminders set for Siti 8 am / 8 pm"; Mandarin version for Bee Lian; Siti's DM shows the reminder | Nemotron Nano Omni reads the letter and labels, files them with their source, builds the schedule, tells each person what they need in their language. Kin never diagnoses or doses |
-| 1:10–1:35 | Grounded recall | Wei Jie: "What did Dr Tan change at the last visit?" → specific change + photo of the Month −4 clinic memo | The answer comes with the document it came from |
-| 1:35–1:55 | Boundary | Wei Jie asks about the insurance claim in the group → "I've asked Mei Ling to share that" → Mei Ling's DM: Share? [Yes] [No] [Just this once] → Yes → Wei Jie gets the summary | Money is family-admin. Kin asks before sharing and enforces it where data is read, not by hoping the model behaves |
-| 1:55–2:25 | Visit | Consent in chat; consult audio sent; summary, one medication record superseded, three action items, next appointment | With consent, the consult becomes records and tasks |
-| 2:25–2:50 | Data map | OpenShell sandbox, Hermes runtime, Nemotron on Nebius, the family's data folder, the locale pack folder; `/who-saw` output | Ran on Nebius with open NVIDIA models; here is where the data lives, who saw what, and the folder you swap for another country |
-| 2:50–3:00 | Close | Repo URL; "Built with NVIDIA Nemotron on Nebius · Hermes Agent · OpenShell" | — |
+| Time | Scene | On screen / spoken point |
+|---|---|---|
+| 0:00–0:15 | The task | Synthetic discharge letter, pill boxes and family chat. Explain repeated paperwork and coordination; use only checked, population-qualified statistics. |
+| 0:15–0:55 | Private intake and confirmation | Admin sends photo in DM; draft includes source excerpt and uncertain fields. Explicit confirmation activates the verified schedule. Name the actual extractor, NVIDIA Nemotron and Nebius Token Factory. |
+| 0:55–1:15 | Authorized reminder/summary | Carer DM receives the confirmed reminder; group sees only approved English/Mandarin summary. State: Kin organizes documented instructions and does not provide clinical advice. |
+| 1:15–1:40 | Grounded recall | Family asks what changed at the last visit; answer shows allowed facts and approved Month −4 memo crop, not a full mixed record. |
+| 1:40–2:10 | Controlled sharing | Finance question gets neutral acknowledgment; Admin DM approves exact view/version/recipient “Just this once”; requester receives DM. Show denial/revocation or audit evidence briefly. |
+| 2:10–2:30 | Personal AI skill | `/skills` and persistent Monday trigger/task, with recipient authorization. Show stored record continuity or restart evidence. |
+| 2:30–2:50 | Try it and data flow | Public licensed repo and free self-service judge instructions. State self-hosted records, Telegram transport, approved Nebius inference inputs and actually deployed isolation. |
 
-Production: replies short enough to read on screen; no copyrighted music; say "Token Factory" and "Nemotron" in the audio; state the safety line.
+Use readable replies/fonts and no copyrighted music. Do not include interaction warnings, auto-activated schedules, unconfirmed audio changes or full restricted source images. Optional scenes can replace a segment only after their gates pass and while retaining core proof; total video stays under three minutes.
 
 ## Judge access
 
-- Demo Telegram group via invite link, pre-loaded, Kin running; judges act as a Family member.
-- README test script: five messages and expected results (intake photo supplied, recall question, finance question → share flow, `/skills`, `/who-saw`).
-- Optional read-only data-map page (Serverless Endpoint): records by category, audit log.
-- Reset script to restore the demo group between judges.
+Judges need both Admin and Family interactions to complete the sharing flow, plus supplied intake photos and expected results. Provide entrant-funded synthetic sessions with instructions for DM `/start`, trusted enrollment, confirmation, reminder, recall, one-shot sharing, `/skills` and authorized audit. No judge should wait for an entrant to manually grant the demo share.
 
-## Must work live
+Implement an independent reset and isolate judge sessions. If a role switch or auto-approver is provided, it applies only to the disposable synthetic fixture and never grants production-family authority. Supply test credentials/enrollment instructions where needed; unknown real identities remain denied outside that fixture.
 
-1. Photo intake → records + reminders + bilingual summary.
-2. Grounded recall with source attachment.
-3. Share-request flow end to end.
-4. Audio debrief (pre-recorded audio, live processing).
-5. `/who-saw`.
+Verify access from a clean judge session through both sides of sharing and reset. Keep the bot, endpoint, budgets and test build available through **16 Dec 2026, 04:00 SGT**. A read-only data map is optional and does not replace the functioning agent.
+
+## Must work
+
+1. Private photo intake → exact-version confirmation → authorized reminder and bilingual summary.
+2. Grounded recall with an approved source excerpt/crop.
+3. Controlled sharing including denial, one-shot behavior and DM delivery.
+4. Persistent memory and one reusable scheduled skill with current permissions.
+5. Minimum privacy/safety tests and access/delivery audit, with public-only Tavily lookup in the main workflow if entering its bonus.

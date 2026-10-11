@@ -2,64 +2,66 @@
 
 **The family member who remembers everything — and tells no one who shouldn't know.**
 
-Kin is a private, always-on care coordinator for families looking after an ageing parent. It joins the family's Telegram group as a member. Photograph the discharge letter and the pill boxes: Kin builds the medication schedule, sets reminders on the helper's phone, flags the one question worth asking the pharmacist, and posts a plain-language summary to the group — in English, and in Mandarin for the aunt who prefers it. Months later, when a brother overseas asks "what did Dr Tan change last time?", Kin answers with the exact change and the photo it came from. Ask about the insurance claim in the group and Kin replies privately to the primary caregiver: that's family-admin information, shall I share it?
+Kin is a planned private, always-on care coordinator for families looking after an ageing parent. A caregiver sends a discharge photo in DM; Kin proposes source-supported records and a schedule for explicit confirmation, then sends each person an authorized reminder or summary. Later questions receive permitted facts and source excerpts. Restricted sharing needs a scoped Admin grant.
 
-Kin runs in a sandbox the family controls, with open NVIDIA Nemotron models served through Nebius. Each person sees only what their role allows, enforced where data is retrieved — not by prompt.
+The design uses self-hosted records, Telegram transport and models served through Nebius. Permission checks cover retrieval, chat history, native agent tools and delivery. Approved context goes to remote inference; a self-hosted store does not mean all information stays local.
 
 Built for the [Nebius x NVIDIA Global AI Hackathon](https://nebiusglobalaihackathon.devpost.com/), Personal AI track. Singapore locale; the locale is a swappable pack.
+
+## Current status
+
+Configuration/policy loading and setup checks exist; `kin serve`, persistent domain memory, intake and reminders are placeholders or planned. The YAML matrix does not yet enforce runtime permissions. Nano Omni is listed as dedicated-only; D0 must qualify an accessible image endpoint/model and its budget. See [ROADMAP.md](ROADMAP.md).
 
 ## Why
 
 - 63 million US caregivers (1 in 4 adults), up ~50% since 2015; 55% perform medical/nursing tasks, 22% trained; 1 in 3 finds coordination hard (AARP/NAC 2025).
 - Singapore is a super-aged society in 2026 (1 in 5 aged 65+); family eldercare hours projected to rise from 29 to 41 per week; 55% of working caregivers left work for a parent's doctor visit in the past six months.
 - Coordination happens in a group chat and a shoebox of paper.
-- Funded players (Hera, Cariloop, Wellthy, Caring Village) are human services or cloud apps. None is a private, self-hosted, memory-first agent in the family's existing chat.
+- Existing care services and coordination apps already offer useful collaboration and role permissions. Kin targets a combined chat workflow: source-grounded memory, confirmed scheduling, reusable skills and auditable field-level sharing.
 
 Details: [docs/01-problem.md](docs/01-problem.md).
 
-## What it does
+## Planned minimum
 
-| Flow | In chat |
+| Flow | Intended behavior |
 |---|---|
-| Intake | Photo of a letter, label, slip or report → structured record with source, filed, scheduled, summarised |
-| Schedule & reminders | Medication times, refills, appointments; reminder to the responsible person |
-| Ask | "What did the cardiologist change in March?" → answer + source photo |
-| Boundaries | Role-based views; sensitive answers to DM; share-request flow; `/who-saw` audit |
-| Appointment prep & debrief | Question list before; with consent, recorded consult → summary, records, action items after |
-| Weekly digest | Role-appropriate summary per member, in their language |
-| Skills | "Every Monday remind Siti to refill the pill organiser and send a photo" — taught once |
-| Local lookups | Scheme rules, clinic hours from allow-listed domains; no family data in queries |
+| Private intake | Photo → source-supported draft → Admin confirms exact records/schedule and permitted summaries |
+| Reminder | Confirmed instructions and timezone; durable retries; supersession cancels future old events |
+| Recall | Answer from authorized fields + approved source excerpt/crop |
+| Sharing | Versioned recipient/view grant in Admin DM; one-shot or revocable standing share; access/delivery audit |
+| Reusable skill | One persistent Monday task/reminder, with recipient permissions rechecked at execution |
+| Local lookup | Public-only Tavily query and allow-listed source; no private record text |
 
-Product: [docs/02-product.md](docs/02-product.md). Boundaries: [docs/03-privacy-boundaries.md](docs/03-privacy-boundaries.md).
+English/Mandarin summaries use the same authorized fields. Audio debrief, arbitrary skill teaching, digests, Viewer expiry, full dataset and OpenShell/data-map polish are optional. Product: [docs/02-product.md](docs/02-product.md). Boundaries: [docs/03-privacy-boundaries.md](docs/03-privacy-boundaries.md).
 
 ## How it works
 
 ```mermaid
 flowchart LR
-    TG[Telegram<br/>family group + DMs] <--> GW[Gateway]
-    GW --> AG[Kin agent<br/>Hermes Agent runtime]
-    AG <--> PE[Policy engine<br/>role × category]
-    PE <--> MEM[(Partitioned memory<br/>records · docs · events)]
-    AG <--> TF[(Nebius Token Factory<br/>Nemotron 3 Nano Omni · Super)]
-    AG <--> TV[(Tavily<br/>allow-listed domains)]
-    subgraph OS["OpenShell / NemoClaw sandbox"]
-        GW
-        AG
-        PE
-        MEM
-    end
+    TG[Telegram group and initialized DMs] <--> GW[Trusted identity and roster]
+    GW --> PE[Policy: fields, relationships, history and grants]
+    PE <--> MEM[Versioned records and restricted originals]
+    PE --> AG[Hermes and bounded model calls]
+    AG --> OUT[Validate source and destination]
+    OUT --> TG
+    AG <--> TF[Nebius inference]
+    MEM --> EV[Confirmed events and durable outbox]
+    EV --> OUT
+    AG --> Q[Validated public-only query]
+    Q <--> TV[Tavily allow-listed sources]
 ```
 
-- **Hermes Agent** (MIT): always-on runtime, persistent memory, skills, Telegram gateway.
-- **OpenShell / NemoClaw**: sandbox, credential proxying, network allow-list.
-- **Nemotron 3 Nano Omni** reads photos, documents and audio; **Nemotron 3 Super** reasons and drafts; served via Nebius Token Factory (dedicated Nebius endpoint supported).
-- **Tavily**: public information from an allow-list.
+- **Hermes Agent:** runtime/chat/skill facilities; unfiltered native memory/history/tools must be isolated before family data is used.
+- **Kin policy/store:** authenticated identity, permitted field/source projections, confirmed schedules and per-destination authorization.
+- **Nebius Token Factory:** NVIDIA Nemotron text reasoning plus a qualified image extractor. Dedicated Nano Omni is one option; an available Token Factory vision model plus Nemotron is another. Audio is separately optional.
+- **OpenShell/NemoClaw:** optional process/network isolation after core privacy controls; it does not supply family-role authorization.
+- **Tavily:** validated public topics with domain filtering.
 
 Architecture: [docs/05-architecture.md](docs/05-architecture.md).
 
 ## Safety
 
-Kin organises; it does not diagnose or dose. Every statement about the care recipient carries its source. Consent is required before any recording. [docs/04-safety.md](docs/04-safety.md).
+Kin organises; it does not diagnose or dose. The target requires sources, exact-version schedule confirmation and conflict blocking; it does not infer drug interactions. Optional audio needs consent before processing. No real personal data is used in the demo. [docs/04-safety.md](docs/04-safety.md).
 
 ## Demo
 
@@ -70,15 +72,16 @@ All demo data is synthetic: fictional family, fictional institutions, generated 
 Requires [uv](https://docs.astral.sh/uv/) (Python 3.12 is fetched automatically) and Docker with Compose v2 for the runtime.
 
 ```bash
-make setup             # .venv + dependencies; creates data/, hermes/home/; copies .env.example → .env
-$EDITOR .env           # NEBIUS_API_KEY, TAVILY_API_KEY, TELEGRAM_BOT_TOKEN, KIN_ADMIN_TELEGRAM_ID, TELEGRAM_* allow-lists
-make check             # keys · policy/locale · models · one Omni vision call · Telegram getMe · Tavily
-make policy            # print and validate the role × category matrix
-make up                # kin service + Hermes gateway (first start installs Hermes into ./hermes/home)
-make logs
+make setup             # dependencies; example .env; data/ and hermes/home/
+$EDITOR .env           # private keys, verified Telegram IDs, qualified endpoints/models
+make policy            # validate matrix shape; runtime authorization is still planned
+make lint
+make test
+make models            # IDs actually visible to the account
+make check             # live configured model/image, Telegram and Tavily probes
 ```
 
-`hermes/config.yaml` is the template seeded into the Hermes home on first start; it sets the Nebius Token Factory provider and registers Kin's MCP server (disabled until `kin serve` exists, ROADMAP D3). `make hermes-shell` opens a shell with `hermes` on the PATH for `hermes doctor`, `hermes model`, `hermes gateway setup`.
+Current live checks need credentials and a qualified image endpoint; `check-nospend` still needs network/keys. `make up` starts the scaffold, not completed intake/reminders. `hermes/config.yaml` seeds the runtime and leaves Kin MCP disabled; enabling it requires D2 authenticated serving and context isolation. [KICKOFF.md](KICKOFF.md) explains the actual setup gates.
 
 Layout:
 
@@ -98,7 +101,7 @@ kin/
 
 ## How we use Nebius and NVIDIA
 
-_Required by the hackathon. To be filled with model IDs, endpoint type, tokens per intake, where Token Factory accelerated the workflow, how OpenShell/NemoClaw is used._
+_Complete from successful product runs: exact model IDs and endpoint types, image/text usage, measured latency and estimated/actual cost, approved data sent externally, persistent memory/skill evidence and the deployed isolation. Setup probes alone do not establish a completed product._
 
 ## Docs
 

@@ -11,7 +11,7 @@ All demo data is fictional. No real patient, family, clinician, clinic or hospit
 | **Lim Wei Jie**, 48 | Family | Son. Lives in Melbourne. |
 | **Tan Bee Lian**, 74 | Family | Mdm Tan's sister. Visits twice weekly. Prefers Mandarin. |
 | **Siti Rahmah**, 34 | Carer | Live-in helper, three years with the family. English and Malay. |
-| Respite carer | Viewer (14 days) | Covers Siti's home leave. |
+| Respite carer | Viewer (14 days, optional) | Covers Siti's home leave. |
 
 Fictional institutions: Eastbrook General Hospital; Bedok Hill Family Clinic; Dr Tan Hui Min (physician); Dr Rajan (GP); Sunrise Pharmacy.
 
@@ -27,7 +27,15 @@ Fictional institutions: Eastbrook General Hospital; Bedok Hill Family Clinic; Dr
 | Week +1 | Cardiology follow-up | Consult recording (~4 min, scripted); summary; next appointment |
 | Week +3 | Siti on home leave | Respite carer onboarding; viewer role with expiry |
 
-## Document set (≥ 20)
+## Minimum fixture (8 documents)
+
+D1 requires a discharge summary, three medication labels, appointment slip, Month −4 clinic memo, insurance claim letter and handwritten carer note. Four are photographed; clean renders and ground truth remain available for all eight. The larger timeline below is optional breadth.
+
+Ground truth includes exact source spans, record/version/category, proposed fields, confirmed instructions and timezones, supersession links, approved field/source crops and expected Admin/Family/Carer/group views. A mixed discharge original stays Admin-only; lower roles receive approved excerpts. Finance/legal fields must not leak through a source attachment, translation, cache or previous chat.
+
+Include deterministic cases for low-confidence extraction, conflicting medication instructions, pending confirmation, supersession, restart/retry, spoofed identity, unknown group member, revoked/one-shot grants and denied recall. The fixture must specify expected denials without exposing hidden record existence. No reminder activates directly from an unconfirmed extraction.
+
+## Optional full document set (≥ 20)
 
 - Discharge summary (2 pages): diagnoses, course, medication table before/after, follow-up.
 - Medication labels ×5 (pharmacy label format: name, strength, directions, quantity, date).
@@ -42,8 +50,8 @@ Fictional institutions: Eastbrook General Hospital; Bedok Hill Family Clinic; Dr
 1. Content for each document as structured JSON (ground truth; also the extraction test set).
 2. HTML/CSS templates per document type → PDF/PNG (WeasyPrint or Playwright); realistic layout: letterhead, tables, stamps, reference numbers.
 3. Print a subset and photograph on a kitchen table (angles, shadows). Intake demo uses photos; clean PDFs kept for tests.
-4. Placeholders: NRIC `S0000000A`; phones `6xxx xxxx` / `9xxx xxxx`; fictional addresses; dates relative to demo day.
-5. Mandarin summaries checked by a native speaker; live translation still performed by the model.
+4. Use conspicuously invalid identifiers such as `DEMO-NOT-A-REAL-ID`, non-dialable phone placeholders, fictional addresses and dates fixed by the reset fixture. Watermark every document “SYNTHETIC DEMO”.
+5. Mandarin summaries are checked by a fluent reviewer; live translation uses only the recipient-authorized fields and sources. Translation quality is a separate check from permission enforcement.
 
 ## Locale pack (Singapore)
 
