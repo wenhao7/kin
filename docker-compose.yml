@@ -9,8 +9,9 @@ services:
       KIN_MCP_PORT: "8765"
     volumes:
       - ./data:/app/data
-    ports:
-      - "${KIN_MCP_PORT:-8765}:8765"
+    # Reachable from the hermes container only; not published on the host.
+    expose:
+      - "8765"
     # Until `kin serve` exists (ROADMAP D2/D3) the service runs the self-check and exits.
     # At D3: command: ["serve"] and restart: unless-stopped.
     command: ["check", "--no-spend"]
