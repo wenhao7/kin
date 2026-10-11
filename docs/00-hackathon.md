@@ -1,53 +1,31 @@
 # 00 · Hackathon context
 
-Source: [Nebius x NVIDIA Global AI Hackathon](https://nebiusglobalaihackathon.devpost.com/) and its [Official Rules](https://nebiusglobalaihackathon.devpost.com/rules).
+Sources: [overview](https://nebiusglobalaihackathon.devpost.com/), [rules](https://nebiusglobalaihackathon.devpost.com/rules), [FAQ](https://nebiusglobalaihackathon.devpost.com/details/faqs) and [schedule](https://nebiusglobalaihackathon.devpost.com/details/dates).
 
-## Dates
+## Dates and entry
 
-- Submission period ends **Fri 30 Oct 2026, 10:00 PDT** (Sat 31 Oct, 01:00 SGT).
-- Judging 1–15 Dec 2026. Demo access must remain available until then.
-- Winners announced on or around 11 Jan 2027.
+Submission closes **30 Oct 2026, 10:00 PDT / 31 Oct, 01:00 SGT**. Judging ends **15 Dec, 12:00 PST / 16 Dec, 04:00 SGT**; keep free testing access available through that instant. Announcement is around 11 Jan 2027.
 
-## Hard requirements (Stage 1 is pass/fail on these)
+Confirm entrant age, residency, conflicts and representative eligibility. Multiple substantially different entries are permitted. Disclose significant in-period work if a project predates 26 Aug 2026.
 
-1. The project **runs on Nebius Token Factory or Nebius AI Cloud**: a runtime call to the Token Factory inference API, or deployment on Nebius AI Cloud compute (Serverless Jobs, Serverless Endpoints, DevPods).
-2. The project uses **at least one NVIDIA open model** (Nemotron, GR00T, Cosmos, Sonic).
-3. The project is a genuine attempt at one track's stated goal.
+## Requirements
 
-## Tracks
+Use Nebius at runtime and at least one NVIDIA open model, with genuine track fit. A Token Factory inference call satisfies Nebius use; unrelated application components can run elsewhere. Named personal-agent tools are examples, not a requirement to use every tool.
 
-| Track | Brief |
-|---|---|
-| Coding & Agentic Engineering | Coding agents and developer tools: agents that write, run and test code in Token Factory Sandboxes |
-| Best Apps & Agents | Any app or agent people would use; Nemotron on Token Factory; Serverless encouraged |
-| Personal AI | Always-on, private assistant with persistent memory, reusable skills, tools and information the user chooses; NVIDIA NemoClaw, OpenShell, Hermes Agent, Nebius Serverless |
-| Physical AI | Embodied/edge agents; hardware demo footage required |
+Provide working software and demo/test-build access, public licensed source with setup/run instructions, description, track and platform feedback. Show the actual working system in a public YouTube video; target **2:50**, safely under three minutes. Translate non-English material. Respect third-party rights.
 
-## Submission deliverables
+Implementation, product design, impact and originality are equally weighted. Public source must include what is needed to run the submitted project; planned features cannot be represented as demonstrated.
 
-- Working project meeting the track requirements.
-- Demo URL (hosted app, working demo or test build); free, unrestricted access until judging ends; credentials in testing instructions if private.
-- Demo video ≤ 3 minutes, public on YouTube, shows the project working; audio explains how Token Factory and Nemotron (or other NVIDIA open models) were used; no third-party trademarks or copyrighted music.
-- Public repo (GitHub/GitLab/Bitbucket) with an OSI license file visible in the About section; README with setup instructions and a section highlighting how Nemotron was used, where Token Factory accelerated the workflow, and other Nebius services used.
-- Text description; track selection; written feedback on Token Factory, AI Cloud and NVIDIA tools.
-- All materials in English.
+## Bonus eligibility
 
-## Judging criteria (equal weight)
+Tavily needs a functional runtime call. City awards require attendance; the FAQ clarifies conflicting resources-page wording. These conditions do not require adding every named service to the minimum product.
 
-1. **Technological implementation** — quality of build; effective use of Token Factory / AI Cloud models and Nemotron.
-2. **Design** — a complete, coherent product experience, not a proof of concept.
-3. **Potential impact** — a credible, specific case for a real problem for a real audience, addressed by what is demonstrated.
-4. **Quality of the idea** — creative, non-obvious use of the stack; genuine understanding of the problem space.
+## Kin choices and platform gates
 
-## Prizes
+The Personal AI entry chooses Hermes for chat/runtime integration and persistent Kin-owned memory, one reusable scheduled skill, controlled tools and Nemotron inference. OpenShell/NemoClaw isolation and Nebius Serverless are optional additions after core application enforcement works.
 
-Grand $20,000 · 2nd $10,000 · 3rd $6,000 (all tracks). Track winners: NVIDIA Jetson Orin Nano each. **Best Use of Tavily $3,000** (requires a functional runtime Tavily API call). City Winner $500 × 20 (Builders & Brews attendees). Most Valuable Feedback $100 × 10. Each project is eligible for one Overall *or* one Track award, plus one Bonus award.
+[Nebius's Nemotron page](https://nebius.com/services/token-factory/models/nvidia-nemotron-models-inference) lists Nano Omni as dedicated-only. D0 must confirm actual image access and budget or select an available vision model on Token Factory with Nemotron handling text reasoning. Audio is optional and needs separate validation. Do not infer modality support from a model name.
 
-## Platform facts
+[Hermes memory](https://hermes-agent.nousresearch.com/docs/user-guide/features/memory) includes injected persistent notes and session search. These paths must be disabled or isolated by Kin's authenticated policy boundary before private records enter model context.
 
-- Token Factory inference: OpenAI-compatible API at `https://api.tokenfactory.nebius.com/v1/`.
-- Nemotron 3 on Token Factory: Nano 30B-A3B (262K ctx), Nano Omni (text/image/video/audio in, 262K), Super 120B-A12B (256K), Ultra 550B-A55B. Exact IDs: `make models`.
-- Token Factory Sandboxes (Contree, beta): VM-isolated execution with git-like branching (fork any checkpoint, parallel runs, rollback), OCI image import, 50 concurrent operations, 180-day checkpoint retention. SDK `contree-sdk` + `contree-client`; CLI `contree-cli`; base URL `https://api.tokenfactory.nebius.com/sandboxes`.
-- Nebius AI Cloud Serverless: Endpoints (serve), Jobs (batch), DevPods (dev); per-second billing.
-- Credits: $25 via promo code `NEBIUS-DEVPOST-GLOBAL26`; a further $25 and Tavily credits via the Nebius Builders Program.
-- Tavily: `search`, `extract`, `map`, `crawl`, `research` endpoints; Python SDK `tavily-python`.
+Credits are account-specific; confirm remaining balance, dedicated-endpoint pricing if used and a judge-period reserve. The advertised Token Factory grants do not establish affordable always-on dedicated Omni hosting. [Credits](https://nebiusglobalaihackathon.devpost.com/resources)
