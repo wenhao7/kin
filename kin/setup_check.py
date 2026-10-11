@@ -93,6 +93,19 @@ def fetch_models(settings: Settings) -> list[str]:
     return sorted(m.id for m in _client(settings).models.list().data)
 
 
+def fetch_models_verbose(settings: Settings) -> list[dict]:
+    """Model records with modality, via `GET /v1/models?verbose=true`."""
+    base = settings.nebius_base_url.rstrip("/")
+    r = httpx.get(
+        f"{base}/models",
+        params={"verbose": "true"},
+        headers={"Authorization": f"Bearer {settings.nebius_api_key.get_secret_value()}"},
+        timeout=30,
+    )
+    r.raise_for_status()
+    return r.json().get("data", [])
+
+
 def check_models(settings: Settings, spend: bool) -> list[Check]:
     out: list[Check] = []
     try:
@@ -117,12 +130,17 @@ def check_models(settings: Settings, spend: bool) -> list[Check]:
             out.append(
                 Check(f"model:{tier}", "FAIL", f"{model_id} not found; nemotron ids: {hint}")
             )
+    if not settings.model_vision:
+        out.append(
+            Check("vision:image", "FAIL", "KIN_MODEL_VISION not set; pick one from `kin models`")
+        )
+        return out
     if not spend:
-        out.append(Check("omni:vision", "SKIP", "--no-spend"))
+        out.append(Check("vision:image", "SKIP", "--no-spend"))
         return out
     try:
         resp = _client(settings).chat.completions.create(
-            model=settings.model_omni,
+            model=settings.model_vision,
             messages=[
                 {
                     "role": "user",
@@ -135,13 +153,14 @@ def check_models(settings: Settings, spend: bool) -> list[Check]:
                     ],
                 }
             ],
-            max_tokens=5,
+            max_tokens=64,
             temperature=0,
         )
         text = (resp.choices[0].message.content or "").strip()
-        out.append(Check("omni:vision", "PASS", f"reply={text!r}"))
+        status = "PASS" if text else "FAIL"
+        out.append(Check("vision:image", status, f"{settings.model_vision} reply={text!r}"))
     except Exception as exc:  # noqa: BLE001
-        out.append(Check("omni:vision", "FAIL", str(exc)[:200]))
+        out.append(Check("vision:image", "FAIL", str(exc)[:200]))
     return out
 
 
@@ -206,14 +225,22 @@ def run_checks(settings: Settings, spend: bool = True) -> bool:
 
 
 def list_nemotron_models(settings: Settings) -> None:
-    ids = fetch_models(settings)
-    table = Table(title="Nemotron models on Token Factory")
-    table.add_column("Model ID")
-    table.add_column("Configured as")
+    """Nemotron models plus every model whose modality accepts images (vision candidates)."""
     configured = {v: k for k, v in settings.models.items()}
-    for i in ids:
-        if "nemotron" in i.lower():
-            table.add_row(i, configured.get(i, ""))
+    table = Table(title="Token Factory: Nemotron and image-capable models")
+    table.add_column("Model ID")
+    table.add_column("Modality")
+    table.add_column("Configured as")
+    try:
+        records = fetch_models_verbose(settings)
+    except Exception as exc:  # noqa: BLE001
+        console.print(f"[yellow]verbose listing failed ({str(exc)[:120]}); falling back[/yellow]")
+        records = [{"id": i, "architecture": {}} for i in fetch_models(settings)]
+    for m in sorted(records, key=lambda r: r.get("id", "")):
+        mid = m.get("id", "")
+        modality = (m.get("architecture") or {}).get("modality", "") or ""
+        if "nemotron" in mid.lower() or "image" in modality.lower():
+            table.add_row(mid, modality, configured.get(mid, ""))
     console.print(table)
 
 

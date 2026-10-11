@@ -6,7 +6,8 @@ def test_defaults_and_missing(monkeypatch):
         monkeypatch.delenv(var, raising=False)
     s = Settings(_env_file=None)
     assert s.locale == "sg"
-    assert s.model_omni.startswith("nvidia/")
+    assert s.model_nano.startswith("nvidia/")
+    assert s.model_vision == "" and "vision" not in s.models
     assert set(s.missing_required()) == {"NEBIUS_API_KEY", "TELEGRAM_BOT_TOKEN", "TAVILY_API_KEY"}
 
 
@@ -15,6 +16,8 @@ def test_env_overrides(monkeypatch):
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "t")
     monkeypatch.setenv("TAVILY_API_KEY", "v")
     monkeypatch.setenv("KIN_MCP_PORT", "9000")
+    monkeypatch.setenv("KIN_MODEL_VISION", "vendor/some-vl-model")
     s = Settings(_env_file=None)
     assert s.mcp_port == 9000
+    assert s.models["vision"] == "vendor/some-vl-model"
     assert s.missing_required() == []
