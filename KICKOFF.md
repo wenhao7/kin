@@ -18,7 +18,7 @@ Fixed dates: submission closes **Fri 30 Oct 2026, 10:00 PDT (Sat 31 Oct, 01:00 S
 - [ ] @BotFather → `/newbot` → token → `TELEGRAM_BOT_TOKEN`.
 - [ ] @BotFather → `/mybots` → the bot → **Bot Settings → Group Privacy → Turn off**. Remove and re-add the bot to any group it already joined (Telegram caches the setting). Alternative: make the bot a group admin.
 - [ ] Your numeric user ID (message @userinfobot) → `KIN_ADMIN_TELEGRAM_ID` and `TELEGRAM_ALLOWED_USERS`.
-- [ ] Create the test group "Tan Family"; add the bot and a second account. Post one message, then read the chat ID (starts with `-100`) from `https://api.telegram.org/bot<TOKEN>/getUpdates` → `TELEGRAM_GROUP_ALLOWED_CHATS` and `TELEGRAM_HOME_CHANNEL`.
+- [ ] Create the test group "Tan Family"; add the bot and a second account. Post one message, then read the chat ID (negative; `-100…` once Telegram upgrades the group to a supergroup, which changes the ID) from `https://api.telegram.org/bot<TOKEN>/getUpdates` → `TELEGRAM_GROUP_ALLOWED_CHATS` and `TELEGRAM_HOME_CHANNEL`.
 
 ## 5. Host tools — **YOU**
 - [ ] `uv`, Docker Engine + Compose v2, `git`, `make`. For synthetic-document generation (`make setup-data`): `apt install libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0`.

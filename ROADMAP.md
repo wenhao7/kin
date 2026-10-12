@@ -7,13 +7,15 @@ Sequential deliverables. Each is sized for one working burst and leaves the repo
 ## Deliverables
 
 ### D0 · Spike: runtime and models
-- [ ] Telegram bot created; test group with two test accounts.
-- [ ] Hermes Agent running; replies in the group and in DM; memory persists across restarts.
-- [ ] Nemotron Nano Omni accepts an image and an audio file through Token Factory (`make check` sends one image); Super answers a text call. If the public endpoint is text-only, apply the contingency in `docs/05-architecture.md` and note the choice here.
-- [ ] OpenShell/NemoClaw: Hermes runs inside the sandbox with network allow-list (Telegram, Token Factory, Tavily). If this does not work within the burst, continue without it and revisit at D7.
-- [ ] GitHub repo created; Apache-2.0 visible in About.
+- [ ] Telegram bot created; test group with two test accounts. Note: bot, group and admin account done; second account pending.
+- [ ] Hermes Agent running; replies in the group and in DM; memory persists across restarts. Note: group replies verified; DM and memory-across-restart pending.
+- [x] A Token Factory vision model accepts an image (`make check` → `vision:image`); Super answers a text call. Note: Nemotron 3 Nano Omni is not in the public catalog for our key, so the vision fallback in `docs/05-architecture.md` applies (`openbmb/MiniCPM-V-4_5` for extraction; Nemotron for classification and answers). No audio-capable model is listed; see D6.
+- [ ] OpenShell/NemoClaw: Hermes runs inside the sandbox with network allow-list (Telegram, Token Factory, Tavily). If this does not work within the burst, continue without it and revisit at D7. Note: deferred to D7; Hermes runs in plain Docker with host-reaching toolsets disabled.
+- [x] GitHub repo created; Apache-2.0 visible in About. Note: repo is private; make it public before submission (D5).
 
-**Done when:** a photo sent to the group is described back by Kin using Nano Omni.
+Note: Hermes runs containerised (official installer into `./hermes/home` at first start); the host-install fallback was not needed.
+
+**Done when:** a photo sent to the group is described back by Kin using the Token Factory vision model. Met: a captioned photo in the test group was described correctly.
 
 ### D1 · Synthetic family, minimum set
 - [ ] Ground-truth JSON for 8 documents: discharge summary, 3 medication labels, 1 appointment slip, 1 clinic memo (Month −4), 1 insurance claim letter, 1 handwritten carer note.
@@ -23,7 +25,7 @@ Sequential deliverables. Each is sized for one working burst and leaves the repo
 **Done when:** the 8 documents exist as clean renders, photos, and ground truth.
 
 ### D2 · Intake
-- [ ] Photo → fields and text (Nano Omni) → category (Nano) → record with source → events (medication times, refills, appointment).
+- [ ] Photo → fields and text (vision model) → category (Nano) → record with source → events (medication times, refills, appointment).
 - [ ] Conflict check against existing records; one clarifying question when needed; admin confirm for low-confidence categories.
 - [ ] Group summary in English; Mandarin version for members set to `zh`; restricted items to DM.
 - [ ] Reminders delivered to the responsible member.
@@ -55,7 +57,7 @@ Sequential deliverables. Each is sized for one working burst and leaves the repo
 **Done when:** the submission could be filed today.
 
 ### D6 · Debrief and skills
-- [ ] Consult audio (scripted, pre-recorded) → transcription and summary (Nano Omni) → superseding medication records → action items → per-role posts; consent captured in chat first.
+- [ ] Consult audio (scripted, pre-recorded) → transcription and summary (Nano Omni) → superseding medication records → action items → per-role posts; consent captured in chat first. Blocked: no audio-capable model on the public Token Factory endpoint for our key; recheck `make models`.
 - [ ] Two pre-taught skills running on schedule/trigger; `/skills` lists them; teach-by-chat for a new skill.
 
 **Done when:** the Week +1 consult produces records and tasks, and the Monday reminder fires.
