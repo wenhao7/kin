@@ -50,10 +50,10 @@ hermes-init: ## Seed ./hermes/home/config.yaml from the template (no-op if it ex
 	@test -f hermes/home/config.yaml || (cp hermes/config.yaml hermes/home/config.yaml && echo ">> seeded hermes/home/config.yaml")
 
 hermes-doctor: ## Run `hermes doctor` inside the container
-	docker compose run --rm hermes doctor
+	docker compose run --rm --no-deps hermes doctor
 
 hermes-shell: ## Interactive shell in the hermes container (hermes on PATH)
-	docker compose run --rm hermes shell
+	docker compose run --rm --no-deps hermes shell
 
 clean: ## Remove venv and caches
 	rm -rf .venv .pytest_cache .ruff_cache

@@ -20,6 +20,7 @@ Kin is a hackathon submission (Nebius x NVIDIA Global AI Hackathon, Personal AI 
 - `make setup`, `make check` (or `make check-nospend`), `make policy`, `make lint`, `make test` must pass before a commit. CI runs `ruff` and `pytest`.
 - Conventional commits (`feat:`, `fix:`, `docs:`, `build:`, `test:`, `chore:`, `refactor:`), small and focused, imperative subject ≤ 72 chars. Branch `main`; push after each deliverable.
 - Keep docs factual and current. When implementation changes a spec in `docs/`, update the doc in the same commit. No decision logs or time estimates in docs; a dated `docs/decisions.md` may be started only when a spike reveals a real fork in the road.
+- The development host is shared with other deployments, including another Hermes stack. Keep everything inside the `kin` compose project: no fixed container names, ports bound to `127.0.0.1`, capped resources, Kin's own bot token and keys (`docs/05-architecture.md`, Deployment).
 - Secrets live in `.env` (git-ignored) and are passed to the Hermes container by compose. Never commit keys, tokens, `.env`, `data/`, or `hermes/home/`.
 - Python ≥ 3.10 locally, 3.12 in Docker; `uv` manages the environment and `uv.lock` is committed. Add dependencies with `uv add` and commit the lock.
 

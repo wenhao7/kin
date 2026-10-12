@@ -17,6 +17,25 @@ auxiliary:
 
 agent:
   image_input_mode: text
+  # The gateway is reachable by every member of the allow-listed group and runs on a shared host:
+  # no shell, code execution, browser, file access or delegation (they could reach other services
+  # on the host or read secrets on the volume), and no Hermes web search (Tavily lookups go through
+  # Kin's locale allow-list). Memory, vision, skills, cron, todo, clarify and session search remain.
+  disabled_toolsets:
+    - terminal
+    - code_execution
+    - browser
+    - computer_use
+    - file
+    - web
+    - search
+    - delegation
+    - image_gen
+    - video_gen
+    - tts
+    - x_search
+    - connections
+    - kanban
 
 # Kin's policy-enforced memory and intake, exposed to Hermes as MCP tools (mcp_kin_<tool>).
 # Enable once `kin serve` exists (ROADMAP D3). `kin` resolves inside docker-compose.
@@ -31,4 +50,4 @@ telegram:
   reply_to_mode: first
 
 terminal:
-  backend: local                # Kin does not use Hermes' terminal tools; keep the default minimal
+  backend: local                # terminal toolset is disabled above; backend kept at the default

@@ -87,3 +87,14 @@ Served via Token Factory (OpenAI-compatible API).
 - **OpenShell / NemoClaw** — sandbox, credential proxying, network allow-list (Telegram API, Token Factory, Tavily, locale allow-list domains).
 - **Tavily** — `search`/`extract` with `include_domains` from the locale pack; no record content in queries.
 - **Locale pack** — folder: languages, lookup allow-list, document templates and label formats, local terms. Swapping the locale replaces the folder.
+
+## Deployment
+
+Kin runs as the `kin` compose project (kin service + Hermes gateway) on a host shared with other deployments, including a separate Hermes stack. It stays self-contained:
+
+- Own compose project, default network and images (`kin:dev`, `kin-hermes:dev`); no fixed container names.
+- Own credentials: Kin's Telegram bot token (Telegram allows one poller per token), Nebius and Tavily keys.
+- No ports on public interfaces: the Hermes gateway publishes none (Telegram is outbound polling); the kin MCP port is bound to `127.0.0.1` for debugging (`KIN_MCP_PORT`), and Hermes reaches kin over the compose network.
+- Capped resources and rotated logs (`mem_limit`, `cpus`, `pids_limit`, `local` log driver).
+- Hermes toolsets that could reach other host services or read the volume (terminal, code execution, browser, file, delegation) and Hermes' own web search are disabled in `hermes/config.yaml`. Containers on the compose network can still open connections to host ports bound to all interfaces; the OpenShell/NemoClaw network allow-list (D7) is the network-level control.
+- Hermes is installed into `./hermes/home` inside its container; nothing is installed on the host.

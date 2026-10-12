@@ -44,7 +44,7 @@ make up             # kin service + hermes gateway; first hermes start installs 
 make logs           # watch the install, config seeding, gateway start
 make hermes-doctor
 ```
-Then send the bot a message in the test group. If the containerised install misbehaves, fall back to a host install (`curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash`, `hermes setup` with provider **Nebius Token Factory**, `hermes gateway setup` for Telegram, `hermes gateway install && hermes gateway start`); the `kin` service stays in Docker either way. Record which path worked in `ROADMAP.md` D0.
+Then send the bot a message in the test group. If the containerised install misbehaves, fall back to a host install (`curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash`, `hermes setup` with provider **Nebius Token Factory**, `hermes gateway setup` for Telegram, `hermes gateway install && hermes gateway start`); the `kin` service stays in Docker either way. Record which path worked in `ROADMAP.md` D0. On a shared host, keep Hermes containerised: a host install uses `~/.hermes` and installs a gateway service, which collide with any other host-level Hermes. The compose stack is self-contained (`docs/05-architecture.md`, Deployment).
 
 ## 9. Community — **YOU**
 - [ ] Nebius Discord: https://discord.gg/ZdC3rXMJH. Hermes docs: https://hermes-agent.nousresearch.com/docs/.

@@ -1,3 +1,14 @@
+# Kin shares its host with other deployments (including a separate Hermes stack). Everything here
+# stays inside the `kin` project: own network, no container_name, loopback-only ports, capped
+# resources and rotated logs. Credentials (bot token, keys) are Kin's own, from .env.
+name: kin
+
+x-logging: &logging
+  driver: local
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   kin:
     build: .
@@ -10,11 +21,17 @@ services:
     volumes:
       - ./data:/app/data
     ports:
-      - "${KIN_MCP_PORT:-8765}:8765"
+      # Hermes reaches kin over the compose network (http://kin:8765); the host port is for local
+      # debugging only, so it is bound to loopback.
+      - "127.0.0.1:${KIN_MCP_PORT:-8765}:8765"
     # Until `kin serve` exists (ROADMAP D2/D3) the service runs the self-check and exits.
     # At D3: command: ["serve"] and restart: unless-stopped.
     command: ["check", "--no-spend"]
     restart: "no"
+    mem_limit: 1g
+    cpus: 1.0
+    pids_limit: 256
+    logging: *logging
 
   hermes:
     build: ./docker/hermes
@@ -29,6 +46,11 @@ services:
       - kin
     init: true                           # reap the gateway's child processes (Hermes warns as PID 1)
     restart: unless-stopped
+    # No published ports: Telegram is outbound polling.
+    mem_limit: 2g
+    cpus: 1.5
+    pids_limit: 512
+    logging: *logging
     # First start seeds config.yaml, installs Hermes (a few minutes), then runs the gateway.
-    # One-off commands: docker compose run --rm hermes doctor
-    #                   docker compose run --rm hermes shell
+    # One-off commands: docker compose run --rm --no-deps hermes doctor
+    #                   docker compose run --rm --no-deps hermes shell
