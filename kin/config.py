@@ -29,7 +29,7 @@ class Settings(BaseSettings):
 
     # Models (Token Factory IDs)
     model_omni: str = Field(default="nvidia/Nemotron-3-Nano-Omni", alias="KIN_MODEL_OMNI")
-    model_nano: str = Field(default="nvidia/Nemotron-3-Nano-30B-A3B", alias="KIN_MODEL_NANO")
+    model_nano: str = Field(default="nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B", alias="KIN_MODEL_NANO")
     model_super: str = Field(default="nvidia/nemotron-3-super-120b-a12b", alias="KIN_MODEL_SUPER")
     model_ultra: str = Field(default="nvidia/Nemotron-3-Ultra-550b-a55b", alias="KIN_MODEL_ULTRA")
     ultra_max_calls: int = Field(default=2, alias="KIN_ULTRA_MAX_CALLS")
