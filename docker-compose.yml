@@ -27,7 +27,8 @@ services:
       - ./hermes/config.yaml:/seed/config.yaml:ro
     depends_on:
       - kin
+    init: true                           # reap the gateway's child processes (Hermes warns as PID 1)
     restart: unless-stopped
-    # First start installs Hermes (a few minutes), seeds config.yaml, then runs the gateway.
+    # First start seeds config.yaml, installs Hermes (a few minutes), then runs the gateway.
     # One-off commands: docker compose run --rm hermes doctor
     #                   docker compose run --rm hermes shell

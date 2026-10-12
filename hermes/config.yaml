@@ -1,5 +1,6 @@
 # Hermes Agent config template for Kin. Copied to $HERMES_HOME/config.yaml on the container's
-# first start (or by `make hermes-init`). Secrets come from the environment (.env via compose):
+# first start, before the installer runs (or by `make hermes-init`); the installer then adds its
+# remaining defaults. Secrets come from the environment (.env via compose):
 # NEBIUS_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_ALLOWED_USERS, TELEGRAM_GROUP_ALLOWED_CHATS,
 # TELEGRAM_HOME_CHANNEL. Reference: https://hermes-agent.nousresearch.com/docs/
 
