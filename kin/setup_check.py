@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import base64
+import struct
+import zlib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -19,8 +21,8 @@ console = Console()
 
 # 2×2 red PNG, used for a one-token Omni vision call.
 _TINY_PNG = (
-    "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAD0lEQVR4nGP4z8DwHwYBAB2lA/9m"
-    "k8OgAAAAAElFTkSuQmCC"
+    "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEElEQVR42mP4z8AARAwQCgAf7gP9"
+    "Y167WwAAAABJRU5ErkJggg=="
 )
 
 
@@ -217,5 +219,22 @@ def list_nemotron_models(settings: Settings) -> None:
     console.print(table)
 
 
-def _b64_ok() -> bool:  # sanity for the embedded PNG
-    return base64.b64decode(_TINY_PNG)[:8] == b"\x89PNG\r\n\x1a\n"
+def _b64_ok() -> bool:  # sanity for the embedded PNG: signature, chunk CRCs, IDAT inflates
+    raw = base64.b64decode(_TINY_PNG)
+    if raw[:8] != b"\x89PNG\r\n\x1a\n":
+        return False
+    i, idat = 8, b""
+    while i < len(raw):
+        (n,) = struct.unpack(">I", raw[i : i + 4])
+        kind, data = raw[i + 4 : i + 8], raw[i + 8 : i + 8 + n]
+        (crc,) = struct.unpack(">I", raw[i + 8 + n : i + 12 + n])
+        if zlib.crc32(kind + data) != crc:
+            return False
+        if kind == b"IDAT":
+            idat += data
+        i += 12 + n
+    try:
+        zlib.decompress(idat)
+    except zlib.error:
+        return False
+    return True
