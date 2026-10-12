@@ -5,7 +5,7 @@
 - Always-on; one family; Telegram.
 - Single retrieval chokepoint; store partitioned by visibility; fails closed.
 - Inference via Nebius Token Factory; a dedicated Nebius endpoint is supported for tenant isolation.
-- Hackathon credits ≈ $50: Nano/Omni for volume; Super for answers; Ultra capped.
+- Hackathon credits ≈ $50: Nano and the vision model for volume; Super for answers; Ultra capped.
 
 ## Components
 
@@ -25,7 +25,7 @@ flowchart TB
         LOC[Locale pack<br/>languages · allow-list · templates]
     end
     subgraph Nebius
-        TF[(Token Factory<br/>Nemotron 3 Nano Omni · Nano · Super)]
+        TF[(Token Factory<br/>Nemotron 3 Nano · Super<br/>MiniCPM-V vision)]
         SE[Serverless Job / Endpoint<br/>weekly digest · optional data-map page]
     end
     TV[(Tavily · allow-listed domains)]
@@ -54,13 +54,13 @@ Storage: SQLite + file store on the sandbox volume, partitioned by visibility cl
 
 ## Flows
 
-**Intake.** Media message → Gateway → Intake: Nano Omni extracts fields/text → Nano classifies category → conflict check → clarifying question if confidence low → Record + Document stored (visibility from policy) → Events created → role-appropriate posts.
+**Intake.** Media message → Gateway → Intake: the vision model extracts fields/text → Nano classifies category → conflict check → clarifying question if confidence low → Record + Document stored (visibility from policy) → Events created → role-appropriate posts.
 
 **Ask.** Message → intent → `retrieve(query, principal)` (policy applied before context) → Super composes answer with source references → Gateway attaches source crop/excerpt → Audit entry.
 
 **Share request.** `retrieve` reports a policy block → admin DM with options → Grant stored → asker answered or declined → Audit.
 
-**Debrief.** Audio + consent flag → Nano Omni transcription and summary → superseding medication Records → Events → per-role posts.
+**Debrief.** Audio + consent flag → Nano Omni transcription and summary (pending: no audio-capable model on the public Token Factory endpoint for our key) → superseding medication Records → Events → per-role posts.
 
 **Skills.** Hermes skill store; scheduler fires with the skill's principal; output passes through the policy path.
 
@@ -70,14 +70,15 @@ Storage: SQLite + file store on the sandbox volume, partitioned by visibility cl
 
 | Task | Model |
 |---|---|
-| Photo/PDF/audio understanding; field extraction; translation | Nemotron 3 Nano Omni |
-| Category classification; conflict detection; short answers | Nemotron 3 Nano 30B-A3B |
+| Photo/PDF understanding; field extraction | MiniCPM-V 4.5 (`openbmb/MiniCPM-V-4_5`), vision fallback for Nemotron 3 Nano Omni |
+| Audio transcription and summary (debrief) | Nemotron 3 Nano Omni, once listed on Token Factory |
+| Category classification; conflict detection; short answers; translation | Nemotron 3 Nano 30B-A3B |
 | Grounded answers; appointment prep; digests; skill interpretation | Nemotron 3 Super 120B-A12B |
 | Hard record conflicts (capped) | Nemotron 3 Ultra 550B-A55B |
 
 Served via Token Factory (OpenAI-compatible API).
 
-Omni modality contingency: the Token Factory catalog lists `Nemotron-3-Nano-Omni` with modality "Text-to-text" on the public endpoint. `kin check` sends one image to it. If image/audio input is rejected on the public endpoint, the options in order are: a Token Factory **dedicated endpoint** for Nano Omni (tenant-isolated, matches the privacy story; cost per hour); another vision-capable model on Token Factory for extraction only, with Nemotron doing classification and answers (still satisfies "at least one NVIDIA open model" but weakens the Nemotron story); text-only intake from PDFs for the demo while the video shows the design. The outcome is recorded in ROADMAP D0.
+**Vision fallback.** Nemotron 3 Nano Omni is not in the public Token Factory catalog (`/v1/models`) for our key. Of the contingency options (a dedicated Nano Omni endpoint; another Token Factory vision model for extraction only; text-only PDF intake), Kin uses the second: `openbmb/MiniCPM-V-4_5` reads photos and documents, and Nemotron classifies, answers and drafts. The kin service reads it from `KIN_MODEL_VISION`; Hermes uses it through `auxiliary.vision` with `agent.image_input_mode: text` (Super is text-only, so Hermes passes Super the vision model's description of an inbound photo). `kin check` sends one image to it (`vision:image`). The hard requirement of an NVIDIA open model in the product path is met by Nano and Super. When `make models` lists Nano Omni, set `KIN_MODEL_VISION` and `auxiliary.vision.model` to its ID. Audio input (debrief) waits on the same: no audio-capable model is listed on the public endpoint.
 
 ## Integrations
 

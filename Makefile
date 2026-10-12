@@ -14,13 +14,13 @@ setup: ## Create .venv and install all dependencies (uv); create .env from the e
 setup-data: ## Also install the synthetic-document toolchain (needs pango libs; see pyproject)
 	$(UV) sync --all-groups --extra data
 
-check: ## Verify keys, policy/locale, models (incl. one Omni vision call), Telegram bot, Tavily
+check: ## Verify keys, policy/locale, models (incl. one vision call), Telegram bot, Tavily
 	$(UV) run kin check
 
 check-nospend: ## Same as check, without paid calls
 	$(UV) run kin check --no-spend
 
-models: ## List Nemotron model IDs visible to this key
+models: ## List Nemotron and configured model IDs visible to this key
 	$(UV) run kin models
 
 policy: ## Print and validate the policy matrix

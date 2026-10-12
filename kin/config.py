@@ -27,8 +27,10 @@ class Settings(BaseSettings):
     telegram_bot_token: SecretStr = Field(default=SecretStr(""), alias="TELEGRAM_BOT_TOKEN")
     admin_telegram_id: str = Field(default="", alias="KIN_ADMIN_TELEGRAM_ID")
 
-    # Models (Token Factory IDs)
-    model_omni: str = Field(default="nvidia/Nemotron-3-Nano-Omni", alias="KIN_MODEL_OMNI")
+    # Models (Token Factory IDs). Vision: photo/document extraction. Nemotron 3 Nano Omni is not in
+    # the public Token Factory catalog for our key, so a Token Factory vision model stands in
+    # (docs/05-architecture.md, "Vision fallback"); set KIN_MODEL_VISION to the Omni ID once listed.
+    model_vision: str = Field(default="openbmb/MiniCPM-V-4_5", alias="KIN_MODEL_VISION")
     model_nano: str = Field(default="nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B", alias="KIN_MODEL_NANO")
     model_super: str = Field(default="nvidia/nemotron-3-super-120b-a12b", alias="KIN_MODEL_SUPER")
     model_ultra: str = Field(default="nvidia/Nemotron-3-Ultra-550b-a55b", alias="KIN_MODEL_ULTRA")
@@ -44,7 +46,7 @@ class Settings(BaseSettings):
     @property
     def models(self) -> dict[str, str]:
         return {
-            "omni": self.model_omni,
+            "vision": self.model_vision,
             "nano": self.model_nano,
             "super": self.model_super,
             "ultra": self.model_ultra,

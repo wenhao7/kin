@@ -31,11 +31,11 @@ $EDITOR .env        # NEBIUS_API_KEY, TAVILY_API_KEY, TELEGRAM_BOT_TOKEN, KIN_AD
 
 ## 7. Self-check
 ```bash
-make check          # keys · policy/locale · model IDs · one Omni vision call · Telegram getMe · Tavily (allow-listed)
-make models         # exact Nemotron IDs; fix .env if a model shows "not found"
+make check          # keys · policy/locale · model IDs · one vision call · Telegram getMe · Tavily (allow-listed)
+make models         # exact Nemotron and configured IDs; fix .env if a model shows "not found"
 make policy         # prints and validates the role × category matrix
 ```
-`Telegram getMe` must show `can_read_all_group_messages=True`. `omni:vision` decides whether photo intake can use the public Omni endpoint; a FAIL triggers the contingency in `docs/05-architecture.md` (D0 note).
+`Telegram getMe` must show `can_read_all_group_messages=True`. `vision:image` must PASS (reply "Red"): the vision model (`KIN_MODEL_VISION`) is the Token Factory fallback for Nemotron 3 Nano Omni, which is not in the public catalog for our key (`docs/05-architecture.md`, Vision fallback).
 
 ## 8. Hermes runtime (ROADMAP D0)
 ```bash

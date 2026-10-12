@@ -19,7 +19,7 @@ from kin.policy import load_policy
 
 console = Console()
 
-# 2×2 red PNG, used for a one-token Omni vision call.
+# 2×2 red PNG, used for a one-word vision call.
 _TINY_PNG = (
     "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEElEQVR42mP4z8AARAwQCgAf7gP9"
     "Y167WwAAAABJRU5ErkJggg=="
@@ -120,11 +120,11 @@ def check_models(settings: Settings, spend: bool) -> list[Check]:
                 Check(f"model:{tier}", "FAIL", f"{model_id} not found; nemotron ids: {hint}")
             )
     if not spend:
-        out.append(Check("omni:vision", "SKIP", "--no-spend"))
+        out.append(Check("vision:image", "SKIP", "--no-spend"))
         return out
     try:
         resp = _client(settings).chat.completions.create(
-            model=settings.model_omni,
+            model=settings.model_vision,
             messages=[
                 {
                     "role": "user",
@@ -141,9 +141,11 @@ def check_models(settings: Settings, spend: bool) -> list[Check]:
             temperature=0,
         )
         text = (resp.choices[0].message.content or "").strip()
-        out.append(Check("omni:vision", "PASS", f"reply={text!r}"))
+        # An empty reply means the model spent the budget elsewhere (e.g. reasoning), not a read.
+        status = "PASS" if text else "FAIL"
+        out.append(Check("vision:image", status, f"reply={text!r}"))
     except Exception as exc:  # noqa: BLE001
-        out.append(Check("omni:vision", "FAIL", str(exc)[:200]))
+        out.append(Check("vision:image", "FAIL", str(exc)[:200]))
     return out
 
 
@@ -209,12 +211,12 @@ def run_checks(settings: Settings, spend: bool = True) -> bool:
 
 def list_nemotron_models(settings: Settings) -> None:
     ids = fetch_models(settings)
-    table = Table(title="Nemotron models on Token Factory")
+    table = Table(title="Nemotron (and configured) models on Token Factory")
     table.add_column("Model ID")
     table.add_column("Configured as")
     configured = {v: k for k, v in settings.models.items()}
     for i in ids:
-        if "nemotron" in i.lower():
+        if "nemotron" in i.lower() or i in configured:
             table.add_row(i, configured.get(i, ""))
     console.print(table)
 

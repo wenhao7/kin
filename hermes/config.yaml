@@ -6,7 +6,17 @@
 
 model:
   provider: "nebius"                              # alias of nebius-token-factory
-  default: "nvidia/nemotron-3-super-120b-a12b"    # reasoning/drafting; Omni/Nano are called by the kin service
+  default: "nvidia/nemotron-3-super-120b-a12b"    # reasoning/drafting; vision/Nano are called by the kin service
+
+# Super is text-only. Inbound photos go to the Token Factory vision model, whose description is
+# passed to Super (Hermes' text path). Same model as KIN_MODEL_VISION; see docs/05-architecture.md.
+auxiliary:
+  vision:
+    provider: "nebius"
+    model: "openbmb/MiniCPM-V-4_5"
+
+agent:
+  image_input_mode: text
 
 # Kin's policy-enforced memory and intake, exposed to Hermes as MCP tools (mcp_kin_<tool>).
 # Enable once `kin serve` exists (ROADMAP D3). `kin` resolves inside docker-compose.

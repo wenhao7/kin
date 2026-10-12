@@ -5,7 +5,7 @@ Source: [Official Rules](https://nebiusglobalaihackathon.devpost.com/rules). Sta
 ## Requirements
 
 - [ ] Runs on **Nebius Token Factory** (Nemotron inference) and/or **Nebius AI Cloud** (dedicated endpoint; Serverless Job for digests).
-- [ ] Uses an **NVIDIA open model**: Nemotron 3 Nano Omni, Nano, Super.
+- [ ] Uses an **NVIDIA open model**: Nemotron 3 Nano and Super (vision extraction: MiniCPM-V 4.5 on Token Factory, standing in for Nano Omni).
 - [ ] **Personal AI** track: always-on, private, persistent memory, skills, tools and information the user chooses; uses NemoClaw/OpenShell, Hermes Agent, Nebius Serverless.
 - [ ] **Demo URL**: judge-joinable Telegram group + test script; optional data-map page.
 - [ ] **Video** ≤ 3 min, public on YouTube, Kin working live; audio names Token Factory and Nemotron; no third-party trademarks, copyrighted music, or real personal data.
@@ -40,7 +40,7 @@ Source: [Official Rules](https://nebiusglobalaihackathon.devpost.com/rules). Sta
 
 ## Feedback template
 
-Per tool (Token Factory inference incl. Omni inputs, NemoClaw/OpenShell, Hermes Agent, Nebius Serverless, Tavily):
+Per tool (Token Factory inference incl. Nano Omni missing from the public catalog, NemoClaw/OpenShell, Hermes Agent, Nebius Serverless, Tavily):
 
 - What we tried.
 - What worked (specific API, default, doc page).

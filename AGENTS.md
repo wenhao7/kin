@@ -25,11 +25,11 @@ Kin is a hackathon submission (Nebius x NVIDIA Global AI Hackathon, Personal AI 
 
 ## Constraints that come from the hackathon
 
-- Inference goes through **Nebius Token Factory** (Nemotron 3 Nano Omni for photos/documents/audio, Nano for classification, Super for answers; Ultra capped). Hermes uses its first-class `nebius` provider. Do not substitute other model providers in the product path.
+- Inference goes through **Nebius Token Factory** (MiniCPM-V 4.5 for photos/documents, standing in for Nemotron 3 Nano Omni until Token Factory lists it for our key; Nemotron Nano for classification and translation, Super for answers; Ultra capped). Hermes uses its first-class `nebius` provider. Do not substitute other model providers in the product path.
 - Use the track's named tools where they fit: Hermes Agent (runtime, memory, skills, Telegram gateway), OpenShell/NemoClaw (sandbox, credential proxy, network allow-list; deferrable to D7 if it blocks D0), Nebius Serverless (optional, digests).
 - Tavily must be called at runtime in the main flow (allow-listed public lookups) with `include_domains` from the locale pack; queries never contain family data.
 - Apache-2.0 license file stays at the root and visible on GitHub.
-- Credits are limited (~$50): Omni/Nano for volume, Super for answers, Ultra capped, translations cached.
+- Credits are limited (~$50): vision model/Nano for volume, Super for answers, Ultra capped, translations cached.
 
 ## Product guardrails (do not relax)
 

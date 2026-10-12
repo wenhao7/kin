@@ -46,7 +46,7 @@ Grand $20,000 · 2nd $10,000 · 3rd $6,000 (all tracks). Track winners: NVIDIA J
 ## Platform facts
 
 - Token Factory inference: OpenAI-compatible API at `https://api.tokenfactory.nebius.com/v1/`.
-- Nemotron 3 on Token Factory: Nano 30B-A3B (262K ctx), Nano Omni (text/image/video/audio in, 262K), Super 120B-A12B (256K), Ultra 550B-A55B. Exact IDs: `make models`.
+- Nemotron 3 on Token Factory: Nano 30B-A3B (262K ctx), Nano Omni (text/image/video/audio in, 262K; not in the public `/v1/models` list for our key, see `05-architecture.md`), Super 120B-A12B (256K), Ultra 550B-A55B. Exact IDs: `make models`.
 - Token Factory Sandboxes (Contree, beta): VM-isolated execution with git-like branching (fork any checkpoint, parallel runs, rollback), OCI image import, 50 concurrent operations, 180-day checkpoint retention. SDK `contree-sdk` + `contree-client`; CLI `contree-cli`; base URL `https://api.tokenfactory.nebius.com/sandboxes`.
 - Nebius AI Cloud Serverless: Endpoints (serve), Jobs (batch), DevPods (dev); per-second billing.
 - Credits: $25 via promo code `NEBIUS-DEVPOST-GLOBAL26`; a further $25 and Tavily credits via the Nebius Builders Program.

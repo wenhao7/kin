@@ -28,7 +28,7 @@ def check(
         False, "--no-spend", help="Skip calls that consume Token Factory or Tavily credits."
     ),
 ) -> None:
-    """Verify keys, policy/locale files, models (incl. Omni vision), Telegram bot and Tavily."""
+    """Verify keys, policy/locale files, models (incl. one vision call), Telegram bot and Tavily."""
     from kin.setup_check import run_checks
 
     ok = run_checks(get_settings(), spend=not no_spend)
@@ -37,7 +37,7 @@ def check(
 
 @app.command()
 def models() -> None:
-    """List Nemotron models visible to this API key and confirm the configured IDs."""
+    """List Nemotron and configured models visible to this API key."""
     from kin.setup_check import list_nemotron_models
 
     list_nemotron_models(get_settings())

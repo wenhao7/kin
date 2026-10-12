@@ -20,6 +20,7 @@ Platform documentation:
 - Hermes Agent repository (MIT): https://github.com/NousResearch/hermes-agent
 - NVIDIA NemoClaw / OpenShell: https://docs.nvidia.com/nemoclaw/ · https://developer.nvidia.com/blog/build-a-secure-always-on-local-ai-agent-with-nvidia-nemoclaw-and-openclaw/
 - Nemotron 3 Nano Omni: https://blogs.nvidia.com/blog/nemotron-3-nano-omni-multimodal-ai-agents/
+- MiniCPM-V 4.5 (vision fallback on Token Factory): https://huggingface.co/openbmb/MiniCPM-V-4_5
 - Token Factory docs index: https://docs.tokenfactory.nebius.com/llms.txt · vision inputs: https://docs.tokenfactory.nebius.com/api-reference/examples/vision-capabilities
 - Telegram Bot API: https://core.telegram.org/bots/api
 - Tavily: https://docs.tavily.com/

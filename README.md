@@ -40,7 +40,7 @@ flowchart LR
     GW --> AG[Kin agent<br/>Hermes Agent runtime]
     AG <--> PE[Policy engine<br/>role × category]
     PE <--> MEM[(Partitioned memory<br/>records · docs · events)]
-    AG <--> TF[(Nebius Token Factory<br/>Nemotron 3 Nano Omni · Super)]
+    AG <--> TF[(Nebius Token Factory<br/>Nemotron 3 Nano · Super<br/>MiniCPM-V vision)]
     AG <--> TV[(Tavily<br/>allow-listed domains)]
     subgraph OS["OpenShell / NemoClaw sandbox"]
         GW
@@ -52,7 +52,7 @@ flowchart LR
 
 - **Hermes Agent** (MIT): always-on runtime, persistent memory, skills, Telegram gateway.
 - **OpenShell / NemoClaw**: sandbox, credential proxying, network allow-list.
-- **Nemotron 3 Nano Omni** reads photos, documents and audio; **Nemotron 3 Super** reasons and drafts; served via Nebius Token Factory (dedicated Nebius endpoint supported).
+- **Nemotron 3 Nano** classifies and translates; **Nemotron 3 Super** reasons and drafts; **MiniCPM-V 4.5** reads photos and documents (standing in for Nemotron 3 Nano Omni, which is not listed on the public endpoint for our key); all served via Nebius Token Factory (dedicated Nebius endpoint supported).
 - **Tavily**: public information from an allow-list.
 
 Architecture: [docs/05-architecture.md](docs/05-architecture.md).
@@ -72,7 +72,7 @@ Requires [uv](https://docs.astral.sh/uv/) (Python 3.12 is fetched automatically)
 ```bash
 make setup             # .venv + dependencies; creates data/, hermes/home/; copies .env.example → .env
 $EDITOR .env           # NEBIUS_API_KEY, TAVILY_API_KEY, TELEGRAM_BOT_TOKEN, KIN_ADMIN_TELEGRAM_ID, TELEGRAM_* allow-lists
-make check             # keys · policy/locale · models · one Omni vision call · Telegram getMe · Tavily
+make check             # keys · policy/locale · models · one vision call · Telegram getMe · Tavily
 make policy            # print and validate the role × category matrix
 make up                # kin service + Hermes gateway (first start installs Hermes into ./hermes/home)
 make logs

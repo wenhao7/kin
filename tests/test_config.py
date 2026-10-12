@@ -6,7 +6,9 @@ def test_defaults_and_missing(monkeypatch):
         monkeypatch.delenv(var, raising=False)
     s = Settings(_env_file=None)
     assert s.locale == "sg"
-    assert s.model_omni.startswith("nvidia/")
+    # Hackathon hard requirement: an NVIDIA open model in the product path.
+    assert s.model_nano.startswith("nvidia/") and s.model_super.startswith("nvidia/")
+    assert s.models["vision"] == s.model_vision
     assert set(s.missing_required()) == {"NEBIUS_API_KEY", "TELEGRAM_BOT_TOKEN", "TAVILY_API_KEY"}
 
 

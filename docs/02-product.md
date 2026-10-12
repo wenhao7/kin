@@ -25,7 +25,7 @@ Every record carries a category, visibility derived from policy, a source (docum
 
 ## Flows
 
-**Intake.** Photo/PDF/audio sent to group or DM → fields and text extracted (Nano Omni) → category classified; admin confirms low-confidence classifications in DM → conflict check against existing records (e.g., dose change) → one clarifying question if needed → record + source stored → schedule/events updated → role-appropriate summaries posted (group: medical summary; DM: restricted items).
+**Intake.** Photo/PDF/audio sent to group or DM → fields and text extracted (Token Factory vision model; audio pending, see `05-architecture.md`) → category classified; admin confirms low-confidence classifications in DM → conflict check against existing records (e.g., dose change) → one clarifying question if needed → record + source stored → schedule/events updated → role-appropriate summaries posted (group: medical summary; DM: restricted items).
 
 **Schedule and reminders.** Medication times, refills computed from quantity, appointments, physio. Reminder goes to the responsible person when it matters: Siti at 8 am for morning meds; Mei Ling the evening before an appointment, with the prep list.
 
@@ -33,7 +33,7 @@ Every record carries a category, visibility derived from policy, a source (docum
 
 **Share request.** Family member asks about a `finance` item in the group → group receives "I've asked Mei Ling to share that" → admin DM: "Wei Jie asked about the insurance claim. Share the summary? [Yes] [No] [Just this once]" → grant stored and logged → asker answered or told no.
 
-**Appointment prep and debrief.** Before: question list compiled from the period (carer observations, medication changes, pending results), posted to the attendee. After, with consent captured in chat: recording transcribed and summarised (Nano Omni) → medication changes become superseding records → action items assigned → next appointment captured → per-role summaries.
+**Appointment prep and debrief.** Before: question list compiled from the period (carer observations, medication changes, pending results), posted to the attendee. After, with consent captured in chat: recording transcribed and summarised (Nano Omni, once listed on Token Factory) → medication changes become superseding records → action items assigned → next appointment captured → per-role summaries.
 
 **Weekly digest.** Sunday evening: admin gets the full digest; Family the overview; Carer next week's tasks and new things to watch for. In each member's language.
 
