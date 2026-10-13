@@ -1,12 +1,16 @@
 # Hermes Agent config template for Kin. Copied to $HERMES_HOME/config.yaml on the container's
-# first start, before the installer runs (or by `make hermes-init`); the installer then adds its
-# remaining defaults. Secrets come from the environment (.env via compose):
+# first start, before the installer runs; `make hermes-config` re-applies every key below (and
+# hermes/SOUL.md) to an existing install. Secrets come from the environment (.env via compose):
 # NEBIUS_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_ALLOWED_USERS, TELEGRAM_GROUP_ALLOWED_CHATS,
 # TELEGRAM_HOME_CHANNEL. Reference: https://hermes-agent.nousresearch.com/docs/
+#
+# Kin's records, intake and boundaries live in the kin service, reached through the Kin plugin
+# (hermes/plugins/kin, ROADMAP D2) rather than MCP: Hermes passes no caller identity to MCP
+# servers, and every Kin decision depends on who is asking (docs/05-architecture.md).
 
 model:
   provider: "nebius"                              # alias of nebius-token-factory
-  default: "nvidia/nemotron-3-super-120b-a12b"    # reasoning/drafting; vision/Nano are called by the kin service
+  default: "nvidia/nemotron-3-super-120b-a12b"    # conversation and answers; vision/Nano are called by the kin service
 
 # Super is text-only. Inbound photos go to the Token Factory vision model, whose description is
 # passed to Super (Hermes' text path). Same model as KIN_MODEL_VISION; see docs/05-architecture.md.
@@ -14,13 +18,17 @@ auxiliary:
   vision:
     provider: "nebius"
     model: "openbmb/MiniCPM-V-4_5"
+  background_review:
+    enabled: false
 
 agent:
   image_input_mode: text
   # The gateway is reachable by every member of the allow-listed group and runs on a shared host:
   # no shell, code execution, browser, file access or delegation (they could reach other services
   # on the host or read secrets on the volume), and no Hermes web search (Tavily lookups go through
-  # Kin's locale allow-list). Memory, vision, skills, cron, todo, clarify and session search remain.
+  # Kin's locale allow-list). Hermes' own memory, session search, skills and cron are off too: they
+  # are shared across every user and chat, so they would bypass Kin's per-person boundaries; Kin's
+  # store is the family's memory and Kin runs the skills. Left: clarify, todo, vision.
   disabled_toolsets:
     - terminal
     - code_execution
@@ -36,17 +44,26 @@ agent:
     - x_search
     - connections
     - kanban
+    - memory
+    - session_search
+    - skills
+    - cronjob
 
-# Kin's policy-enforced memory and intake, exposed to Hermes as MCP tools (mcp_kin_<tool>).
-# Enable once `kin serve` exists (ROADMAP D3). `kin` resolves inside docker-compose.
-mcp_servers:
-  kin:
-    url: "http://kin:8765/mcp"
-    enabled: false
-    timeout: 60
+memory:
+  memory_enabled: false
+  user_profile_enabled: false
+  nudge_interval: 0
+
+skills:
+  creation_nudge_interval: 0
+
+# Voice notes are not transcribed: consent comes first (docs/04-safety.md) and no audio-capable
+# model is listed on Token Factory for our key.
+stt:
+  enabled: false
 
 telegram:
-  require_mention: false        # Kin is a participant; needs BotFather Group Privacy OFF
+  require_mention: false        # from D2 the Kin plugin gates group text itself (docs/05-architecture.md)
   reply_to_mode: first
 
 terminal:

@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 UV ?= uv
 
-.PHONY: help setup check check-nospend models policy lint test docker-build up down logs hermes-init hermes-doctor hermes-shell clean
+.PHONY: help setup check check-nospend models policy lint test docker-build up down logs hermes-init hermes-config hermes-doctor hermes-shell clean
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -48,6 +48,11 @@ logs: ## Follow logs
 hermes-init: ## Seed ./hermes/home/config.yaml from the template (no-op if it exists)
 	@mkdir -p hermes/home
 	@test -f hermes/home/config.yaml || (cp hermes/config.yaml hermes/home/config.yaml && echo ">> seeded hermes/home/config.yaml")
+	@test -f hermes/home/SOUL.md || (cp hermes/SOUL.md hermes/home/SOUL.md && echo ">> seeded hermes/home/SOUL.md")
+
+hermes-config: ## Re-apply hermes/config.yaml and hermes/SOUL.md to the live Hermes home, restart the gateway
+	$(UV) run kin hermes-config | docker compose run --rm --no-deps -T --entrypoint bash hermes -s
+	docker compose restart hermes
 
 hermes-doctor: ## Run `hermes doctor` inside the container
 	docker compose run --rm --no-deps hermes doctor

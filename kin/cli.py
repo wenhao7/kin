@@ -6,6 +6,8 @@ until then it exits with code 2.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import typer
 from rich.console import Console
 
@@ -63,6 +65,16 @@ def policy() -> None:
     if problems:
         console.print("[red]" + "\n".join(problems) + "[/red]")
         raise typer.Exit(code=1)
+
+
+@app.command("hermes-config")
+def hermes_config(
+    template: Path = typer.Option(Path("hermes/config.yaml"), help="Hermes config template."),
+) -> None:
+    """Print the shell script that applies the Hermes template (used by `make hermes-config`)."""
+    from kin.hermes_config import hermes_config_script
+
+    typer.echo(hermes_config_script(template), nl=False)
 
 
 @app.command()

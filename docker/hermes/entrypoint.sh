@@ -15,6 +15,10 @@ if [ ! -f "$HERMES_HOME/config.yaml" ] && [ -f /seed/config.yaml ]; then
   echo ">> seeding $HERMES_HOME/config.yaml from template"
   cp /seed/config.yaml "$HERMES_HOME/config.yaml"
 fi
+# Kin's persona; Hermes would otherwise seed its own default SOUL.md. Re-applied by `make hermes-config`.
+if [ ! -f "$HERMES_HOME/SOUL.md" ] && [ -f /seed/SOUL.md ]; then
+  cp /seed/SOUL.md "$HERMES_HOME/SOUL.md"
+fi
 
 # The installer's launcher lives on the volume; ~/.local/bin holds only a shim to it.
 export PATH="$HERMES_HOME/hermes-agent/.hermes/bin:$HOME/.local/bin:$PATH"

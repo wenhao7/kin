@@ -42,6 +42,7 @@ services:
     volumes:
       - ./hermes/home:/opt/data          # persistent: install, config.yaml, .env, state.db, memory, skills
       - ./hermes/config.yaml:/seed/config.yaml:ro
+      - ./hermes/SOUL.md:/seed/SOUL.md:ro
     depends_on:
       - kin
     init: true                           # reap the gateway's child processes (Hermes warns as PID 1)
