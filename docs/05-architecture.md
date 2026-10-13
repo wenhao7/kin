@@ -27,17 +27,17 @@ Hermes supplies the runtime and the Telegram gateway; Kin owns domain memory, po
 
 Hermes is the conversation runtime and the only Telegram poller. The kin service holds records, intake, policy and the scheduler. The two meet in one small Hermes plugin (`hermes/plugins/kin`, mounted read-only into the Hermes container, enabled with `plugins.enabled: [kin]`). It is a plugin rather than MCP because Hermes passes no caller identity to MCP servers: tool calls carry only the model's arguments.
 
-**Identity.** The plugin reads the sender's Telegram user ID, the chat ID and the chat type (`dm` or `group`) from the gateway's per-turn session context and attaches them as `caller` to every request to the kin API, which also checks a shared `KIN_API_TOKEN`. Kin's tools take no identity arguments. Kin resolves the caller against the roster (`config/members.yaml`, IDs from `.env`); unknown senders get nothing, and a chat that is neither the family group (`TELEGRAM_HOME_CHANNEL`) nor a roster member's DM is refused.
+**Identity.** For tools the plugin reads the sender's Telegram user ID, the chat ID and the chat type (`dm` or `group`) from the gateway's per-turn session context; for the hook it takes them from the message's source. It attaches them as `caller` to every request to the kin API, which also checks a shared `KIN_API_TOKEN`. Kin's tools take no identity arguments. Kin resolves the caller against the roster (`config/members.yaml`, IDs from `.env`); unknown senders get nothing, and a chat that is neither the family group (`TELEGRAM_HOME_CHANNEL`) nor the sender's own DM is refused. The hook skips both silently, so Hermes never runs for them. Everyone in the family group should be on the roster: the group's level is computed from the roster's roles.
 
-**Message hook.** The plugin's `pre_gateway_dispatch` hook handles these before the model runs:
+**Message hook.** The plugin's `pre_gateway_dispatch` hook forwards every Telegram message (with the file for photos and documents) to `POST /inbound`; Kin decides, sends any reply itself and answers `pass` or `skip`. If kin is unreachable the hook skips (fails closed). Before the model runs:
 
 | Inbound | Handling | Agent turn |
 |---|---|---|
-| Photo or PDF in the Admin's DM | File and caption to `POST /intake`; Kin stores the original as restricted and replies with the draft | Skipped |
-| Photo elsewhere (group, other DMs) | Not ingested; Kin replies once that documents go to the Admin by DM | Skipped |
-| Admin taps Confirm / Discard on a draft, or Yes / No / Just this once on a share request | `POST /decide`; Kin activates, discards, grants or refuses, and notifies | Skipped |
+| Photo or PDF in the Admin's DM | Kin stores the original as restricted; from D3 it extracts and replies with the draft | Skipped |
+| Photo elsewhere (group, other DMs) | Not ingested; Kin replies that documents go to the Admin by DM | Skipped |
+| Admin taps Confirm / Discard on a draft, or Yes / No / Just this once on a share request (D3) | Kin activates, discards, grants or refuses, and notifies | Skipped |
 | Voice note or audio | Fixed reply: Kin can't listen yet, please type it | Skipped |
-| `/help`, `/roles`, `/who_saw`, `/skills`, `/export`, `/demo` (fixture only) | `POST /command`; role-checked by Kin | Skipped |
+| Any `/command`: `/help`, `/start`, and for the Admin `/roles`, `/who_saw`, `/skills`, `/export`; `/demo` in the judge fixture | Handled by Kin; other commands, including Hermes' own (`/model`, `/new`…), get "Try /help" | Skipped |
 | Group text that doesn't say "Kin", @mention the bot or reply to one of Kin's messages | Ignored | Skipped |
 | Any other text | — | Runs, with Kin's tools |
 
@@ -45,15 +45,15 @@ Hermes is the conversation runtime and the only Telegram poller. The kin service
 
 | Tool | Does |
 |---|---|
-| `kin_ask(question)` | `retrieve(query, principal)`: permitted fields and approved excerpts for this caller in this chat; a blocked `finance`/`legal` question starts the share flow and says so |
-| `kin_correct(text)` | Admin only: corrections to the pending draft ("dose is 500 mg"); Kin re-validates and re-shows the draft |
-| `kin_note(text)` | Saves a note or observation the caller owns |
-| `kin_lookup(topic)` | Public scheme rules via Tavily with the locale allow-list; Kin builds the query and rejects names and record content |
+| `kin_ask(question)` | `retrieve(query, principal)`: permitted fields and approved excerpts for this caller in this chat, with fixed answering rules (sources, "I don't know", no advice); from D3 a blocked `finance`/`legal` question starts the share flow |
+| `kin_correct(text)` | D3. Admin only: corrections to the pending draft ("dose is 500 mg"); Kin re-validates and re-shows the draft |
+| `kin_note(text)` | Saves a note the caller owns (refused for roles without `write` on notes) |
+| `kin_lookup(topic)` | D4. Public scheme rules via Tavily with the locale allow-list; Kin builds the query and rejects names and record content |
 | `kin_teach(instruction)` | Admin only, optional (D6): a structured skill with a confirmed trigger and recipients |
 
 **Outbound.** Messages Kin starts — drafts, confirmed summaries, reminders, share requests, private answers' excerpts — are sent by the kin container through the Bot API (`sendMessage`). Only Hermes polls `getUpdates`; sending with the same token alongside it is allowed. Decisions use one-time reply keyboards, whose taps arrive as ordinary DM text for the hook to resolve, so no callback handling is needed. When Telegram refuses a DM (the member never opened one), Kin asks the member in the group to tap Start.
 
-**Before D2.** Until the plugin exists, a photo reaches Hermes' own vision path (the extractor describes it, Super replies); from D2 every photo goes through Kin's intake.
+**Retrieval.** `retrieve` loads only the categories the principal may see (filtered in SQL), drops rows an `own` qualifier excludes, keeps only the fields in `config/policy.yaml` `projections` (a `summary` level shows nothing without one) and attaches only excerpts whose approved audience includes the reader. In the group the reader is every roster role: categories are capped at the group's level and fields and excerpts must suit every role. Originals never leave the store. Every call, empty and refused ones included, is written to the audit log that `/who_saw` reads.
 
 ## Models
 

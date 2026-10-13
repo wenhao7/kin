@@ -38,11 +38,13 @@ make check          # live probes: models, one image call to the configured extr
 ## 7. Hermes runtime (D0)
 ```bash
 make docker-build
-make up             # kin self-check + hermes gateway; first start installs Hermes into ./hermes/home
+make up             # kin service + hermes gateway; first start installs Hermes into ./hermes/home
 make logs
 make hermes-doctor
 make hermes-config  # re-applies hermes/config.yaml and hermes/SOUL.md whenever they change
+make seed           # loads the Week 0 synthetic fixture into the kin store
 ```
+`KIN_API_TOKEN` in `.env` must be set (any long random string) before `make up`; kin refuses to start without it.
 Send the bot a message in the group and in DM. If the containerised install fails, install on the host instead (`curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash`, `hermes setup` with provider **Nebius Token Factory**, `hermes gateway setup`, `hermes gateway install && hermes gateway start`); the `kin` service stays in Docker. Record which path worked in ROADMAP D0. On a shared host, keep Hermes containerised: a host install uses `~/.hermes` and installs a gateway service, which collide with any other host-level Hermes; the compose stack is self-contained (`docs/05-architecture.md`, Deployment). Hermes memory, session search, skills, cron and host-reaching tools are already off in `hermes/config.yaml`; Kin's plugin, which binds identity, arrives at D2.
 
 ## 8. Community — **YOU**

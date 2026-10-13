@@ -18,7 +18,7 @@
 |---|---|---|---|---|
 | medical | read/write | confirmed summary | care instructions | none |
 | medication | read/write | read | confirmed schedule | confirmed schedule |
-| appointments | read/write | read | involved appointments | none |
+| appointments | read/write | read | read | none |
 | tasks | read/write | read | assigned | assigned |
 | observations | read | read | own | own |
 | finance | read/write | none → share request | none | none |
@@ -26,7 +26,7 @@
 | admin | read/write | contacts and logistics | emergency contacts | emergency contacts |
 | notes | read/write | own | own | none |
 
-`own` = assigned to (tasks) or authored by (observations, notes) the principal; `emergency_contacts` = the emergency-contact records in `admin`. Notes are private to their author and the Admin; anything meant for everyone goes to the group or its category. `summary` is the Admin-confirmed overview plus care instructions and permitted excerpts, not a model paraphrase of the whole record. The YAML level sets the ceiling; field projections narrow it.
+`own` = assigned to (tasks) or authored by (observations, notes) the principal; `emergency_contacts` = the emergency-contact records in `admin`. Notes are private to their author and the Admin; anything meant for everyone goes to the group or its category. `summary` is the Admin-confirmed overview plus care instructions and permitted excerpts, not a model paraphrase of the whole record. The YAML level sets the ceiling; field projections (`projections` in `config/policy.yaml`) narrow it to named fields. Appointments stay readable by the Carer: they reach the group, which includes the Carer.
 
 ## Data fields
 

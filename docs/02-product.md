@@ -46,7 +46,7 @@ Categories: `medical`, `medication`, `appointments`, `tasks`, `observations`, `f
 - One clarifying question at a time; short group posts; detail and anything restricted in DM.
 - Every personal answer and reminder carries a dated, permitted excerpt.
 - Mandarin variants use the same confirmed fields; translation adds no facts.
-- Admin commands: `/roles`, `/who_saw`, `/export` (Telegram commands allow only letters, digits and `_`). `/skills` is role-filtered. `/demo` role switch exists only in the disposable judge fixture.
+- Admin commands: `/roles`, `/who_saw`, `/export` (Telegram commands allow only letters, digits and `_`), answered only in the Admin's DM. Every slash command is Kin's; Hermes' own commands are not reachable from the family chats. `/skills` is role-filtered. `/demo` role switch exists only in the disposable judge fixture.
 - In the group, Kin answers text only when addressed: its name, an @mention, or a reply to one of its messages. Family members can talk among themselves without Kin chiming in.
 - Voice notes are not processed; Kin replies that it can't listen yet and asks for text.
 - Group privacy mode is off (or the bot is a group admin) so Kin sees group messages; identity and policy are enforced on every message regardless.

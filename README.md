@@ -10,7 +10,7 @@ Built for the [Nebius x NVIDIA Global AI Hackathon](https://nebiusglobalaihackat
 
 ## Status
 
-Configuration, policy and roster loading, setup checks and the containerised Hermes gateway (on Nebius, isolated from other deployments on the host) exist; `kin serve`, memory, intake and reminders are not implemented. Nano Omni is dedicated-only on Token Factory, so photo extraction uses a public vision model chosen at D0: MiniCPM-V 4.5 (`make models`). See [ROADMAP.md](ROADMAP.md).
+The containerised Hermes gateway runs on Nebius with Kin's plugin: caller identity from the gateway, routing before the model, `kin_ask`/`kin_note`. `kin serve` holds the SQLite store and `retrieve(query, principal)` with role, group and field-level policy and an audit log. Intake, reminders and sharing are not implemented yet. Nano Omni is dedicated-only on Token Factory, so photo extraction uses a public vision model chosen at D0: MiniCPM-V 4.5 (`make models`). See [ROADMAP.md](ROADMAP.md).
 
 ## Why
 
@@ -71,8 +71,9 @@ make policy            # validate the matrix shape (runtime enforcement is D2)
 make lint && make test
 make models            # Nemotron and image-capable models visible to the key
 make check             # live probes: models, one image call, Telegram getMe, Tavily
-make up                # kin self-check + Hermes gateway (first start installs Hermes into ./hermes/home)
+make up                # kin service + Hermes gateway (first start installs Hermes into ./hermes/home)
 make hermes-config     # after editing hermes/config.yaml or hermes/SOUL.md
+make seed              # reset the kin store to the Week 0 synthetic fixture
 ```
 
 `hermes/config.yaml` and `hermes/SOUL.md` (Kin's persona) seed the gateway: Nebius provider, MiniCPM-V for any image Hermes sees, and the Hermes features that would bypass Kin's boundaries turned off. `make hermes-config` re-applies them to a running install; Kin's plugin arrives at D2 ([docs/05-architecture.md](docs/05-architecture.md#hermes--kin)). Setup gates: [KICKOFF.md](KICKOFF.md).
