@@ -1,4 +1,4 @@
-# Kin service image (MCP server + intake API). uv-managed, lockfile-driven.
+# Kin service image (kin API for the Hermes plugin: intake, retrieval, scheduler). uv-managed, lockfile-driven.
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS base
 
 ENV UV_COMPILE_BYTECODE=1 \

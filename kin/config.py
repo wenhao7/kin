@@ -43,8 +43,8 @@ class Settings(BaseSettings):
     locale: str = Field(default="sg", alias="KIN_LOCALE")
     policy_file: Path = Field(default=Path("./config/policy.yaml"), alias="KIN_POLICY_FILE")
     members_file: Path = Field(default=Path("./config/members.yaml"), alias="KIN_MEMBERS_FILE")
-    mcp_host: str = Field(default="0.0.0.0", alias="KIN_MCP_HOST")
-    mcp_port: int = Field(default=8765, alias="KIN_MCP_PORT")
+    api_host: str = Field(default="127.0.0.1", alias="KIN_API_HOST")
+    api_port: int = Field(default=8765, alias="KIN_API_PORT")
 
     @property
     def models(self) -> dict[str, str]:

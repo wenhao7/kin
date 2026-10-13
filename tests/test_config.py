@@ -16,7 +16,7 @@ def test_env_overrides(monkeypatch):
     monkeypatch.setenv("NEBIUS_API_KEY", "k")
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "t")
     monkeypatch.setenv("TAVILY_API_KEY", "v")
-    monkeypatch.setenv("KIN_MCP_PORT", "9000")
+    monkeypatch.setenv("KIN_API_PORT", "9000")
     s = Settings(_env_file=None)
-    assert s.mcp_port == 9000
+    assert s.api_port == 9000
     assert s.missing_required() == []

@@ -1,6 +1,6 @@
 """Kin command-line interface.
 
-`serve` (MCP server + intake API for the Hermes runtime) is implemented in ROADMAP D2–D3;
+`serve` (the kin API used by the Hermes plugin, plus the scheduler) is implemented in ROADMAP D2;
 until then it exits with code 2.
 """
 
@@ -79,8 +79,8 @@ def hermes_config(
 
 @app.command()
 def serve() -> None:
-    """Run the Kin MCP server and intake API (consumed by the Hermes gateway)."""
-    console.print("[yellow]Not implemented yet — see ROADMAP.md D2/D3.[/yellow]")
+    """Run the kin API (used by the Kin plugin in Hermes) and the scheduler."""
+    console.print("[yellow]Not implemented yet — see ROADMAP.md D2.[/yellow]")
     raise typer.Exit(code=2)
 
 

@@ -16,16 +16,16 @@ services:
     env_file: .env
     environment:
       KIN_DATA_DIR: /app/data
-      KIN_MCP_HOST: 0.0.0.0
-      KIN_MCP_PORT: "8765"
+      KIN_API_HOST: 0.0.0.0
+      KIN_API_PORT: "8765"
     volumes:
       - ./data:/app/data
     ports:
-      # Hermes reaches kin over the compose network (http://kin:8765); the host port is for local
-      # debugging only, so it is bound to loopback.
-      - "127.0.0.1:${KIN_MCP_PORT:-8765}:8765"
-    # Until `kin serve` exists (ROADMAP D2/D3) the service runs the self-check and exits.
-    # At D3: command: ["serve"] and restart: unless-stopped.
+      # The Kin plugin in the Hermes container reaches kin over the compose network
+      # (http://kin:8765); the host port is for local debugging only, so it is bound to loopback.
+      - "127.0.0.1:${KIN_API_PORT:-8765}:8765"
+    # Until `kin serve` exists (ROADMAP D2) the service runs the self-check and exits.
+    # At D2: command: ["serve"] and restart: unless-stopped.
     command: ["check", "--no-spend"]
     restart: "no"
     mem_limit: 1g
