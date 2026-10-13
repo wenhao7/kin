@@ -12,6 +12,9 @@ from pathlib import Path
 import yaml
 
 LEVELS = {"read", "write", "summary", "none"}
+QUALIFIERS = {"own", "emergency_contacts"}
+# Order used to compute what a group may see: the lowest level among its members.
+RANK = {"none": 0, "summary": 1, "read": 2, "write": 3}
 
 
 @dataclass
@@ -28,6 +31,20 @@ class Policy:
         level, _, qualifier = raw.partition(":")
         return level, (qualifier or None)
 
+    def group_level(self, category: str, roles: list[str]) -> str:
+        """Level a group may see for a category: the lowest among its members' roles.
+
+        Qualified levels (`own`, `emergency_contacts`) count as `none` for a group, and an empty
+        or unknown roster fails closed.
+        """
+        if not roles or any(r not in self.roles for r in roles):
+            return "none"
+        levels = []
+        for role in roles:
+            level, qualifier = self.level(role, category)
+            levels.append("none" if qualifier else level)
+        return min(levels, key=RANK.__getitem__)
+
     def validate(self) -> list[str]:
         problems: list[str] = []
         for cat in self.categories:
@@ -39,9 +56,11 @@ class Policy:
                 if role not in row:
                     problems.append(f"matrix[{cat}] missing role {role!r}")
                     continue
-                level, _, _ = str(row[role]).partition(":")
+                level, _, qualifier = str(row[role]).partition(":")
                 if level not in LEVELS:
                     problems.append(f"matrix[{cat}][{role}] has unknown level {level!r}")
+                if qualifier and qualifier not in QUALIFIERS:
+                    problems.append(f"matrix[{cat}][{role}] has unknown qualifier {qualifier!r}")
         for cat in self.matrix:
             if cat not in self.categories:
                 problems.append(f"matrix has unknown category {cat!r}")

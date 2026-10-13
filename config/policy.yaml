@@ -1,6 +1,7 @@
 # Default role × category policy (docs/03-privacy-boundaries.md).
-# Levels: read | write | summary | none. `write` implies read. `own` restricts to records the
-# principal created. Editable per family by the admin; this file is the demo default.
+# Levels: read | write | summary | none. `write` implies read. Qualifiers (`level:qualifier`):
+# `own` = records the principal created; `emergency_contacts` = the emergency-contact records in
+# `admin`. Editable per family by the admin; this file is the demo default.
 
 roles: [admin, family, carer, viewer]
 
@@ -53,11 +54,11 @@ matrix:
     viewer: read:emergency_contacts
   notes:
     admin: write
-    family: read:shared+own
-    carer: read:own
+    family: write:own
+    carer: write:own
     viewer: none
 
-# Where restricted answers are delivered. `dm` = only to the asker in a private chat.
+# Where restricted answers are delivered. `dm` = only to the asker in a private chat. What the
+# group itself may see is computed from its members (docs/03-privacy-boundaries.md, Behaviour).
 delivery:
   restricted_answers: dm
-  group_never_receives: [finance, legal]
