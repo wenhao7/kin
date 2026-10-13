@@ -43,5 +43,12 @@ def hermes_config_script(template: Path) -> str:
     # Superseded by the Kin plugin (Hermes passes no caller identity to MCP servers).
     lines.append("hermes config unset mcp_servers >/dev/null 2>&1 || true")
     lines.append('cp /seed/SOUL.md "$HERMES_HOME/SOUL.md"')
+    # Hermes stores each session's system prompt; delete Telegram sessions (open ones too) so the
+    # new persona and tools apply at once. Family memory lives in Kin's store, not in sessions.
+    lines.append(
+        "for id in $(hermes sessions list --source telegram --limit 10000 2>/dev/null"
+        " | grep -oE '[0-9]{8}_[0-9]{6}_[0-9a-f]+'); do"
+        ' hermes sessions delete --yes "$id" >/dev/null 2>&1 || true; done'
+    )
     lines.append(f'echo "applied {len(items)} keys and SOUL.md"')
     return "\n".join(lines) + "\n"

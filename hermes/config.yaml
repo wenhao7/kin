@@ -8,6 +8,10 @@
 # (hermes/plugins/kin, ROADMAP D2) rather than MCP: Hermes passes no caller identity to MCP
 # servers, and every Kin decision depends on who is asking (docs/05-architecture.md).
 
+# Kin's bridge plugin (hermes/plugins/kin, mounted read-only by compose).
+plugins:
+  enabled: [kin]
+
 model:
   provider: "nebius"                              # alias of nebius-token-factory
   default: "nvidia/nemotron-3-super-120b-a12b"    # conversation and answers; vision/Nano are called by the kin service
@@ -28,7 +32,9 @@ agent:
   # on the host or read secrets on the volume), and no Hermes web search (Tavily lookups go through
   # Kin's locale allow-list). Hermes' own memory, session search, skills and cron are off too: they
   # are shared across every user and chat, so they would bypass Kin's per-person boundaries; Kin's
-  # store is the family's memory and Kin runs the skills. Left: clarify, todo, vision.
+  # store is the family's memory and Kin runs the skills. clarify, todo and vision are off too:
+  # photos go to Kin's intake and Kin asks its one clarifying question in plain text. Left: Kin's
+  # own tools (kin_ask, kin_note).
   disabled_toolsets:
     - terminal
     - code_execution
@@ -48,6 +54,14 @@ agent:
     - session_search
     - skills
     - cronjob
+    - clarify
+    - todo
+    - vision
+
+# Kin's two tools are always in view; deferring them behind tool search made Super skip them.
+tools:
+  tool_search:
+    enabled: "off"
 
 memory:
   memory_enabled: false

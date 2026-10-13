@@ -1,0 +1,12 @@
+name: kin
+version: 0.1.0
+description: "Kin's bridge: caller identity from the gateway, inbound routing before the model runs, and Kin's tools. All family data stays in the kin service (docs/05-architecture.md, Hermes ↔ Kin)."
+author: Kin contributors
+kind: standalone
+provides_tools:
+  - kin_ask
+  - kin_note
+provides_hooks:
+  - pre_gateway_dispatch
+requires_env:
+  - KIN_API_TOKEN

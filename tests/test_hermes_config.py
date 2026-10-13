@@ -13,3 +13,5 @@ def test_template_renders_set_commands():
     assert 'hermes config set agent.disabled_toolsets \'["terminal",' in script
     assert "session_search" in script and "hermes config unset mcp_servers" in script
     assert 'cp /seed/SOUL.md "$HERMES_HOME/SOUL.md"' in script
+    assert "hermes config set tools.tool_search.enabled off" in script
+    assert "hermes sessions list --source telegram" in script and "sessions delete --yes" in script
