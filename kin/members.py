@@ -2,7 +2,8 @@
 
 Roles and languages come from the roster file; Telegram user IDs come from `.env` so the file
 stays free of real account data. Resolution of a Telegram user to a member is used by every
-policy decision, so unknown IDs fall back to the roster's default role, never to admin.
+policy decision, so an unknown ID gets no role (fail closed) unless the roster names a
+non-admin `default_role`, and never admin.
 """
 
 from __future__ import annotations
@@ -17,7 +18,7 @@ import yaml
 class Member:
     id: str
     name: str
-    role: str
+    role: str | None
     language: str
     telegram_id: str | None = None
 
@@ -25,11 +26,11 @@ class Member:
 @dataclass
 class Roster:
     members: list[Member]
-    default_role: str
+    default_role: str | None
     default_language: str
 
     def by_telegram_id(self, telegram_id: str) -> Member:
-        """The member for a Telegram user ID, or a default-role guest for anyone else."""
+        """The member for a Telegram user ID, or a guest with `default_role` (usually none)."""
         for m in self.members:
             if m.telegram_id and m.telegram_id == str(telegram_id):
                 return m
@@ -51,7 +52,9 @@ class Roster:
                 problems.append(f"member {m.id!r} has unknown role {m.role!r}")
             if m.language not in languages:
                 problems.append(f"member {m.id!r} has unsupported language {m.language!r}")
-        if self.default_role not in roles or self.default_role == "admin":
+        if self.default_role is not None and (
+            self.default_role not in roles or self.default_role == "admin"
+        ):
             problems.append(f"default_role {self.default_role!r} must be a non-admin role")
         ids = [m.telegram_id for m in self.members if m.telegram_id]
         if len(ids) != len(set(ids)):
@@ -86,6 +89,6 @@ def load_roster(path: Path, admin_telegram_id: str = "", member_ids: str = "") -
         )
     return Roster(
         members=members,
-        default_role=data.get("default_role", "family"),
+        default_role=data.get("default_role"),
         default_language=data.get("default_language", "en"),
     )

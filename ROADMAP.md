@@ -1,90 +1,90 @@
 # Roadmap
 
-Sequential deliverables. Each is sized for one working burst and leaves the repo in a working state. No dates except the fixed ones below.
+Sequential deliverables. Tick a box only with recorded evidence. No time estimates.
 
-**Fixed dates:** submission closes **Fri 30 Oct 2026, 10:00 PDT (Sat 31 Oct, 01:00 SGT)**; judging 1–15 Dec 2026; the demo Telegram group must stay up until 15 Dec.
+**Fixed dates:** submission closes **Fri 30 Oct 2026, 10:00 PDT (Sat 31 Oct, 01:00 SGT)**; judging ends **15 Dec 2026, 12:00 PST (16 Dec, 04:00 SGT)** and the demo bot stays up until then.
 
-## Deliverables
+## Status
 
-### D0 · Spike: runtime and models
-- [ ] Telegram bot created; test group with two test accounts. Note: bot, group and admin account done; second account pending.
-- [ ] Hermes Agent running; replies in the group and in DM; comes back after a restart. Note: group replies verified; DM and restart pending. Hermes' own memory is off by design; the family's memory is Kin's store (D2).
-- [x] A Token Factory vision model accepts an image (`make check` → `vision:image`); Super answers a text call. Note: Nemotron 3 Nano Omni is not in the public catalog for our key, so the vision fallback in `docs/05-architecture.md` applies (`openbmb/MiniCPM-V-4_5` for extraction; Nemotron for classification and answers). No audio-capable model is listed, so audio is out of scope.
-- [ ] OpenShell/NemoClaw: Hermes runs inside the sandbox with network allow-list (Telegram, Token Factory, Tavily). If this does not work within the burst, continue without it and revisit at D7. Note: deferred to D7; Hermes runs in plain Docker with host-reaching toolsets disabled.
-- [x] GitHub repo created; Apache-2.0 visible in About. Note: repo is private; make it public before submission (D5).
+- Configuration, policy and roster loading, setup checks and container templates exist. The containerised Hermes gateway runs on Nebius with Kin's persona, its memory/skills/cron/host tools off and the stack isolated from other deployments on the host. `kin serve`, the Kin plugin, memory, intake, reminders and enforcement are not implemented.
+- Nano Omni is dedicated-only; the extractor chosen at D0 is `openbmb/MiniCPM-V-4_5` (`KIN_MODEL_VISION`).
+- Upgradient's Sandboxes approval does not affect Kin; D0 and D1 can proceed now.
 
-Note: Hermes runs containerised (official installer into `./hermes/home` at first start); the host-install fallback was not needed.
+## D0 · Runtime, identity and models
 
-**Done when:** a photo sent to the group is described back by Kin using the Token Factory vision model. Met: a captioned photo in the test group was described correctly.
+- [ ] Bot created; test group with Admin, Family and Carer accounts; each account has opened a DM with the bot. Note: bot (privacy off, `can_read_all_group_messages=True`), group and Admin account done; the second account arrives this week and plays Family and Carer in separate takes.
+- [ ] Hermes gateway replies in group and DM (container or host install recorded); installed version and native tool/memory paths inventoried. Note: container install (official installer into `./hermes/home`); Hermes v0.21.7; group reply verified; inventory in `docs/05-architecture.md` (Hermes hardening). DM pending.
+- [ ] Vision extractor chosen from `make models` and one image call passes (`make check`); Nano or Lightning picked for classification; Super answers a structured call. Audio and Ultra optional. Note: MiniCPM-V 4.5 chosen, `vision:image` passes; Nano picked; Super answered a text call through Hermes, structured call pending. No public audio-capable model.
+- [ ] Public repo with Apache-2.0 visible in About. Note: GitHub detects Apache-2.0; the repo is private until it is made public.
 
-### D1 · Synthetic family, minimum set
-- [ ] Ground-truth JSON for 8 documents: discharge summary, 3 medication labels, 1 appointment slip, 1 clinic memo (Month −4), 1 insurance claim letter, 1 handwritten carer note.
-- [ ] Templates render to PDF/PNG (`make setup-data`); 4 printed and photographed on a kitchen table — **YOU**.
-- [x] Member roster with roles and languages (`config/members.yaml`; Telegram IDs in `.env`).
+**Done when:** a synthetic photo sent in Admin DM is described back by the chosen extractor, and a bounded structured text call succeeds or fails truthfully. Note: a captioned photo in the test group was described correctly through MiniCPM-V and Super.
 
-**Done when:** the 8 documents exist as clean renders, photos, and ground truth.
+## D1 · Minimum synthetic fixture
 
-### D2 · Bridge and intake
-Two bursts; the bridge first ([docs/05-architecture.md](docs/05-architecture.md#hermes--kin)).
-- [ ] `kin serve`: kin API (`KIN_API_TOKEN`), SQLite + file store partitioned by visibility, roster loaded, scheduler; compose runs it with `restart: unless-stopped`.
-- [ ] Kin plugin (`hermes/plugins/kin`, mounted and enabled): caller identity from the gateway session; `pre_gateway_dispatch` routes photos/PDFs to intake, answers voice notes with the fixed reply, and drops group text not addressed to Kin.
-- [ ] Telegram sender in kin (Bot API); a refused DM asks the member in the group to tap Start.
-- [ ] Photo → fields and text (vision model) → category and document type (Nano) → record with source → events (medication times, refills, appointment).
-- [ ] Conflict check against existing records; one clarifying question when needed; admin confirms a low-confidence category in DM.
-- [ ] Group post at the group's computed level, in English plus Mandarin for `zh` members; restricted items to the DMs of members who may see them.
-- [ ] Reminders delivered by DM to the responsible member at local time.
+- [ ] Eight documents (discharge summary, three medication labels, appointment slip, Month −4 clinic memo, insurance claim letter, carer note) rendered; four photographed; ground truth with fields, source spans and expected per-role views.
+- [ ] Roster with roles and languages; expected outcomes for confirmation, supersession, denied recall and share flows. Note: roster in `config/members.yaml` (IDs in `.env`).
 
-**Done when:** the discharge summary photo produces the medication table, reminders for the carer, and a bilingual group post, and the records survive `make down && make up`.
+**Done when:** fixtures and expected results exist for intake, recall, sharing and the privacy tests. No infrastructure needed.
 
-### D3 · Boundaries
-- [ ] `retrieve(query, principal)` as the only read path, behind `kin_ask`; policy and grants applied before model context; group questions capped at the group's level.
-- [ ] Share-request flow: redirect to the asker, admin DM with the Yes / No / Just this once reply keyboard resolved by the hook, grant stored, asker answered by DM.
-- [ ] Audit log; `/who_saw`, `/roles`, `/help`.
+## D2 · Identity, policy store and Hermes isolation
 
-**Done when:** a Family member's finance question in the group completes the share flow and appears in `/who_saw`.
+- [ ] SQLite store: members, versioned records, restricted originals, approved excerpts, events, grants, audit.
+- [ ] Principal derived from the gateway's authenticated sender and chat; `retrieve(query, principal)` is the only read path; category and field projection applied before model context; unknown identity/category fails closed.
+- [x] Hermes native memory, session search and file/terminal tools disabled over family data; group and DM contexts separated. Evidence: `hermes/config.yaml` applied (`make hermes-config`); `hermes prompt-size --platform telegram` lists clarify, todo and vision only; sessions keyed per chat and user.
+- [ ] Kin plugin in Hermes (caller from the gateway session, `pre_gateway_dispatch` routing, Kin's tools); kin API on the internal network only with `KIN_API_TOKEN`; `/who_saw` Admin-only. MCP is not used: it carries no caller identity.
+- [ ] Minimum privacy tests pass through the real gateway path (03-privacy-boundaries.md).
 
-### D4 · Grounded recall and lookups
-- [ ] Natural-language questions answered from permitted records; Kin sends the source photo or excerpt as a reply to the question, and the answer cites it.
-- [ ] One allow-listed Tavily lookup flow (public scheme rules, e.g. Home Caregiving Grant, CHAS) through `kin_lookup`, no names or record content in the query.
+**Done when:** Admin, Family, Carer and an unknown sender each receive exactly their permitted fields; spoofed principals and a mixed original fail closed.
 
-**Done when:** "Kin, what did Dr Tan change at the last visit?" returns the change and the Month −4 memo photo.
+## D3 · Intake, confirmation, reminders, sharing
 
-— **Minimum submittable product.** From here every deliverable is optional; never start one that breaks the state above. —
+- [ ] Admin DM photo → extractor → draft records with source excerpts; mixed originals stay Admin-only.
+- [ ] Admin confirms category, medication/appointment details, assignee, timezone; conflicts and unreadable fields block activation.
+- [ ] Activation creates events; supersession cancels future events; restart does not duplicate reminders.
+- [ ] Admin-confirmed summary to the group in English and Mandarin; carer reminder in DM with the source excerpt.
+- [ ] Finance question → neutral group reply → Admin DM Yes / No / Just this once (reply keyboard, resolved by the hook) → private answer; audited. Kin sends through the Bot API; a refused DM asks the member to tap Start.
 
-### D5 · Submission skeleton
-- [ ] Repo public; README quick start verified on a clean machine; `.env.example`.
-- [ ] "How we use Nebius and NVIDIA" section drafted with real numbers.
-- [ ] Demo group "Tan Family" with invite link: judges get `default_role` and a greeting with the test script; `make demo-reset` restores Week 0 (nightly host cron during 1–15 Dec). Test script in the README: intake photo, recall question, finance question (share redirect), scheme lookup, clinical-advice question (refusal).
-- [ ] Draft Devpost description and feedback notes.
+**Done when:** a confirmed synthetic intake yields the right reminder and summaries, supersession cancels the old reminder, and sharing works without leaking the original.
 
-**Done when:** the submission could be filed today.
+## D4 · Recall, lookup, reusable skill
 
-### D6 · Visit debrief and skills
-- [ ] After-visit summary photo (Week +1) → superseding medication records → action items with owners → next appointment → per-role posts.
-- [ ] Skills in Kin's scheduler: two pre-taught (Monday pill-organiser reminder; cardiology prep list); `/skills` lists them; the admin teaches a new one in DM through `kin_teach`.
+- [ ] Recall answers from permitted records with the approved excerpt; destination re-checked before delivery.
+- [ ] One Tavily lookup in the main flow with a public-only query and the locale allow-list.
+- [ ] One preconfigured Monday skill in Kin's scheduler survives restart; `/skills` shows it; recipients are authorised at execution.
 
-**Done when:** the Week +1 after-visit summary produces records and tasks, and the Monday reminder fires.
+**Done when:** a Family member gets the Month −4 change with its excerpt, a cited public lookup works, and the Monday reminder fires after a restart.
 
-### D7 · Sandbox and privacy proof
-- [ ] OpenShell/NemoClaw integration completed if deferred at D0 (one timeboxed burst; if it does not work, the docs and video keep it as planned).
-- [ ] Data-map view: records by category, audit log, outbound calls made (read-only page or `/export`).
-- [ ] Adversarial test set: clinical-advice requests refused; in-family prompt-injection and impersonation attempts do not leak.
+## D5 · Submission package and judge access
 
-**Done when:** the data-map scene in the video can be recorded from the running system.
+- [ ] README separates implemented from planned; "How we use Nebius and NVIDIA" filled with measured values.
+- [ ] Self-service synthetic demo: judge joins a disposable fixture, uses `/demo` to act as Admin or Family, follows the test script (intake photo supplied, confirm, recall, share, `/skills`); `make demo-reset` (nightly during judging) isolates sessions. Repo public. Entrant-funded.
+- [ ] Devpost text and feedback drafted; access verified from a clean session.
 
-### D8 · Full dataset and polish
-- [ ] Remaining documents to reach the 20-document set; full six-month timeline loaded.
-- [ ] Weekly digest per role and language (Kin's scheduler or a Nebius Serverless Job).
-- [ ] Respite viewer with `expires_at`.
+**Done when:** the submission could be filed with working memory, confirmed intake, sharing and the reusable skill.
 
-**Done when:** the demo group can be reset to Week 0 with the full history.
+— **Minimum submittable product: D0–D5 and D9. D6–D8 are optional.** —
 
-### D9 · Video and submission
-- [ ] Script rehearsed; kitchen scene, intake, recall, boundary, debrief, data map recorded live; safety line stated; Token Factory and Nemotron named in audio.
-- [ ] Uploaded to YouTube (public); Devpost form complete; feedback submitted; city selected if applicable.
+## D6 · Visit debrief and teach-by-chat
 
-**Done when:** the submission is confirmed on Devpost.
+- [ ] After-visit summary photo (Week +1) → drafts → Admin confirmation → superseding records, tasks with owners, next appointment. Audio stays out unless a dedicated Nano Omni endpoint is affordable; it would then need consent in chat first.
+- [ ] Teach-by-chat yields a structured skill with confirmed trigger and recipients.
+
+## D7 · Hardening and isolation
+
+- [ ] Versioned grant binding (record/version, projection, recipient), transactional one-shot consumption, roster-intersection check for group posts, policy-version cache invalidation, delivery reconciliation, viewer expiry, deletion workflow.
+- [ ] OpenShell/NemoClaw isolation (one timeboxed burst, first after D5; also closes the host-network gap); Admin data-map/export; privacy tests repeated after runtime changes.
+
+## D8 · Breadth and polish
+
+- [ ] Full 20-document, six-month fixture; weekly per-role digest; cached translations with permissions.
+
+## D9 · Video and submission
+
+- [ ] 2:50 script recorded from the real minimum: intake and confirmation, reminder, recall, sharing, skill, data flow.
+- [ ] Public YouTube upload; Devpost fields, feedback, city declaration; judge access through 16 Dec, 04:00 SGT.
+
+**Done when:** Devpost confirms submission. Start recording no later than the final working burst.
 
 ## Order of work
 
-D0 → D1 → D2 → D3 → D4 → D5 → D9 is the shortest path to a valid submission; D1 needs no infrastructure and can run alongside the others. After D5, the OpenShell/NemoClaw burst (D7's first item) comes first, because it is a named track tool and closes the host-network gap; then D6, the rest of D7 and D8, as far as effort allows. D9 is started no later than the final working burst before the deadline, whatever else is unfinished.
+D0 → D1 → D2 → D3 → D4 → D5 → D9. D1 fits any spare burst. After D5, the OpenShell burst comes first among the optional items. Upgradient's verified minimum takes priority once Sandboxes access arrives; if Kin has not reached D5 when the final burst begins, submit Upgradient first.

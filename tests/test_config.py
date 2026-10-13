@@ -12,11 +12,19 @@ def test_defaults_and_missing(monkeypatch):
     assert set(s.missing_required()) == {"NEBIUS_API_KEY", "TELEGRAM_BOT_TOKEN", "TAVILY_API_KEY"}
 
 
+def test_empty_vision_model_drops_the_tier(monkeypatch):
+    monkeypatch.setenv("KIN_MODEL_VISION", "")
+    s = Settings(_env_file=None)
+    assert "vision" not in s.models
+
+
 def test_env_overrides(monkeypatch):
     monkeypatch.setenv("NEBIUS_API_KEY", "k")
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "t")
     monkeypatch.setenv("TAVILY_API_KEY", "v")
     monkeypatch.setenv("KIN_API_PORT", "9000")
+    monkeypatch.setenv("KIN_MODEL_VISION", "vendor/some-vl-model")
     s = Settings(_env_file=None)
     assert s.api_port == 9000
+    assert s.models["vision"] == "vendor/some-vl-model"
     assert s.missing_required() == []

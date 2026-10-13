@@ -24,3 +24,9 @@ Platform documentation:
 - Token Factory docs index: https://docs.tokenfactory.nebius.com/llms.txt · vision inputs: https://docs.tokenfactory.nebius.com/api-reference/examples/vision-capabilities
 - Telegram Bot API: https://core.telegram.org/bots/api
 - Tavily: https://docs.tavily.com/
+
+- Hackathon FAQ and schedule: https://nebiusglobalaihackathon.devpost.com/details/faqs · https://nebiusglobalaihackathon.devpost.com/details/dates
+- Caring Village member roles: https://help.caringvillage.com/hc/en-us/articles/218121268-What-do-the-member-roles-mean
+- Nemotron public endpoints and prices; Nano Omni dedicated-only: https://nebius.com/services/token-factory/models/nvidia-nemotron-models-inference
+- Hermes memory and session search: https://hermes-agent.nousresearch.com/docs/user-guide/features/memory · sessions: https://hermes-agent.nousresearch.com/docs/user-guide/sessions/
+- Telegram bots cannot initiate DMs: https://core.telegram.org/bots

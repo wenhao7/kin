@@ -2,124 +2,112 @@
 
 **The family member who remembers everything — and tells no one who shouldn't know.**
 
-Kin is a private, always-on care coordinator for families looking after an ageing parent. It joins the family's Telegram group as a member. Photograph the discharge letter and the pill boxes: Kin builds the medication schedule, sets reminders on the helper's phone, flags the one question worth asking the pharmacist, and posts a plain-language summary to the group — in English, and in Mandarin for the aunt who prefers it. Months later, when a brother overseas asks "what did Dr Tan change last time?", Kin answers with the exact change and the photo it came from. Ask about the insurance claim in the group and Kin replies privately to the primary caregiver: that's family-admin information, shall I share it?
+Kin is a private, always-on care coordinator for families looking after an ageing parent. It lives in the family's Telegram group and in each member's DM. The primary caregiver photographs a discharge letter in DM; Kin drafts the records with source excerpts, the caregiver confirms, and the schedule goes live: reminders to the helper's phone, a confirmed summary to the group in English and Mandarin. Months later, when a brother overseas asks "what did Dr Tan change last time?", Kin answers from permitted records with the source excerpt. A question about the insurance claim gets a neutral group reply and a private request to the caregiver: share it, once, or not.
 
-Kin runs on a machine the family controls (OpenShell/NemoClaw sandboxing planned), with open NVIDIA Nemotron models served through Nebius. Each person sees only what their role allows, enforced where data is retrieved — not by prompt.
+Records live on self-hosted storage; Telegram carries messages; approved context goes to **NVIDIA Nemotron on Nebius Token Factory** for inference. Each person sees only what their role allows, enforced before retrieval and before delivery — not by prompt.
 
 Built for the [Nebius x NVIDIA Global AI Hackathon](https://nebiusglobalaihackathon.devpost.com/), Personal AI track. Singapore locale; the locale is a swappable pack.
+
+## Status
+
+Configuration, policy and roster loading, setup checks and the containerised Hermes gateway (on Nebius, isolated from other deployments on the host) exist; `kin serve`, memory, intake and reminders are not implemented. Nano Omni is dedicated-only on Token Factory, so photo extraction uses a public vision model chosen at D0: MiniCPM-V 4.5 (`make models`). See [ROADMAP.md](ROADMAP.md).
 
 ## Why
 
 - 63 million US caregivers (1 in 4 adults), up ~50% since 2015; 55% perform medical/nursing tasks, 22% trained; 1 in 3 finds coordination hard (AARP/NAC 2025).
-- Singapore is a super-aged society in 2026 (1 in 5 aged 65+); family eldercare hours projected to rise from 29 to 41 per week; 55% of working caregivers left work for a parent's doctor visit in the past six months.
-- Coordination happens in a group chat and a shoebox of paper.
-- Funded players (Hera, Cariloop, Wellthy, Caring Village) are human services or cloud apps. None is a private, self-hosted, memory-first agent in the family's existing chat.
+- Singapore is super-aged in 2026 (1 in 5 aged 65+); family eldercare hours projected to rise from 29 to 41 per week; 55% of working caregivers left work for a parent's doctor visit in the past six months.
+- Coordination happens in a group chat and a shoebox of paper; existing apps are cloud SaaS or human services. Kin combines chat-native intake, source-grounded memory, confirmed scheduling, a reusable skill and audited per-person sharing.
 
 Details: [docs/01-problem.md](docs/01-problem.md).
 
-## What it does
+## Minimum product
 
-| Flow | In chat |
+| Flow | Behaviour |
 |---|---|
-| Intake | Photo of a letter, label, slip or report → structured record with source, filed, scheduled, summarised |
-| Schedule & reminders | Medication times, refills, appointments; reminder to the responsible person |
-| Ask | "What did the cardiologist change in March?" → answer + source photo |
-| Boundaries | Role-based views; sensitive answers to DM; share-request flow; `/who_saw` audit |
-| Appointment prep & debrief | Question list before; photo of the after-visit summary → updated records, action items, next appointment after |
-| Weekly digest | Role-appropriate summary per member, in their language |
-| Skills | "Every Monday remind Siti to refill the pill organiser and send a photo" — taught once |
-| Local lookups | Public scheme rules from allow-listed domains; no family data in queries |
+| Private intake | Admin sends a photo in DM → draft records with source excerpts → Admin confirms → schedule active |
+| Reminder | Confirmed time and assignee; delivered to the carer's DM; supersession cancels future reminders |
+| Group summary | Admin-confirmed summary only, English and Mandarin |
+| Recall | Answer from the asker's permitted records with an approved source excerpt |
+| Sharing | Finance/legal questions → neutral group reply → Admin DM: Yes / No / Just this once → private answer; audited |
+| Reusable skill | One scheduled skill ("every Monday remind Siti to refill the pill organiser") that survives restart |
+| Public lookup | Tavily on the locale allow-list; no family data in queries |
 
-Product: [docs/02-product.md](docs/02-product.md). Boundaries: [docs/03-privacy-boundaries.md](docs/03-privacy-boundaries.md).
+Optional: audio debrief, teach-by-chat skills, weekly digest, viewer expiry, full 20-document fixture, OpenShell isolation, data-map page. Product: [docs/02-product.md](docs/02-product.md). Boundaries: [docs/03-privacy-boundaries.md](docs/03-privacy-boundaries.md).
 
 ## How it works
 
 ```mermaid
 flowchart LR
-    TG[Telegram<br/>family group + DMs] <--> GW[Hermes gateway<br/>+ Kin plugin]
-    GW --> AG[Hermes agent<br/>Kin persona]
-    GW & AG -->|caller from the gateway| KIN[kin service<br/>intake · retrieve · policy · scheduler]
-    KIN --> MEM[(Partitioned store<br/>records · docs · events)]
-    KIN -->|posts, DMs, reminders| TG
-    AG & KIN <--> TF[(Nebius Token Factory<br/>Nemotron 3 Nano · Super<br/>MiniCPM-V vision)]
-    KIN --> TV[(Tavily<br/>allow-listed domains)]
-    subgraph Host["Family's machine · OpenShell/NemoClaw sandbox planned"]
-        GW
-        AG
-        KIN
-        MEM
-    end
+    TG[Telegram group and DMs] <--> GW[Hermes gateway + Kin plugin:<br/>verified sender, role, destination]
+    GW --> PE[Policy: category and field projection, grants]
+    PE <--> MEM[(Kin store: versioned records, restricted originals)]
+    PE --> AG[Hermes runtime · Nemotron on Token Factory]
+    AG --> OUT[Validate sources and destination]
+    OUT --> TG
+    MEM --> EV[Confirmed events and reminders]
+    EV --> OUT
+    AG --> TV[Tavily, allow-listed public lookups]
 ```
 
-- **Hermes Agent** (MIT): always-on Telegram gateway and conversation runtime. A small Kin plugin gives Kin's tools the sender's identity from the gateway and routes photos and share replies to Kin without a model in the loop.
-- **Kin service**: the family's persistent memory (records with sources), intake, `retrieve(query, principal)` with the role × category policy, reminders and skills.
-- **OpenShell / NemoClaw** (planned): sandbox, credential proxying, network allow-list.
-- **Nemotron 3 Nano** classifies and translates; **Nemotron 3 Super** reasons and drafts; **MiniCPM-V 4.5** reads photos and documents (standing in for Nemotron 3 Nano Omni, which is not listed on the public endpoint for our key); all served via Nebius Token Factory (dedicated Nebius endpoint supported).
-- **Tavily**: public scheme information from an allow-list, called by the Kin service.
+- **Hermes Agent** (MIT): runtime and Telegram gateway. A small Kin plugin gives Kin's tools the sender's identity from the gateway session (Hermes passes none to MCP servers) and routes photos and share replies without a model in the loop. Hermes' native memory, session search, skills, cron and file/terminal tools are off; Kin owns memory, policy and the scheduled skill.
+- **Nebius Token Factory**: Nemotron Nano/Lightning for classification, Super for grounded answers; MiniCPM-V 4.5, a public vision model, for photo extraction (Nano Omni is dedicated-only).
+- **Tavily**: public lookups filtered to the locale allow-list, made by the Kin service.
+- **OpenShell/NemoClaw**: optional process and network isolation; it does not implement family roles.
 
 Architecture: [docs/05-architecture.md](docs/05-architecture.md).
 
 ## Safety
 
-Kin organises; it does not diagnose or dose. Every statement about the care recipient carries its source. Audio is not processed; any future recording needs consent in chat first. [docs/04-safety.md](docs/04-safety.md).
-
-## Demo
-
-All demo data is synthetic: fictional family, fictional institutions, generated documents. [docs/06-synthetic-data.md](docs/06-synthetic-data.md) · [docs/07-demo-plan.md](docs/07-demo-plan.md).
+Kin organises confirmed records and reminders. It never diagnoses, doses, triages or infers drug interactions; discrepancies between documents are shown for confirmation. Every personal answer carries its permitted source. All demo data is synthetic. [docs/04-safety.md](docs/04-safety.md).
 
 ## Quick start
 
-Requires [uv](https://docs.astral.sh/uv/) (Python 3.12 is fetched automatically) and Docker with Compose v2 for the runtime.
+Requires [uv](https://docs.astral.sh/uv/) and Docker with Compose v2.
 
 ```bash
-make setup             # .venv + dependencies; creates data/, hermes/home/; copies .env.example → .env
-$EDITOR .env           # NEBIUS_API_KEY, TAVILY_API_KEY, TELEGRAM_BOT_TOKEN, KIN_ADMIN_TELEGRAM_ID, TELEGRAM_* allow-lists
-make check             # keys · policy/locale · models · one vision call · Telegram getMe · Tavily
-make policy            # print and validate the role × category matrix
-make up                # kin service + Hermes gateway (first start installs Hermes into ./hermes/home)
+make setup             # deps; .env from example; data/ and hermes/home/
+$EDITOR .env           # keys, verified Telegram IDs, model IDs (KIN_MODEL_VISION from `make models`)
+make policy            # validate the matrix shape (runtime enforcement is D2)
+make lint && make test
+make models            # Nemotron and image-capable models visible to the key
+make check             # live probes: models, one image call, Telegram getMe, Tavily
+make up                # kin self-check + Hermes gateway (first start installs Hermes into ./hermes/home)
 make hermes-config     # after editing hermes/config.yaml or hermes/SOUL.md
-make logs
 ```
 
-`hermes/config.yaml` and `hermes/SOUL.md` (Kin's persona) are seeded into the Hermes home on first start; `make hermes-config` re-applies them after a change. They set the Nebius Token Factory provider and turn off Hermes features that would bypass Kin's boundaries; Kin's tools arrive as a Hermes plugin in ROADMAP D2 ([docs/05-architecture.md](docs/05-architecture.md#hermes--kin)). `make hermes-shell` opens a shell with `hermes` on the PATH for `hermes doctor`, `hermes model`, `hermes gateway setup`.
-
-Layout:
-
-```
-kin/
-  README.md · AGENTS.md · KICKOFF.md · ROADMAP.md · LICENSE (Apache-2.0)
-  pyproject.toml · uv.lock · .python-version · .env.example
-  Makefile · Dockerfile · docker-compose.yml
-  kin/               # package: config, policy, members, cli, setup_check, hermes_config; intake/retrieve/serve land per ROADMAP
-  config/policy.yaml # default role × category matrix
-  config/members.yaml # demo roster: personas, roles, languages (Telegram IDs in .env)
-  locale/sg/         # Singapore locale pack (languages, lookup allow-list, terms, document types)
-  hermes/            # config.yaml template, SOUL.md persona, plugins/kin (D2); home/ is the gateway's volume (git-ignored)
-  docker/hermes/     # Hermes container (installs on first start, runs `hermes gateway run`)
-  data/              # family data volume (git-ignored)
-  tests/ · docs/ · .github/workflows/ci.yml
-```
+`hermes/config.yaml` and `hermes/SOUL.md` (Kin's persona) seed the gateway: Nebius provider, MiniCPM-V for any image Hermes sees, and the Hermes features that would bypass Kin's boundaries turned off. `make hermes-config` re-applies them to a running install; Kin's plugin arrives at D2 ([docs/05-architecture.md](docs/05-architecture.md#hermes--kin)). Setup gates: [KICKOFF.md](KICKOFF.md).
 
 ## How we use Nebius and NVIDIA
 
-_Required by the hackathon. To be filled with model IDs, endpoint type, tokens per intake, where Token Factory accelerated the workflow, how OpenShell/NemoClaw is used._
+_Filled from real runs at D5: model IDs, image/text usage, latency, estimated cost, what leaves the host, deployed isolation._
+
+## Layout
+
+```
+README.md · AGENTS.md · KICKOFF.md · ROADMAP.md · LICENSE (Apache-2.0)
+pyproject.toml · uv.lock · .python-version · .env.example · Makefile · Dockerfile · docker-compose.yml
+kin/               # config, policy, members, cli, setup_check, hermes_config; serve/intake/retrieve per ROADMAP
+config/policy.yaml · config/members.yaml (demo roster) · locale/sg/
+hermes/ (config template, SOUL.md, plugins/kin from D2; home/ is the runtime volume) · docker/hermes/
+data/ (volume) · tests/ · docs/ · .github/workflows/ci.yml
+```
 
 ## Docs
 
 | Doc | Content |
 |---|---|
-| [AGENTS.md](AGENTS.md) | Instructions for coding agents: reading order, conventions, constraints, guardrails |
-| [KICKOFF.md](KICKOFF.md) | One-time setup; items needing the human are marked |
-| [ROADMAP.md](ROADMAP.md) | Sequential deliverables and order of work |
-| [00-hackathon.md](docs/00-hackathon.md) | Hackathon requirements, judging criteria, dates, platform facts |
-| [01-problem.md](docs/01-problem.md) | Problem, evidence, users, landscape ([sources](docs/sources.md)) |
-| [02-product.md](docs/02-product.md) | Scope, roles, categories, flows, chat conventions |
-| [03-privacy-boundaries.md](docs/03-privacy-boundaries.md) | Boundary model, policy matrix, enforcement, audit |
-| [04-safety.md](docs/04-safety.md) | Organiser-not-adviser rules, grounding, consent, data protection |
-| [05-architecture.md](docs/05-architecture.md) | Components, data model, flows, models, integrations |
-| [06-synthetic-data.md](docs/06-synthetic-data.md) | Demo family, timeline, document set, generation |
+| [AGENTS.md](AGENTS.md) | Instructions for coding agents |
+| [KICKOFF.md](KICKOFF.md) | One-time setup; **YOU** items need the human |
+| [ROADMAP.md](ROADMAP.md) | Sequential deliverables and gates |
+| [00-hackathon.md](docs/00-hackathon.md) | Requirements, judging, prizes, platform facts |
+| [01-problem.md](docs/01-problem.md) | Problem, evidence, landscape ([sources](docs/sources.md)) |
+| [02-product.md](docs/02-product.md) | Roles, minimum flows, chat conventions |
+| [03-privacy-boundaries.md](docs/03-privacy-boundaries.md) | Minimum boundary, matrix, hardening, tests |
+| [04-safety.md](docs/04-safety.md) | Organise-not-advise, confirmation, consent, data flow |
+| [05-architecture.md](docs/05-architecture.md) | Components, models, data, flows, Hermes hardening |
+| [06-synthetic-data.md](docs/06-synthetic-data.md) | Demo family, fixture, generation |
 | [07-demo-plan.md](docs/07-demo-plan.md) | Video script, judge access |
-| [08-submission-checklist.md](docs/08-submission-checklist.md) | Devpost requirements, feedback template |
+| [08-submission-checklist.md](docs/08-submission-checklist.md) | Devpost checklist |
 
 ## License
 

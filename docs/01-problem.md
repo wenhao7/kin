@@ -8,52 +8,45 @@ Family caregiving is a multi-person, multi-year, medically demanding coordinatio
 
 | Claim | Number | Source |
 |---|---|---|
-| Caregiving is mainstream | 63M US caregivers, ~1 in 4 adults, up ~50% since 2015; 29% sandwich generation | AARP / NAC, Caregiving in the US 2025 |
+| Caregiving is mainstream | 63M US caregivers, ~1 in 4 adults, up ~50% since 2015; 29% sandwich generation | AARP / NAC 2025 |
 | Medical work without training | 55% perform medical/nursing tasks; 22% received training | AARP / NAC 2025 |
-| Coordination is the pain | 1 in 3 find care coordination challenging; 64% communicate with providers; 70% monitor health | AARP / NAC 2025 |
+| Coordination is the pain | 1 in 3 find care coordination challenging; 64% communicate with providers | AARP / NAC 2025 |
 | Singapore is super-aged | 1 in 5 residents aged 65+ in 2026 | LKYSPP; NBER |
 | Load is rising | Family eldercare hours projected 29 → 41 per week | NBER w31958 |
-| Burden is growing | 27.9% of informal caregivers report care burden (24.5% a decade earlier) | BMC Geriatrics 2026 (WiSE) |
-| Work is disrupted | 55% of working caregivers left work for a doctor visit in the past 6 months; 68% took leave | Duke-NUS research brief |
+| Burden is growing | 27.9% of informal caregivers report care burden (24.5% a decade earlier) | BMC Geriatrics 2026 |
+| Work is disrupted | 55% of working caregivers left work for a doctor visit in the past 6 months; 68% took leave | Duke-NUS |
 | Who carries it | 66% adult children; 73% women; over half aged 60+ | Duke-NUS |
+
+Figures describe their cited populations; US and Singapore numbers are not interchangeable.
 
 ## How the work happens
 
-- Coordination in a WhatsApp/Telegram family group.
-- Information arrives as paper: discharge summaries, clinic slips, pharmacy labels, MCs, insurance and grant letters.
-- One sibling holds everything in their head; the sibling overseas is a day behind; the helper doing hands-on care is told last.
-- Diagnoses, medication, finances and legal powers — the most sensitive data a family holds — sit in people's heads, consumer apps or general chatbots with no boundaries.
+Coordination in a WhatsApp/Telegram family group; information arrives as paper (discharge summaries, clinic slips, pharmacy labels, letters); one sibling holds everything in their head; the sibling overseas is a day behind; the helper doing hands-on care is told last. The data is the most sensitive a family holds and sits in heads, consumer apps or general chatbots.
 
 ## Users
 
-1. Primary caregiver (typically a working daughter, 40s–60s).
-2. Siblings and remote family.
-3. Domestic helpers and hired carers.
-4. The parent, as the subject of care.
+Primary caregiver (typically a working daughter, 40s–60s); siblings and remote family; domestic helpers and hired carers; the parent as the subject of care.
 
 ## Landscape
 
 | Segment | Players | Gap |
 |---|---|---|
-| AI + human coordination (US) | Hera ($27M Series A, Jun 2026; nurses + AI; 1,000 families) | Service-heavy; US; health-system distribution |
+| AI + human coordination (US) | Hera ($27M Series A, Jun 2026; nurses + AI) | Service-heavy; US |
 | Employer care concierge | Cariloop ($40M), Wellthy ($35M) | Human coaches sold to HR |
-| Paid family caregiving | Abby Care ($45M raised) | Medicaid-driven |
-| Consumer coordination apps | Caring Village (AI "Julia"), ianacare, Carely, Lotsa Helping Hands, CaringBridge | Cloud SaaS; separate app; no role boundaries |
+| Paid family caregiving | Abby Care ($45M) | Medicaid-driven |
+| Consumer coordination apps | Caring Village (AI "Julia", role permissions), ianacare, Carely, Lotsa Helping Hands, CaringBridge | Cloud apps; separate app; no source-grounded chat memory or field-level sharing |
 | Elder-facing devices | ElliQ, Sensi.ai | For the elder, not the family |
-| Singapore | Homage, Jaga-Me; AIC caregiver resources | Supply of care, not coordination |
-| Default | WhatsApp, Notes, ChatGPT | No memory boundaries, no privacy, no persistence |
-
-No player offers a private, self-hosted, memory-first agent in the family's existing chat with per-role visibility.
+| Singapore | Homage, Jaga-Me; AIC resources | Supply of care, not coordination |
+| Default | WhatsApp, Notes, ChatGPT | No boundaries, no persistence |
 
 ## Differentiation
 
-1. Private by construction: sandboxed agent, open models, data stays in the tenant.
-2. Multimodal intake from paper: photos and PDFs of letters, labels, slips and after-visit summaries.
+1. Self-hosted records with policy enforced before retrieval and delivery; Telegram carries messages and Nebius receives approved inference inputs.
+2. Photo intake from paper, confirmed by the caregiver before anything activates.
 3. Lives in the group chat the family already uses.
 4. Memory across years, grounded to source documents.
-5. Role-based boundaries enforced at retrieval, with audit.
-6. Skills taught once in plain language.
-7. Appointment prep and debrief.
-8. Local context from allow-listed public sources.
+5. Per-person views with audited, scoped sharing.
+6. A reusable scheduled skill.
+7. Local context from allow-listed public sources.
 
-Sources: [sources.md](sources.md).
+Role permissions exist elsewhere (Caring Village); the claim is the combined chat, memory and sharing workflow. Sources: [sources.md](sources.md).

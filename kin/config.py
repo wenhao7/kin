@@ -29,9 +29,9 @@ class Settings(BaseSettings):
     # Other roster members: `id:telegram_id,...` (ids from config/members.yaml).
     member_ids: str = Field(default="", alias="KIN_MEMBER_IDS")
 
-    # Models (Token Factory IDs). Vision: photo/document extraction. Nemotron 3 Nano Omni is not in
-    # the public Token Factory catalog for our key, so a Token Factory vision model stands in
-    # (docs/05-architecture.md, "Vision fallback"); set KIN_MODEL_VISION to the Omni ID once listed.
+    # Models (Token Factory IDs). Vision = photo/document extractor, chosen at D0 from `kin models`:
+    # Nano Omni is dedicated-only on Token Factory, so a public image-capable model stands in
+    # (docs/05-architecture.md, Models). Empty disables the vision tier.
     model_vision: str = Field(default="openbmb/MiniCPM-V-4_5", alias="KIN_MODEL_VISION")
     model_nano: str = Field(default="nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B", alias="KIN_MODEL_NANO")
     model_super: str = Field(default="nvidia/nemotron-3-super-120b-a12b", alias="KIN_MODEL_SUPER")
@@ -48,12 +48,10 @@ class Settings(BaseSettings):
 
     @property
     def models(self) -> dict[str, str]:
-        return {
-            "vision": self.model_vision,
-            "nano": self.model_nano,
-            "super": self.model_super,
-            "ultra": self.model_ultra,
-        }
+        out = {"nano": self.model_nano, "super": self.model_super, "ultra": self.model_ultra}
+        if self.model_vision:
+            out["vision"] = self.model_vision
+        return out
 
     @property
     def locale_file(self) -> Path:

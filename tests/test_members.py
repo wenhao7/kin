@@ -14,10 +14,10 @@ def test_default_roster_is_valid():
     assert roster.by_telegram_id("222").id == "wei_jie"
 
 
-def test_unknown_user_is_a_default_role_guest_never_admin():
+def test_unknown_user_gets_no_role_and_never_admin():
     roster = load_roster(ROOT / "config" / "members.yaml", "111", "")
     guest = roster.by_telegram_id("999")
-    assert guest.role == "family" and guest.id == "guest:999"
+    assert guest.role is None and guest.id == "guest:999"
     assert load_roster(ROOT / "config" / "members.yaml", "", "").by_telegram_id("").role != "admin"
 
 

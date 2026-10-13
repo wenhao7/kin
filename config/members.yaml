@@ -21,6 +21,6 @@ members:
     role: carer
     language: en
 
-# Anyone else in the allow-listed group (e.g. a judge) is treated as this role and language.
-default_role: family
+# Unknown senders get no role and see nothing (fail closed). The disposable judge fixture assigns
+# roles with `/demo` instead (docs/07-demo-plan.md). Language for anyone not listed:
 default_language: en

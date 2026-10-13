@@ -1,5 +1,5 @@
 # Kin shares its host with other deployments (including a separate Hermes stack). Everything here
-# stays inside the `kin` project: own network, no container_name, loopback-only ports, capped
+# stays inside the `kin` project: own network, no container_name, no published ports, capped
 # resources and rotated logs. Credentials (bot token, keys) are Kin's own, from .env.
 name: kin
 
@@ -20,10 +20,9 @@ services:
       KIN_API_PORT: "8765"
     volumes:
       - ./data:/app/data
-    ports:
-      # The Kin plugin in the Hermes container reaches kin over the compose network
-      # (http://kin:8765); the host port is for local debugging only, so it is bound to loopback.
-      - "127.0.0.1:${KIN_API_PORT:-8765}:8765"
+    # Reachable from the hermes container only (http://kin:8765); not published on the host.
+    expose:
+      - "8765"
     # Until `kin serve` exists (ROADMAP D2) the service runs the self-check and exits.
     # At D2: command: ["serve"] and restart: unless-stopped.
     command: ["check", "--no-spend"]

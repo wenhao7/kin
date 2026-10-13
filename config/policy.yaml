@@ -1,7 +1,7 @@
 # Default role × category policy (docs/03-privacy-boundaries.md).
 # Levels: read | write | summary | none. `write` implies read. Qualifiers (`level:qualifier`):
-# `own` = records the principal created; `emergency_contacts` = the emergency-contact records in
-# `admin`. Editable per family by the admin; this file is the demo default.
+# `own` = assigned to (tasks) or authored by (observations, notes) the principal;
+# `emergency_contacts` = the emergency-contact records in `admin`. Editable per family by the admin; this file is the demo default.
 
 roles: [admin, family, carer, viewer]
 
