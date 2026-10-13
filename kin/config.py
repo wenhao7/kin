@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     tavily_api_key: SecretStr = Field(default=SecretStr(""), alias="TAVILY_API_KEY")
     telegram_bot_token: SecretStr = Field(default=SecretStr(""), alias="TELEGRAM_BOT_TOKEN")
     admin_telegram_id: str = Field(default="", alias="KIN_ADMIN_TELEGRAM_ID")
+    # Other roster members: `id:telegram_id,...` (ids from config/members.yaml).
+    member_ids: str = Field(default="", alias="KIN_MEMBER_IDS")
 
     # Models (Token Factory IDs). Vision: photo/document extraction. Nemotron 3 Nano Omni is not in
     # the public Token Factory catalog for our key, so a Token Factory vision model stands in
@@ -40,6 +42,7 @@ class Settings(BaseSettings):
     data_dir: Path = Field(default=Path("./data"), alias="KIN_DATA_DIR")
     locale: str = Field(default="sg", alias="KIN_LOCALE")
     policy_file: Path = Field(default=Path("./config/policy.yaml"), alias="KIN_POLICY_FILE")
+    members_file: Path = Field(default=Path("./config/members.yaml"), alias="KIN_MEMBERS_FILE")
     mcp_host: str = Field(default="0.0.0.0", alias="KIN_MCP_HOST")
     mcp_port: int = Field(default=8765, alias="KIN_MCP_PORT")
 

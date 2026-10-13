@@ -1,0 +1,26 @@
+# Demo roster (docs/02-product.md, Roles; docs/06-synthetic-data.md, Family). All people are
+# fictional. Telegram user IDs are not stored here: the admin is KIN_ADMIN_TELEGRAM_ID and other
+# members are mapped in KIN_MEMBER_IDS (`id:telegram_id,...`) in .env. A member without a mapped
+# account is roster-only: they never message Kin, but their language still shapes group posts.
+
+members:
+  - id: mei_ling
+    name: Lim Mei Ling
+    role: admin
+    language: en
+  - id: wei_jie
+    name: Lim Wei Jie
+    role: family
+    language: en
+  - id: bee_lian
+    name: Tan Bee Lian
+    role: family
+    language: zh
+  - id: siti
+    name: Siti Rahmah
+    role: carer
+    language: en
+
+# Anyone else in the allow-listed group (e.g. a judge) is treated as this role and language.
+default_role: family
+default_language: en

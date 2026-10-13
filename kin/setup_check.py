@@ -15,6 +15,7 @@ from rich.console import Console
 from rich.table import Table
 
 from kin.config import Settings
+from kin.members import load_roster
 from kin.policy import load_policy
 
 console = Console()
@@ -74,12 +75,28 @@ def check_files(settings: Settings) -> list[Check]:
         )
     except Exception as exc:  # noqa: BLE001
         out.append(Check(f"policy {settings.policy_file}", "FAIL", str(exc)[:200]))
+    langs: list[str] = []
     try:
         loc = yaml.safe_load(Path(settings.locale_file).read_text(encoding="utf-8"))
         langs = loc["languages"]["supported"]
         out.append(Check(f"locale {settings.locale_file}", "PASS", f"languages={langs}"))
     except Exception as exc:  # noqa: BLE001
         out.append(Check(f"locale {settings.locale_file}", "FAIL", str(exc)[:200]))
+    try:
+        roster = load_roster(settings.members_file, settings.admin_telegram_id, settings.member_ids)
+        problems = roster.validate(load_policy(settings.policy_file).roles, langs)
+        linked = sum(1 for m in roster.members if m.telegram_id)
+        out.append(
+            Check(
+                f"members {settings.members_file}",
+                "PASS" if not problems else "FAIL",
+                f"{len(roster.members)} members, {linked} linked to Telegram"
+                if not problems
+                else "; ".join(problems)[:300],
+            )
+        )
+    except Exception as exc:  # noqa: BLE001
+        out.append(Check(f"members {settings.members_file}", "FAIL", str(exc)[:200]))
     d = Path(settings.data_dir)
     out.append(
         Check(
