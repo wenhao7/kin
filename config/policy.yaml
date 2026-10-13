@@ -58,6 +58,18 @@ matrix:
     carer: write:own
     viewer: none
 
+# Field projections narrow a level to the listed record fields (docs/03-privacy-boundaries.md,
+# Matrix and field constraints). A `summary` level shows nothing without a projection; a
+# `read`/`write` level without one shows every field.
+projections:
+  medical:
+    family: [summary, care_instructions, source]
+    carer: [care_instructions, source]
+    viewer: [care_instructions, source]
+  medication:
+    carer: [drug, strength, directions, change, times, source]
+    viewer: [drug, strength, directions, times, source]
+
 # Where restricted answers are delivered. `dm` = only to the asker in a private chat. What the
 # group itself may see is computed from its members (docs/03-privacy-boundaries.md, Behaviour).
 delivery:

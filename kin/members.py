@@ -21,6 +21,11 @@ class Member:
     role: str | None
     language: str
     telegram_id: str | None = None
+    call: str = ""
+
+    @property
+    def short(self) -> str:
+        return self.call or self.name
 
 
 @dataclass
@@ -85,6 +90,7 @@ def load_roster(path: Path, admin_telegram_id: str = "", member_ids: str = "") -
                 role=m["role"],
                 language=m["language"],
                 telegram_id=str(telegram_id) if telegram_id else None,
+                call=m.get("call", ""),
             )
         )
     return Roster(

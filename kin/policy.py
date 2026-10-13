@@ -24,12 +24,22 @@ class Policy:
     matrix: dict[str, dict[str, str]]
     share_request_on_none: list[str] = field(default_factory=list)
     delivery: dict = field(default_factory=dict)
+    projections: dict[str, dict[str, list[str]]] = field(default_factory=dict)
 
     def level(self, role: str, category: str) -> tuple[str, str | None]:
         """Return (level, qualifier) for a role/category, e.g. ("write", "own")."""
         raw = self.matrix[category][role]
         level, _, qualifier = raw.partition(":")
         return level, (qualifier or None)
+
+    def fields_for(self, role: str, category: str, level: str) -> list[str] | None:
+        """Fields a role may see at `level`: a list, None for every field, [] for nothing."""
+        if level not in ("summary", "read", "write"):
+            return []
+        projection = self.projections.get(category, {}).get(role)
+        if level == "summary":
+            return list(projection or [])
+        return None if projection is None else list(projection)
 
     def group_level(self, category: str, roles: list[str]) -> str:
         """Level a group may see for a category: the lowest among its members' roles.
@@ -67,6 +77,12 @@ class Policy:
         for cat in self.share_request_on_none:
             if cat not in self.categories:
                 problems.append(f"share_request_on_none has unknown category {cat!r}")
+        for cat, by_role in self.projections.items():
+            if cat not in self.categories:
+                problems.append(f"projections has unknown category {cat!r}")
+            for role in by_role:
+                if role not in self.roles:
+                    problems.append(f"projections[{cat}] has unknown role {role!r}")
         return problems
 
 
@@ -78,4 +94,8 @@ def load_policy(path: Path) -> Policy:
         matrix={k: {r: str(v) for r, v in row.items()} for k, row in data["matrix"].items()},
         share_request_on_none=list(data.get("share_request_on_none", [])),
         delivery=dict(data.get("delivery", {})),
+        projections={
+            c: {r: list(fs) for r, fs in by_role.items()}
+            for c, by_role in (data.get("projections") or {}).items()
+        },
     )
