@@ -33,6 +33,8 @@ Demo day (Week 0) is Mon 26 Oct 2026; documents carry absolute dates on that tim
 
 Discharge summary, three medication labels, appointment slip, Month −4 clinic memo, insurance claim letter, handwritten carer note. All eight rendered; four photographed. Ground truth per document: fields, source spans, category, expected confirmation, supersession links, approved excerpts and expected Admin/Family/Carer views. Include cases for low-confidence extraction, a conflicting instruction between two documents, denied recall and a finance share request.
 
+Files: `fixtures/documents/<id>.json` (ground truth; field values are printed verbatim and double as source spans), `fixtures/expected.json` (expected outcomes), `fixtures/renders/` (`make fixtures`), `fixtures/photos/`. Cases: the discharge summary's 9:30 am follow-up conflicts with the slip's 10:30 am; it supersedes metformin 850 mg and stops glipizide in the seed schedule; the amoxicillin-clavulanate label's dispensed date is faded (low confidence); the losartan label drives a refill calculation; the Month −4 memo is the recall source; the insurance letter drives the share flow. See [fixtures/README.md](../fixtures/README.md).
+
 ## Optional full set (≥ 20)
 
 Discharge summary (2 pages); medication labels ×5; appointment slips ×3; lab reports ×2; clinic memos ×2; referral letter; exercise sheet; MC; invoice; insurance claim letter; LPA cover page; carer notes ×2; after-visit summary ×1 (Week +1).
@@ -40,7 +42,7 @@ Discharge summary (2 pages); medication labels ×5; appointment slips ×3; lab r
 ## Generation
 
 1. Content as structured JSON (ground truth and extraction test set).
-2. HTML/CSS templates → PDF/PNG (WeasyPrint or Playwright) with realistic letterheads, tables, stamps, reference numbers; watermark "SYNTHETIC DEMO".
+2. HTML/CSS templates → PDF/PNG (WeasyPrint and pypdfium2, `make fixtures`; deterministic) with realistic letterheads, tables, stamps, reference numbers; watermark "SYNTHETIC DEMO".
 3. Print a subset and photograph on a kitchen table; the intake demo uses photos, clean renders stay for tests.
 4. Identifiers obviously invalid (`DEMO-NOT-A-REAL-ID`), non-dialable phone placeholders, fictional addresses (postal codes `000xxx`), dates on the demo-day timeline.
 5. Mandarin summaries checked by a fluent reviewer; live translation uses only confirmed fields.

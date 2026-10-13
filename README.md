@@ -88,6 +88,7 @@ README.md · AGENTS.md · KICKOFF.md · ROADMAP.md · LICENSE (Apache-2.0)
 pyproject.toml · uv.lock · .python-version · .env.example · Makefile · Dockerfile · docker-compose.yml
 kin/               # config, policy, members, cli, setup_check, hermes_config; serve/intake/retrieve per ROADMAP
 config/policy.yaml · config/members.yaml (demo roster) · locale/sg/
+fixtures/          # synthetic documents: ground truth, expected outcomes, templates, renders, photos
 hermes/ (config template, SOUL.md, plugins/kin from D2; home/ is the runtime volume) · docker/hermes/
 data/ (volume) · tests/ · docs/ · .github/workflows/ci.yml
 ```
