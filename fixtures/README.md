@@ -13,7 +13,7 @@ Demo day (Week 0) is Mon 26 Oct 2026, timezone Asia/Singapore.
 | `templates/` | HTML/CSS per document type; `base.css` carries the watermark and footer |
 | `fonts/` | Kalam (SIL Open Font License, `OFL.txt`) for the handwritten carer note |
 | `renders/` | `make fixtures` output: `<id>.pdf` and `<id>-p<n>.png` (150 dpi), deterministic |
-| `photos/` | Phone photos of the printed documents (below) |
+| `photos/` | Phone photos of the four photographed documents (below) |
 
 `tests/test_fixtures.py` checks that every field and excerpt is printed, that only placeholder identifiers appear, that views follow `config/policy.yaml` (originals stay Admin-only) and that `expected.json` references real documents, excerpts and roster members.
 
@@ -40,3 +40,5 @@ make fixtures     # writes renders/
 ## Photos — **YOU**
 
 Print the four marked documents at 100% (the label and slip print on their own small page sizes) and photograph each on a kitchen table with a phone: whole page in frame, natural light, slight angle, no flash. The carer note can instead be copied out by hand on lined paper — real handwriting is the better test. Save as `photos/<id>.jpg` (for example `photos/discharge-summary-p1.jpg`). Photos are what the intake demo sends; clean renders stay for tests.
+
+Current photos: `discharge-summary-p1.jpg`, `discharge-summary-p2.jpg`, `label-metformin.jpg`, `appointment-slip.jpg`, `carer-note.jpg`, taken with a phone of the renders on a monitor (screen moiré included), resized to 2000 px and saved without metadata. MiniCPM-V 4.5 read every ground-truth value on them verbatim (70/70; about 740 input tokens and 2–6 s per photo). Kitchen-table photos of printed copies can replace them for the video.
