@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     admin_telegram_id: str = Field(default="", alias="KIN_ADMIN_TELEGRAM_ID")
     # Other roster members: `id:telegram_id,...` (ids from config/members.yaml).
     member_ids: str = Field(default="", alias="KIN_MEMBER_IDS")
+    # The family group Kin serves (Hermes' home channel); other chats are refused.
+    group_chat_id: str = Field(default="", alias="TELEGRAM_HOME_CHANNEL")
 
     # Models (Token Factory IDs). Vision = photo/document extractor, chosen at D0 from `kin models`:
     # Nano Omni is dedicated-only on Token Factory, so a public image-capable model stands in
@@ -45,6 +47,16 @@ class Settings(BaseSettings):
     members_file: Path = Field(default=Path("./config/members.yaml"), alias="KIN_MEMBERS_FILE")
     api_host: str = Field(default="127.0.0.1", alias="KIN_API_HOST")
     api_port: int = Field(default=8765, alias="KIN_API_PORT")
+    # Shared secret between the Kin plugin in Hermes and the kin API; empty refuses every call.
+    api_token: SecretStr = Field(default=SecretStr(""), alias="KIN_API_TOKEN")
+
+    @property
+    def db_path(self) -> Path:
+        return Path(self.data_dir) / "kin.sqlite3"
+
+    @property
+    def originals_dir(self) -> Path:
+        return Path(self.data_dir) / "originals"
 
     @property
     def models(self) -> dict[str, str]:

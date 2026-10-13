@@ -89,11 +89,77 @@ def render_fixtures() -> None:
         console.print(str(path))
 
 
+def _runtime():
+    from kin.members import load_roster
+    from kin.policy import load_policy
+    from kin.store import Store
+
+    s = get_settings()
+    roster = load_roster(s.members_file, s.admin_telegram_id, s.member_ids)
+    policy = load_policy(s.policy_file)
+    import yaml
+
+    languages = yaml.safe_load(s.locale_file.read_text(encoding="utf-8"))["languages"]["supported"]
+    problems = policy.validate() + roster.validate(policy.roles, languages)
+    if problems:
+        console.print("[red]" + "\n".join(problems) + "[/red]")
+        raise typer.Exit(code=1)
+    store = Store(s.db_path, s.originals_dir)
+    store.sync_roster(roster)
+    return s, roster, policy, store
+
+
 @app.command()
 def serve() -> None:
-    """Run the kin API (used by the Kin plugin in Hermes) and the scheduler."""
-    console.print("[yellow]Not implemented yet — see ROADMAP.md D2.[/yellow]")
-    raise typer.Exit(code=2)
+    """Run the kin API used by the Kin plugin in Hermes (compose network only)."""
+    import uvicorn
+
+    from kin.api import create_app
+    from kin.telegram import TelegramSender
+
+    s, roster, policy, store = _runtime()
+    if not s.api_token.get_secret_value():
+        console.print("[red]KIN_API_TOKEN is empty; the API would refuse every call.[/red]")
+        raise typer.Exit(code=1)
+    api = create_app(
+        store=store,
+        policy=policy,
+        roster=roster,
+        sender=TelegramSender(s.telegram_bot_token.get_secret_value()),
+        group_chat_id=s.group_chat_id,
+        token=s.api_token.get_secret_value(),
+    )
+    uvicorn.run(api, host=s.api_host, port=s.api_port, log_level="info")
+
+
+@app.command()
+def seed(
+    everything: bool = typer.Option(False, "--all", help="Load all eight fixture documents."),
+    reset: bool = typer.Option(
+        False, "--reset", help="Wipe the store first (synthetic data only)."
+    ),
+) -> None:
+    """Load the synthetic fixture into the store: Week 0 history, or --all documents."""
+    import shutil
+
+    from kin.seed import load_fixture_documents, load_week0
+
+    s = get_settings()
+    if s.db_path.exists() and not reset:
+        console.print(f"[red]{s.db_path} exists; pass --reset to wipe it and reseed.[/red]")
+        raise typer.Exit(code=1)
+    if reset:
+        for p in (
+            s.db_path,
+            s.db_path.with_suffix(".sqlite3-wal"),
+            s.db_path.with_suffix(".sqlite3-shm"),
+        ):
+            p.unlink(missing_ok=True)
+        shutil.rmtree(s.originals_dir, ignore_errors=True)
+    _, _, _, store = _runtime()
+    loaded = load_fixture_documents(store) if everything else load_week0(store)
+    for doc_id, records in loaded.items():
+        console.print(f"{doc_id}: {len(records)} records")
 
 
 if __name__ == "__main__":
