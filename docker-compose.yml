@@ -23,10 +23,14 @@ services:
     # Reachable from the hermes container only (http://kin:8765); not published on the host.
     expose:
       - "8765"
-    # Until `kin serve` exists (ROADMAP D2) the service runs the self-check and exits.
-    # At D2: command: ["serve"] and restart: unless-stopped.
-    command: ["check", "--no-spend"]
-    restart: "no"
+    command: ["serve"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     mem_limit: 1g
     cpus: 1.0
     pids_limit: 256
@@ -38,12 +42,15 @@ services:
     env_file: .env
     environment:
       HERMES_HOME: /opt/data
+      KIN_API_URL: http://kin:8765
     volumes:
       - ./hermes/home:/opt/data          # persistent: install, config.yaml, .env, state.db, memory, skills
       - ./hermes/config.yaml:/seed/config.yaml:ro
       - ./hermes/SOUL.md:/seed/SOUL.md:ro
+      - ./hermes/plugins/kin:/opt/data/plugins/kin:ro   # Kin's bridge (docs/05-architecture.md)
     depends_on:
-      - kin
+      kin:
+        condition: service_healthy
     init: true                           # reap the gateway's child processes (Hermes warns as PID 1)
     restart: unless-stopped
     # No published ports: Telegram is outbound polling.

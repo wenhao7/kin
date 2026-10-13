@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 UV ?= uv
 
-.PHONY: help setup setup-data fixtures check check-nospend models policy lint test docker-build up down logs hermes-init hermes-config hermes-doctor hermes-shell clean
+.PHONY: help setup setup-data fixtures seed check check-nospend models policy lint test docker-build up down logs hermes-init hermes-config hermes-doctor hermes-shell clean
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -16,6 +16,11 @@ setup-data: ## Also install the synthetic-document toolchain (needs pango libs; 
 
 fixtures: ## Render the synthetic fixture to fixtures/renders (PDF + PNG; needs setup-data)
 	$(UV) run --extra data kin render-fixtures
+
+seed: ## Reset the kin store to the Week 0 fixture (synthetic data only; restarts kin)
+	docker compose stop kin
+	docker compose run --rm --no-deps kin seed --reset
+	docker compose start kin
 
 check: ## Verify keys, policy/locale, models (incl. one vision call), Telegram bot, Tavily
 	$(UV) run kin check
@@ -53,9 +58,10 @@ hermes-init: ## Seed ./hermes/home/config.yaml from the template (no-op if it ex
 	@test -f hermes/home/config.yaml || (cp hermes/config.yaml hermes/home/config.yaml && echo ">> seeded hermes/home/config.yaml")
 	@test -f hermes/home/SOUL.md || (cp hermes/SOUL.md hermes/home/SOUL.md && echo ">> seeded hermes/home/SOUL.md")
 
-hermes-config: ## Re-apply hermes/config.yaml and hermes/SOUL.md to the live Hermes home, restart the gateway
+hermes-config: ## Re-apply hermes/config.yaml and hermes/SOUL.md, clear Telegram sessions, restart the gateway
+	docker compose stop hermes
 	$(UV) run kin hermes-config | docker compose run --rm --no-deps -T --entrypoint bash hermes -s
-	docker compose restart hermes
+	docker compose start hermes
 
 hermes-doctor: ## Run `hermes doctor` inside the container
 	docker compose run --rm --no-deps hermes doctor

@@ -18,6 +18,7 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY kin ./kin
 COPY config ./config
 COPY locale ./locale
+COPY fixtures ./fixtures
 COPY README.md ./
 RUN uv sync --frozen --no-dev
 
