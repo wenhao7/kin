@@ -48,7 +48,7 @@ No player offers a private, self-hosted, memory-first agent in the family's exis
 ## Differentiation
 
 1. Private by construction: sandboxed agent, open models, data stays in the tenant.
-2. Multimodal intake from paper and audio.
+2. Multimodal intake from paper: photos and PDFs of letters, labels, slips and after-visit summaries.
 3. Lives in the group chat the family already uses.
 4. Memory across years, grounded to source documents.
 5. Role-based boundaries enforced at retrieval, with audit.

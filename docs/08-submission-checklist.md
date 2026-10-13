@@ -40,7 +40,7 @@ Source: [Official Rules](https://nebiusglobalaihackathon.devpost.com/rules). Sta
 
 ## Feedback template
 
-Per tool (Token Factory inference incl. Nano Omni missing from the public catalog, NemoClaw/OpenShell, Hermes Agent, Nebius Serverless, Tavily):
+Per tool (Token Factory inference incl. Nano Omni missing from the public catalog, NemoClaw/OpenShell, Hermes Agent incl. MCP tool calls carrying no caller identity, Nebius Serverless, Tavily):
 
 - What we tried.
 - What worked (specific API, default, doc page).

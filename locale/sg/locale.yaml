@@ -34,6 +34,7 @@ document_types:
   appointment_slip: [clinic, department, date, time, instructions]
   lab_report: [clinic, date, tests]
   clinic_memo: [clinic, date, clinician, notes, medication_changes]
+  after_visit_summary: [clinic, date, clinician, summary, medication_changes, instructions, next_appointment]
   referral_letter: [from, to, date, reason]
   medical_certificate: [clinic, date, days, for_whom]
   invoice: [provider, date, amount, items]

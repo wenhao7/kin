@@ -17,7 +17,7 @@ Fixed dates: submission closes **Fri 30 Oct 2026, 10:00 PDT (Sat 31 Oct, 01:00 S
 ## 4. Telegram — **YOU**
 - [ ] @BotFather → `/newbot` → token → `TELEGRAM_BOT_TOKEN`.
 - [ ] @BotFather → `/mybots` → the bot → **Bot Settings → Group Privacy → Turn off**. Remove and re-add the bot to any group it already joined (Telegram caches the setting). Alternative: make the bot a group admin.
-- [ ] Your numeric user ID (message @userinfobot) → `KIN_ADMIN_TELEGRAM_ID` and `TELEGRAM_ALLOWED_USERS`.
+- [ ] Your numeric user ID (message @userinfobot) → `KIN_ADMIN_TELEGRAM_ID` and `TELEGRAM_ALLOWED_USERS`. Each other test account: map it to a persona in `KIN_MEMBER_IDS` (`wei_jie:<id>`, see `config/members.yaml`) and add it to `TELEGRAM_ALLOWED_USERS` so it can DM Kin.
 - [ ] Create the test group "Tan Family"; add the bot and a second account. Post one message, then read the chat ID (negative; `-100…` once Telegram upgrades the group to a supergroup, which changes the ID) from `https://api.telegram.org/bot<TOKEN>/getUpdates` → `TELEGRAM_GROUP_ALLOWED_CHATS` and `TELEGRAM_HOME_CHANNEL`.
 
 ## 5. Host tools — **YOU**
@@ -43,6 +43,7 @@ make docker-build
 make up             # kin service + hermes gateway; first hermes start installs Hermes into ./hermes/home
 make logs           # watch the install, config seeding, gateway start
 make hermes-doctor
+make hermes-config  # re-applies hermes/config.yaml and hermes/SOUL.md whenever they change
 ```
 Then send the bot a message in the test group. If the containerised install misbehaves, fall back to a host install (`curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash`, `hermes setup` with provider **Nebius Token Factory**, `hermes gateway setup` for Telegram, `hermes gateway install && hermes gateway start`); the `kin` service stays in Docker either way. Record which path worked in `ROADMAP.md` D0. On a shared host, keep Hermes containerised: a host install uses `~/.hermes` and installs a gateway service, which collide with any other host-level Hermes. The compose stack is self-contained (`docs/05-architecture.md`, Deployment).
 

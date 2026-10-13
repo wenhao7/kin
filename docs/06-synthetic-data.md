@@ -24,7 +24,7 @@ Fictional institutions: Eastbrook General Hospital; Bedok Hill Family Clinic; Dr
 | Month −3 | Physio referral (knee) | Referral letter; exercise sheet |
 | Month −1 | Hospital admission (chest infection) | Admission note; discharge summary with medication review (one stopped, one dose changed, one antibiotic course); MC for Mei Ling; invoice; insurance claim letter |
 | Week 0 (demo day) | Post-discharge | Pill box photos ×5; follow-up appointment slip; family note on Home Caregiving Grant application |
-| Week +1 | Cardiology follow-up | Consult recording (~4 min, scripted); summary; next appointment |
+| Week +1 | Cardiology follow-up | After-visit summary (printed by the clinic, photographed): one dose change, action items, next appointment |
 | Week +3 | Siti on home leave | Respite carer onboarding; viewer role with expiry |
 
 ## Document set (≥ 20)
@@ -35,7 +35,7 @@ Fictional institutions: Eastbrook General Hospital; Bedok Hill Family Clinic; Dr
 - Referral letter; exercise sheet. MC; hospital invoice; insurance claim letter.
 - LPA cover page (redacted-looking) — `legal`.
 - Handwritten notes from Siti (photos) ×2 — `observations`.
-- Consult audio ×1 (scripted; two team members; mono 16 kHz).
+- After-visit summary ×1 (Week +1 cardiology) — drives the debrief.
 
 ## Generation
 
@@ -48,6 +48,6 @@ Fictional institutions: Eastbrook General Hospital; Bedok Hill Family Clinic; Dr
 ## Locale pack (Singapore)
 
 - Languages: `en`, `zh`.
-- Lookup allow-list: scheme pages on gov.sg domains; clinic/pharmacy sites used in the demo.
+- Lookup allow-list: scheme pages on the domains in `locale/sg/locale.yaml` (gov.sg, AIC, MOH, CPF, HealthHub, CHAS). The demo clinics are fictional, so lookups cover public schemes only.
 - Document templates and label formats.
 - Local terms: polyclinic, MC, helper, CHAS, MediSave, Home Caregiving Grant, LPA.

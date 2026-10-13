@@ -16,7 +16,7 @@ Evidence cited in [01-problem.md](01-problem.md).
 
 Platform documentation:
 
-- Hermes Agent docs: https://hermes-agent.nousresearch.com/docs/ — providers (Nebius Token Factory is a first-class provider: `model.provider: nebius`, key `NEBIUS_API_KEY`), Telegram gateway, MCP (`mcp_servers` in `config.yaml`; tools exposed as `mcp_<server>_<tool>`), environment variables.
+- Hermes Agent docs: https://hermes-agent.nousresearch.com/docs/ — providers (Nebius Token Factory is a first-class provider: `model.provider: nebius`, key `NEBIUS_API_KEY`), Telegram gateway, plugins (tools read the caller from the gateway session context; `pre_gateway_dispatch` hook), environment variables. MCP tool calls carry no caller identity, which is why Kin uses a plugin.
 - Hermes Agent repository (MIT): https://github.com/NousResearch/hermes-agent
 - NVIDIA NemoClaw / OpenShell: https://docs.nvidia.com/nemoclaw/ · https://developer.nvidia.com/blog/build-a-secure-always-on-local-ai-agent-with-nvidia-nemoclaw-and-openclaw/
 - Nemotron 3 Nano Omni: https://blogs.nvidia.com/blog/nemotron-3-nano-omni-multimodal-ai-agents/

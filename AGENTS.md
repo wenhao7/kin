@@ -7,9 +7,9 @@ Kin is a hackathon submission (Nebius x NVIDIA Global AI Hackathon, Personal AI 
 1. `README.md` — what it is, commands, stack.
 2. `ROADMAP.md` — sequential deliverables D0–D9 with "done when" criteria. The next unchecked deliverable is the current task.
 3. `docs/02-product.md` — roles, categories, flows, chat conventions.
-4. `docs/03-privacy-boundaries.md` — the boundary model and enforcement rules; `config/policy.yaml` is its data.
+4. `docs/03-privacy-boundaries.md` — the boundary model and enforcement rules; `config/policy.yaml` and `config/members.yaml` are its data.
 5. `docs/04-safety.md` — organise-not-advise rules, grounding, consent.
-6. `docs/05-architecture.md` — components, data model, flows, models, integrations (Hermes Agent, OpenShell/NemoClaw, Telegram, Tavily).
+6. `docs/05-architecture.md` — components, the Hermes ↔ Kin bridge (plugin, hook, tools, outbound), data model, flows, models, integrations, deployment.
 7. `docs/06-synthetic-data.md` and `docs/07-demo-plan.md` — demo family, documents, video.
 8. `docs/00-hackathon.md` — requirements and judging criteria; `docs/08-submission-checklist.md` before submitting.
 9. `KICKOFF.md` — one-time setup; items marked **YOU** need the human.
@@ -34,9 +34,10 @@ Kin is a hackathon submission (Nebius x NVIDIA Global AI Hackathon, Personal AI 
 
 ## Product guardrails (do not relax)
 
-- Policy is enforced **before retrieval**: the agent reads memory only through `retrieve(query, principal)`; the store is partitioned by visibility and fails closed. Prompts are not the boundary.
+- Policy is enforced **before retrieval**: the agent reads the family's records only through Kin's tools and `retrieve(query, principal)`; the store is partitioned by visibility and fails closed. Prompts are not the boundary.
+- The principal comes from the gateway (Kin's Hermes plugin reads the sender from the session), never from model arguments. Hermes' own memory, session search, skills and cron stay off.
 - Kin organises; it never diagnoses, doses or triages. Every statement about the care recipient carries its source; no source → "I don't know".
-- Consent is captured in chat before any audio is processed.
+- Kin processes no audio (voice transcription off; no audio-capable model on Token Factory for our key). If audio is ever added, consent is captured in chat first.
 - All demo data is synthetic (fictional people and institutions, invalid-pattern identifiers). No real personal data, ever.
 - The family group never receives detail that any member of the group cannot see; restricted answers go to DM; `finance`/`legal` trigger the share-request flow.
 
