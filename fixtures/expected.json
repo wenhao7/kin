@@ -219,6 +219,26 @@
       "restart": "after `make down && make up` no reminder is duplicated or lost"
     },
     {
+      "case": "misread name from a low-resolution photo",
+      "document": "discharge-summary",
+      "photo": "fixtures/photos/discharge-summary-p1.jpg",
+      "sender": "mei_ling",
+      "chat": "dm",
+      "observed": "MiniCPM-V 4.5 read 'Glibpizide' for 'Glipizide' on the 697x888 px paper photo",
+      "draft": {
+        "uncertain": [
+          "medications_after[3].drug"
+        ],
+        "reason": "no active record or other document matches; the closest is seed:glipizide"
+      },
+      "result": {
+        "admin_confirms": {
+          "medications_after[3].drug": "Glipizide"
+        },
+        "rule": "Kin never corrects a name silently"
+      }
+    },
+    {
       "case": "low-confidence field",
       "document": "label-amoxiclav",
       "sender": "mei_ling",
