@@ -1,0 +1,41 @@
+{
+  "id": "insurance-letter",
+  "type": "insurance_letter",
+  "title": "Insurance claim letter",
+  "date": "2026-10-24",
+  "timeline": "Month −1",
+  "categories": [
+    "finance"
+  ],
+  "photograph": false,
+  "fields": {
+    "insurer": "Orchidline Assurance",
+    "date": "24 Oct 2026",
+    "claim_ref": "DEMO-CLAIM-0001",
+    "status": "Under assessment: itemised hospital bill required",
+    "amount": "S$4,820.50"
+  },
+  "render": {
+    "to": "Ms Lim Mei Ling",
+    "address": "Blk 123 Bedok Hill Avenue 9, #08-15, Singapore 000123",
+    "insured": "Mdm Tan Siew Lan",
+    "policy": "DEMO-POLICY-0001",
+    "insurer_address": "8 Orchid Lane, Singapore 000888",
+    "phone": "6xxx xxxx",
+    "admission": "Eastbrook General Hospital, 18 Oct 2026 to 23 Oct 2026",
+    "request": "Your claim is under assessment. Please send us the itemised hospital bill by 7 Nov 2026.",
+    "signatory": "Claims Department"
+  },
+  "excerpts": {
+    "status": "Your claim is under assessment. Please send us the itemised hospital bill by 7 Nov 2026."
+  },
+  "views": {
+    "admin": [
+      "original",
+      "fields",
+      "excerpts"
+    ],
+    "family": [],
+    "carer": []
+  }
+}

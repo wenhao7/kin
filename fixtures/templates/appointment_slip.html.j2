@@ -1,0 +1,23 @@
+{% extends "base.html.j2" %}
+{% set f = doc.fields %}{% set r = doc.render %}
+{% block head %}<style>
+@page { size: A5 landscape; margin: 10mm 12mm 14mm 12mm; }
+.watermark { top: 45mm; left: 30mm; font-size: 40pt; }
+.demo-footer { bottom: -9mm; }
+</style>{% endblock %}
+{% block body %}
+{% with org=r.issuer.name, address=r.issuer.address, phone=r.issuer.phone %}{% include "_letterhead.html.j2" %}{% endwith %}
+<h1>APPOINTMENT</h1>
+<div class="ref">Appointment no. {{ r.ref }}</div>
+<table>
+  <tr><td class="k">Patient</td><td>{{ r.patient.name }} ({{ r.patient.id }})</td></tr>
+  <tr><td class="k">Clinic</td><td>{{ f.clinic }}</td></tr>
+  <tr><td class="k">Department</td><td>{{ f.department }}</td></tr>
+  <tr><td class="k">Doctor</td><td>{{ r.doctor }}</td></tr>
+  <tr><td class="k">Date</td><td><b>{{ f.date }}</b></td></tr>
+  <tr><td class="k">Time</td><td><b>{{ f.time }}</b></td></tr>
+  <tr><td class="k">Location</td><td>{{ r.location }}</td></tr>
+</table>
+<h2>Instructions</h2>
+<ul>{% for i in f.instructions %}<li>{{ i }}</li>{% endfor %}</ul>
+{% endblock %}

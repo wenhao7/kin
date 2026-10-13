@@ -1,0 +1,45 @@
+{
+  "id": "label-losartan",
+  "type": "medication_label",
+  "title": "Medication label: Losartan",
+  "date": "2026-09-28",
+  "timeline": "Month −1",
+  "categories": [
+    "medication"
+  ],
+  "photograph": false,
+  "fields": {
+    "drug": "Losartan",
+    "strength": "50 mg",
+    "directions": "Take ONE tablet ONCE a day in the morning",
+    "quantity": "30 tablets",
+    "dispensed_date": "28 Sep 2026",
+    "pharmacy": "Sunrise Pharmacy"
+  },
+  "render": {
+    "patient": {
+      "name": "Mdm Tan Siew Lan",
+      "id": "DEMO-NOT-A-REAL-ID",
+      "dob": "14 Mar 1948",
+      "address": "Blk 123 Bedok Hill Avenue 9, #08-15, Singapore 000123"
+    },
+    "ref": "DEMO-RX-0003",
+    "warnings": [
+      "Stand up slowly if you feel dizzy."
+    ],
+    "phone": "6xxx xxxx"
+  },
+  "excerpts": {},
+  "views": {
+    "admin": [
+      "original",
+      "fields"
+    ],
+    "family": [
+      "fields"
+    ],
+    "carer": [
+      "fields"
+    ]
+  }
+}

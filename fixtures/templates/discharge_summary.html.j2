@@ -1,0 +1,37 @@
+{% extends "base.html.j2" %}
+{% set f = doc.fields %}{% set r = doc.render %}
+{% block body %}
+{% with org=f.hospital, address=r.issuer.address, phone=r.issuer.phone %}{% include "_letterhead.html.j2" %}{% endwith %}
+<h1>DISCHARGE SUMMARY</h1>
+<div class="ref">Reference {{ r.ref }} · Page 1 of 2</div>
+<table>
+  <tr><td class="k">Patient</td><td>{{ r.patient.name }}</td><td class="k">ID</td><td>{{ r.patient.id }}</td></tr>
+  <tr><td class="k">Date of birth</td><td>{{ r.patient.dob }}</td><td class="k">Ward</td><td>{{ r.ward }}</td></tr>
+  <tr><td class="k">Admitted</td><td>{{ f.admission_date }}</td><td class="k">Discharged</td><td>{{ f.discharge_date }}</td></tr>
+  <tr><td class="k">Attending</td><td colspan="3">{{ r.attending }}</td></tr>
+</table>
+<h2>Diagnoses</h2>
+<ol>{% for d in f.diagnoses %}<li>{{ d }}</li>{% endfor %}</ol>
+<h2>Hospital course</h2>
+<p>{{ r.course }}</p>
+<h2>Discharge medications</h2>
+<table>
+  <tr><th>Medication</th><th>Strength</th><th>Directions</th><th>Change</th></tr>
+  {% for m in f.medications_after %}<tr><td>{{ m.drug }}</td><td>{{ m.strength }}</td><td>{{ m.directions }}</td><td>{{ m.change }}</td></tr>{% endfor %}
+</table>
+<p class="emph">{{ r.changes_summary }}</p>
+<div class="page-break"></div>
+{% with org=f.hospital, address=r.issuer.address, phone=r.issuer.phone %}{% include "_letterhead.html.j2" %}{% endwith %}
+<div class="ref">Reference {{ r.ref }} · {{ r.patient.name }} · Page 2 of 2</div>
+<h2>Medications before admission</h2>
+<table>
+  <tr><th>Medication</th><th>Strength</th><th>Directions</th></tr>
+  {% for m in f.medications_before %}<tr><td>{{ m.drug }}</td><td>{{ m.strength }}</td><td>{{ m.directions }}</td></tr>{% endfor %}
+</table>
+<h2>Follow-up</h2>
+<ul>{% for item in f.follow_up %}<li>{{ item }}</li>{% endfor %}</ul>
+<p>Please bring this summary and all your medicines to every appointment.</p>
+<h2>Discharging doctor</h2>
+<p>{{ r.attending }}<br>Electronically signed on {{ f.discharge_date }}</p>
+<div class="stamp">DISCHARGED</div>
+{% endblock %}

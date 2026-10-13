@@ -1,0 +1,23 @@
+{% extends "base.html.j2" %}
+{% set f = doc.fields %}{% set r = doc.render %}
+{% block head %}<style>
+@page { size: A5; margin: 14mm 12mm 16mm 16mm; background: #fffef8; }
+html { font-family: "Kalam", cursive; font-size: 13pt; color: #1f2f6f; line-height: 9mm; }
+.paper { min-height: 162mm;
+  background-image: linear-gradient(to bottom, transparent 6.7mm, #a9c4e8 6.7mm, #a9c4e8 7.1mm, transparent 7.1mm);
+  background-size: 100% 9mm; }
+.date { text-align: right; margin: 0; }
+ul { list-style: none; margin: 0; }
+li { margin: 0; }
+li::before { content: "- "; }
+.sig { margin: 0; padding-left: 40mm; }
+.watermark { font-family: "DejaVu Sans", sans-serif; top: 80mm; left: 4mm; font-size: 36pt; }
+.demo-footer { font-family: "DejaVu Sans", sans-serif; bottom: -10mm; line-height: 1.2; }
+</style>{% endblock %}
+{% block body %}
+<div class="paper">
+<div class="date">{{ f.date }}</div>
+<ul>{% for o in f.observations %}<li>{{ o }}</li>{% endfor %}</ul>
+<div class="sig">{{ r.signed }}</div>
+</div>
+{% endblock %}

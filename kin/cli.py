@@ -77,6 +77,18 @@ def hermes_config(
     typer.echo(hermes_config_script(template), nl=False)
 
 
+@app.command("render-fixtures")
+def render_fixtures() -> None:
+    """Render the synthetic fixture to fixtures/renders (needs `make setup-data`)."""
+    try:
+        from kin.fixtures import render_all
+    except ImportError as exc:  # pragma: no cover - depends on the optional extra
+        console.print(f"[red]{exc}; run `make setup-data`[/red]")
+        raise typer.Exit(code=1) from exc
+    for path in render_all():
+        console.print(str(path))
+
+
 @app.command()
 def serve() -> None:
     """Run the kin API (used by the Kin plugin in Hermes) and the scheduler."""

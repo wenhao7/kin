@@ -1,0 +1,46 @@
+{
+  "id": "label-metformin",
+  "type": "medication_label",
+  "title": "Medication label: Metformin",
+  "date": "2026-10-23",
+  "timeline": "Month −1",
+  "categories": [
+    "medication"
+  ],
+  "photograph": true,
+  "fields": {
+    "drug": "Metformin",
+    "strength": "500 mg",
+    "directions": "Take ONE tablet TWICE a day with breakfast and dinner",
+    "quantity": "60 tablets",
+    "dispensed_date": "23 Oct 2026",
+    "pharmacy": "Eastbrook General Hospital Pharmacy"
+  },
+  "render": {
+    "patient": {
+      "name": "Mdm Tan Siew Lan",
+      "id": "DEMO-NOT-A-REAL-ID",
+      "dob": "14 Mar 1948",
+      "address": "Blk 123 Bedok Hill Avenue 9, #08-15, Singapore 000123"
+    },
+    "ref": "DEMO-RX-0001",
+    "warnings": [
+      "Take with food.",
+      "May cause stomach upset."
+    ],
+    "phone": "6xxx xxxx"
+  },
+  "excerpts": {},
+  "views": {
+    "admin": [
+      "original",
+      "fields"
+    ],
+    "family": [
+      "fields"
+    ],
+    "carer": [
+      "fields"
+    ]
+  }
+}

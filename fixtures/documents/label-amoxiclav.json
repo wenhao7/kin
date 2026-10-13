@@ -1,0 +1,49 @@
+{
+  "id": "label-amoxiclav",
+  "type": "medication_label",
+  "title": "Medication label: Amoxicillin-clavulanate",
+  "date": "2026-10-23",
+  "timeline": "Month −1",
+  "categories": [
+    "medication"
+  ],
+  "photograph": false,
+  "fields": {
+    "drug": "Amoxicillin-clavulanate",
+    "strength": "625 mg",
+    "directions": "Take ONE tablet THREE times a day after food. Complete the course.",
+    "quantity": "15 tablets",
+    "dispensed_date": "23 Oct 2026",
+    "pharmacy": "Eastbrook General Hospital Pharmacy"
+  },
+  "render": {
+    "patient": {
+      "name": "Mdm Tan Siew Lan",
+      "id": "DEMO-NOT-A-REAL-ID",
+      "dob": "14 Mar 1948",
+      "address": "Blk 123 Bedok Hill Avenue 9, #08-15, Singapore 000123"
+    },
+    "ref": "DEMO-RX-0002",
+    "warnings": [
+      "Complete the full course.",
+      "Take after food."
+    ],
+    "phone": "6xxx xxxx",
+    "faded": [
+      "dispensed_date"
+    ]
+  },
+  "excerpts": {},
+  "views": {
+    "admin": [
+      "original",
+      "fields"
+    ],
+    "family": [
+      "fields"
+    ],
+    "carer": [
+      "fields"
+    ]
+  }
+}

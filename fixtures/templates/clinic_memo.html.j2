@@ -1,0 +1,23 @@
+{% extends "base.html.j2" %}
+{% set f = doc.fields %}{% set r = doc.render %}
+{% block body %}
+{% with org=r.issuer.name, address=r.issuer.address, phone=r.issuer.phone %}{% include "_letterhead.html.j2" %}{% endwith %}
+<h1>CLINIC MEMO</h1>
+<div class="ref">Reference {{ r.ref }}</div>
+<table>
+  <tr><td class="k">From</td><td>{{ f.clinic }}</td></tr>
+  <tr><td class="k">To</td><td>{{ r.to }}</td></tr>
+  <tr><td class="k">Date</td><td>{{ f.date }}</td></tr>
+  <tr><td class="k">Re</td><td>{{ r.patient.name }} ({{ r.patient.id }}), date of birth {{ r.patient.dob }}</td></tr>
+</table>
+<h2>Review</h2>
+<ul>{% for n in f.notes %}<li>{{ n }}</li>{% endfor %}</ul>
+<h2>Medication change</h2>
+<table>
+  <tr><th>Medication</th><th>Change</th><th>Dose</th></tr>
+  {% for m in f.medication_changes %}<tr><td>{{ m.drug }}</td><td>{{ m.change }}</td><td>{{ m.dose }}</td></tr>{% endfor %}
+</table>
+<p class="emph">{{ r.plan }}</p>
+<p>Thank you for continuing her care.</p>
+<p>{{ f.clinician }}<br>Consultant, Cardiology</p>
+{% endblock %}

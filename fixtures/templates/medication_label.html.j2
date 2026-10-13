@@ -1,0 +1,27 @@
+{% extends "base.html.j2" %}
+{% set f = doc.fields %}{% set r = doc.render %}{% set faded = r.get("faded", []) %}
+{% block head %}<style>
+@page { size: 100mm 64mm; margin: 4mm; }
+html { font-size: 8pt; }
+.label { border: 0.8pt solid #333; padding: 2.5mm; height: 52mm; }
+.pharmacy { font-weight: bold; font-size: 9pt; color: #0f6d6d; }
+.small { font-size: 6.5pt; color: #555; }
+.patient { margin-top: 1.5mm; font-size: 8pt; }
+.drug { font-size: 12pt; font-weight: bold; margin-top: 1.2mm; }
+.directions { font-size: 9.5pt; font-weight: bold; margin: 1.2mm 0; }
+.meta { font-size: 7.5pt; }
+.warnings { font-size: 7pt; margin-left: 3.5mm; }
+.watermark { top: 22mm; left: 6mm; font-size: 22pt; }
+.demo-footer { bottom: -3.5mm; font-size: 5pt; }
+</style>{% endblock %}
+{% block body %}
+<div class="label">
+  <div class="pharmacy">{{ f.pharmacy }}</div>
+  <div class="small">Tel {{ r.phone }} · Label {{ r.ref }}</div>
+  <div class="patient">For: {{ r.patient.name }}</div>
+  <div class="drug">{{ f.drug }} {{ f.strength }}</div>
+  <div class="directions">{{ f.directions }}</div>
+  <div class="meta">Qty: {{ f.quantity }} · Dispensed: <span class="{{ 'faded' if 'dispensed_date' in faded else '' }}">{{ f.dispensed_date }}</span></div>
+  <ul class="warnings">{% for w in r.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+/* Synthetic fixture styles (docs/06-synthetic-data.md). Every page carries a SYNTHETIC DEMO mark. */
+@font-face { font-family: "Kalam"; src: url("../fonts/Kalam-Regular.ttf"); }
+@page { size: A4; margin: 16mm 16mm 20mm 16mm; }
+html { font-family: "DejaVu Sans", sans-serif; font-size: 9.5pt; color: #1d1d1d; line-height: 1.35; }
+h1 { font-size: 13pt; letter-spacing: 0.06em; margin: 4mm 0 2mm; }
+h2 { font-size: 10pt; margin: 4mm 0 1.5mm; border-bottom: 0.4pt solid #7a8a8a; padding-bottom: 0.6mm; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 0.4pt solid #8a9a9a; padding: 1.2mm 1.6mm; text-align: left; vertical-align: top; }
+th { background: #e9f0f0; font-weight: bold; }
+td.k { width: 16%; background: #f6f8f8; font-weight: bold; white-space: nowrap; }
+tr { break-inside: avoid; }
+ul, ol { margin: 1mm 0 1mm 5mm; padding: 0; }
+li { margin: 0.6mm 0; }
+.letterhead { display: flex; justify-content: space-between; border-bottom: 1.4pt solid #0f6d6d; padding-bottom: 2mm; }
+.letterhead .org { font-size: 15pt; font-weight: bold; color: #0f6d6d; }
+.letterhead .addr { font-size: 7.5pt; color: #4a5a5a; text-align: right; }
+.ref { font-size: 7.5pt; color: #4a5a5a; }
+.emph { font-weight: bold; background: #fff6d6; padding: 1.5mm; border: 0.4pt solid #e2c96a; }
+.stamp { display: inline-block; border: 1.6pt solid #b22222; color: #b22222; font-weight: bold;
+         padding: 1.5mm 3mm; transform: rotate(-6deg); letter-spacing: 0.08em; margin-top: 4mm; }
+.page-break { break-before: page; }
+.watermark { position: fixed; top: 110mm; left: 18mm; transform: rotate(-30deg); font-size: 52pt;
+             font-weight: bold; color: rgba(178, 34, 34, 0.07); letter-spacing: 0.1em; z-index: -1; }
+.demo-footer { position: fixed; bottom: -12mm; left: 0; right: 0; font-size: 6.5pt; color: #8a2020;
+               text-align: center; letter-spacing: 0.04em; }
+.faded { color: #c4c4c4; }

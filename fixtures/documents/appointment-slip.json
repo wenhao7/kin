@@ -1,0 +1,49 @@
+{
+  "id": "appointment-slip",
+  "type": "appointment_slip",
+  "title": "Appointment slip",
+  "date": "2026-10-23",
+  "timeline": "Week 0",
+  "categories": [
+    "appointments"
+  ],
+  "photograph": true,
+  "fields": {
+    "clinic": "Eastbrook General Hospital Specialist Outpatient Clinic",
+    "department": "Cardiology",
+    "date": "Mon, 2 Nov 2026",
+    "time": "10:30 am",
+    "instructions": [
+      "Blood test at Laboratory, Level 1, at 9:45 am before your consultation",
+      "Bring all your medicines and your home blood pressure readings",
+      "Please arrive 15 minutes before your appointment"
+    ]
+  },
+  "render": {
+    "patient": {
+      "name": "Mdm Tan Siew Lan",
+      "id": "DEMO-NOT-A-REAL-ID",
+      "dob": "14 Mar 1948",
+      "address": "Blk 123 Bedok Hill Avenue 9, #08-15, Singapore 000123"
+    },
+    "issuer": {
+      "name": "Eastbrook General Hospital",
+      "address": "1 Eastbrook Avenue, Singapore 000001",
+      "phone": "6xxx xxxx"
+    },
+    "doctor": "Dr Tan Hui Min",
+    "location": "Clinic B, Level 3",
+    "ref": "DEMO-APPT-0001"
+  },
+  "excerpts": {},
+  "views": {
+    "admin": [
+      "original",
+      "fields"
+    ],
+    "family": [
+      "fields"
+    ],
+    "carer": []
+  }
+}

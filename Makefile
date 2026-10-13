@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 UV ?= uv
 
-.PHONY: help setup check check-nospend models policy lint test docker-build up down logs hermes-init hermes-config hermes-doctor hermes-shell clean
+.PHONY: help setup setup-data fixtures check check-nospend models policy lint test docker-build up down logs hermes-init hermes-config hermes-doctor hermes-shell clean
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -13,6 +13,9 @@ setup: ## Create .venv and install all dependencies (uv); create .env from the e
 
 setup-data: ## Also install the synthetic-document toolchain (needs pango libs; see pyproject)
 	$(UV) sync --all-groups --extra data
+
+fixtures: ## Render the synthetic fixture to fixtures/renders (PDF + PNG; needs setup-data)
+	$(UV) run --extra data kin render-fixtures
 
 check: ## Verify keys, policy/locale, models (incl. one vision call), Telegram bot, Tavily
 	$(UV) run kin check

@@ -24,6 +24,7 @@ dependencies = [
 #   Debian/Ubuntu: apt install libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0
 data = [
   "jinja2>=3.1",
+  "pypdfium2>=5.14.0",
   "weasyprint>=62",
 ]
 
@@ -32,6 +33,7 @@ kin = "kin.cli:app"
 
 [dependency-groups]
 dev = [
+  "jinja2>=3.1.6",
   "pytest>=8.0",
   "pytest-asyncio>=0.23",
   "ruff>=0.5",

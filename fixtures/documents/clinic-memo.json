@@ -1,0 +1,61 @@
+{
+  "id": "clinic-memo",
+  "type": "clinic_memo",
+  "title": "Clinic memo",
+  "date": "2026-06-26",
+  "timeline": "Month −4",
+  "categories": [
+    "medical",
+    "medication"
+  ],
+  "photograph": false,
+  "fields": {
+    "clinic": "Eastbrook General Hospital Cardiology Clinic",
+    "date": "26 Jun 2026",
+    "clinician": "Dr Tan Hui Min",
+    "notes": [
+      "Blood pressure 152/88 on amlodipine 5 mg",
+      "No chest pain or breathlessness",
+      "Kidney function and potassium at GP in 4 weeks",
+      "Review in 4 months"
+    ],
+    "medication_changes": [
+      {
+        "drug": "Losartan",
+        "change": "Start",
+        "dose": "50 mg once a day in the morning"
+      }
+    ]
+  },
+  "render": {
+    "patient": {
+      "name": "Mdm Tan Siew Lan",
+      "id": "DEMO-NOT-A-REAL-ID",
+      "dob": "14 Mar 1948",
+      "address": "Blk 123 Bedok Hill Avenue 9, #08-15, Singapore 000123"
+    },
+    "issuer": {
+      "name": "Eastbrook General Hospital",
+      "address": "1 Eastbrook Avenue, Singapore 000001",
+      "phone": "6xxx xxxx"
+    },
+    "ref": "DEMO-MEMO-0001",
+    "to": "Dr Rajan, Bedok Hill Family Clinic",
+    "plan": "Plan: start losartan 50 mg once a day in the morning."
+  },
+  "excerpts": {
+    "plan": "Plan: start losartan 50 mg once a day in the morning."
+  },
+  "views": {
+    "admin": [
+      "original",
+      "fields",
+      "excerpts"
+    ],
+    "family": [
+      "medication_changes",
+      "excerpt:plan"
+    ],
+    "carer": []
+  }
+}

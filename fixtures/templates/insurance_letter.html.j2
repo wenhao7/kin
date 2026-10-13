@@ -1,0 +1,20 @@
+{% extends "base.html.j2" %}
+{% set f = doc.fields %}{% set r = doc.render %}
+{% block body %}
+{% with org=f.insurer, address=r.insurer_address, phone=r.phone %}{% include "_letterhead.html.j2" %}{% endwith %}
+<p style="margin-top:8mm">{{ f.date }}</p>
+<p>{{ r.to }}<br>{{ r.address }}</p>
+<h1>Hospitalisation claim</h1>
+<table>
+  <tr><td class="k">Claim reference</td><td>{{ f.claim_ref }}</td></tr>
+  <tr><td class="k">Policy</td><td>{{ r.policy }}</td></tr>
+  <tr><td class="k">Insured</td><td>{{ r.insured }}</td></tr>
+  <tr><td class="k">Hospitalisation</td><td>{{ r.admission }}</td></tr>
+  <tr><td class="k">Amount claimed</td><td>{{ f.amount }}</td></tr>
+  <tr><td class="k">Status</td><td>{{ f.status }}</td></tr>
+</table>
+<p style="margin-top:5mm">Dear {{ r.to }},</p>
+<p>{{ r.request }}</p>
+<p>You can reply to this letter with the document attached, quoting the claim reference above.</p>
+<p style="margin-top:8mm">Yours sincerely,<br>{{ r.signatory }}<br>{{ f.insurer }}</p>
+{% endblock %}

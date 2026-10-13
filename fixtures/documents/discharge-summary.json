@@ -1,0 +1,133 @@
+{
+  "id": "discharge-summary",
+  "type": "discharge_summary",
+  "title": "Discharge summary",
+  "date": "2026-10-23",
+  "timeline": "Month −1",
+  "categories": [
+    "medical",
+    "medication",
+    "appointments"
+  ],
+  "photograph": true,
+  "fields": {
+    "hospital": "Eastbrook General Hospital",
+    "admission_date": "18 Oct 2026",
+    "discharge_date": "23 Oct 2026",
+    "diagnoses": [
+      "Community-acquired pneumonia (right lower lobe)",
+      "Hypertension",
+      "Type 2 diabetes mellitus",
+      "Osteoarthritis of both knees"
+    ],
+    "medications_before": [
+      {
+        "drug": "Amlodipine",
+        "strength": "5 mg",
+        "directions": "1 tablet once a day in the morning"
+      },
+      {
+        "drug": "Losartan",
+        "strength": "50 mg",
+        "directions": "1 tablet once a day in the morning"
+      },
+      {
+        "drug": "Metformin",
+        "strength": "850 mg",
+        "directions": "1 tablet twice a day with breakfast and dinner"
+      },
+      {
+        "drug": "Glipizide",
+        "strength": "5 mg",
+        "directions": "1 tablet once a day before breakfast"
+      },
+      {
+        "drug": "Atorvastatin",
+        "strength": "20 mg",
+        "directions": "1 tablet once a day at night"
+      }
+    ],
+    "medications_after": [
+      {
+        "drug": "Amlodipine",
+        "strength": "5 mg",
+        "directions": "1 tablet once a day in the morning",
+        "change": "Unchanged"
+      },
+      {
+        "drug": "Losartan",
+        "strength": "50 mg",
+        "directions": "1 tablet once a day in the morning",
+        "change": "Unchanged"
+      },
+      {
+        "drug": "Metformin",
+        "strength": "500 mg",
+        "directions": "1 tablet twice a day with breakfast and dinner",
+        "change": "Dose reduced from 850 mg"
+      },
+      {
+        "drug": "Glipizide",
+        "strength": "5 mg",
+        "directions": "Do not take",
+        "change": "Stopped: low blood sugar during admission"
+      },
+      {
+        "drug": "Atorvastatin",
+        "strength": "20 mg",
+        "directions": "1 tablet once a day at night",
+        "change": "Unchanged"
+      },
+      {
+        "drug": "Amoxicillin-clavulanate",
+        "strength": "625 mg",
+        "directions": "1 tablet three times a day after food until 27 Oct 2026",
+        "change": "New: 5 more days to complete the course"
+      }
+    ],
+    "follow_up": [
+      "Cardiology Clinic (Dr Tan Hui Min), Eastbrook General Hospital: 2 Nov 2026, 9:30 am",
+      "Bedok Hill Family Clinic (Dr Rajan) in 2 weeks: blood test for kidney function",
+      "Return to the Emergency Department if breathless, chest pain or fever above 38.5°C"
+    ]
+  },
+  "render": {
+    "patient": {
+      "name": "Mdm Tan Siew Lan",
+      "id": "DEMO-NOT-A-REAL-ID",
+      "dob": "14 Mar 1948",
+      "address": "Blk 123 Bedok Hill Avenue 9, #08-15, Singapore 000123"
+    },
+    "issuer": {
+      "name": "Eastbrook General Hospital",
+      "address": "1 Eastbrook Avenue, Singapore 000001",
+      "phone": "6xxx xxxx"
+    },
+    "ward": "Ward 7B",
+    "ref": "DEMO-DS-0001",
+    "attending": "Dr Lee Wen Hui, General Medicine",
+    "course": "Admitted with fever, cough and breathlessness. Chest X-ray showed right lower lobe pneumonia, treated with intravenous then oral antibiotics with good response. Two episodes of low blood sugar on the ward. Kidney function was mildly reduced on admission and improved before discharge.",
+    "changes_summary": "Medication changes: metformin reduced to 500 mg twice a day; glipizide stopped because of low blood sugar; amoxicillin-clavulanate for 5 more days to complete the course."
+  },
+  "excerpts": {
+    "medication-changes": "Medication changes: metformin reduced to 500 mg twice a day; glipizide stopped because of low blood sugar; amoxicillin-clavulanate for 5 more days to complete the course.",
+    "return-advice": "Return to the Emergency Department if breathless, chest pain or fever above 38.5°C"
+  },
+  "views": {
+    "admin": [
+      "original",
+      "fields",
+      "excerpts"
+    ],
+    "family": [
+      "discharge_date",
+      "medications_after",
+      "follow_up",
+      "excerpt:medication-changes"
+    ],
+    "carer": [
+      "medications_after",
+      "excerpt:return-advice"
+    ]
+  }
+}

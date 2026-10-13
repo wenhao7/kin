@@ -1,0 +1,42 @@
+{
+  "id": "carer-note",
+  "type": "carer_note",
+  "title": "Carer note (handwritten)",
+  "date": "2026-10-25",
+  "timeline": "Week 0",
+  "categories": [
+    "observations"
+  ],
+  "photograph": true,
+  "author": "siti",
+  "fields": {
+    "date": "Sun 25/10",
+    "observations": [
+      "8.10am morning medicine taken",
+      "Ate half of breakfast",
+      "Cough less than yesterday",
+      "BP 138/80 at 9am",
+      "Sugar 6.8 before lunch",
+      "Dizzy when stand up after lunch, sit down, OK after 5 min",
+      "8pm night medicine taken"
+    ]
+  },
+  "render": {
+    "signed": "Siti"
+  },
+  "excerpts": {
+    "dizzy": "Dizzy when stand up after lunch, sit down, OK after 5 min"
+  },
+  "views": {
+    "admin": [
+      "original",
+      "fields"
+    ],
+    "family": [
+      "fields"
+    ],
+    "carer": [
+      "fields"
+    ]
+  }
+}

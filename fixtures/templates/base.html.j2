@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="dcterms.created" content="2026-10-26T00:00:00">
+<meta name="dcterms.modified" content="2026-10-26T00:00:00">
+<title>{{ doc.title }} (synthetic)</title>
+<link rel="stylesheet" href="base.css">
+{% block head %}{% endblock %}
+</head>
+<body class="{{ doc.type }}">
+<div class="watermark">SYNTHETIC DEMO</div>
+{% block body %}{% endblock %}
+<div class="demo-footer">SYNTHETIC DEMO DOCUMENT · fictional person and institution · {{ doc.render.get("ref", doc.id) }}</div>
+</body>
+</html>
