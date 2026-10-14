@@ -11,9 +11,9 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from kin import flows, share
+from kin import flows, share, skills
 from kin.context import Context
-from kin.retrieve import Caller, Refused, principal_for
+from kin.retrieve import Caller, Principal, Refused, principal_for
 
 VOICE_REPLY = "I can't listen to voice notes yet. Could you type it instead?"
 OTHER_MEDIA_REPLY = "I can read text, photos and documents, but not this kind of message."
@@ -23,7 +23,7 @@ HELP = (
     'In the group, start with "Kin" or reply to one of my messages.\n'
     "Documents go to {admin} by direct message, who checks them before anything is filed."
 )
-ADMIN_COMMANDS = {"roles", "who_saw", "reminders", "revoke", "skills", "export"}
+ADMIN_COMMANDS = {"roles", "who_saw", "reminders", "revoke", "export"}
 
 
 @dataclass
@@ -91,17 +91,17 @@ def decide(ctx: Context, msg: Inbound, bot_username: str = "") -> Decision:
         return Decision("skip", "documents go through the Admin", reply)
 
     if msg.kind == "command" or msg.text.startswith("/"):
-        return _command(ctx, member, msg, admin_name, bot_username)
+        return _command(ctx, principal, msg, admin_name, bot_username)
 
     if msg.kind != "text":
         return Decision("skip", "unsupported media", None if not in_dm else OTHER_MEDIA_REPLY)
 
     if not in_dm and not (msg.reply_to_kin or addressed_to_kin(msg.text, bot_username)):
         return Decision("skip", "group chatter not addressed to Kin")
-    if member.role == "admin" and in_dm:
-        handled = flows.handle_prompt(ctx, msg.text)
+    if in_dm:
+        handled = flows.handle_prompt(ctx, member, msg.text)
         if handled is not None:
-            return Decision("skip", "admin answer", handled or None)
+            return Decision("skip", "prompt answer", handled or None)
     category = share.blocked_category(ctx.policy, member, msg.text)
     if category:
         reply = share.start(
@@ -125,14 +125,20 @@ def _suffix(filename: str | None, kind: str) -> str:
     return ".jpg" if kind == "photo" else ""
 
 
-def _command(ctx: Context, member, msg: Inbound, admin_name: str, bot_username: str) -> Decision:
-    store, roster = ctx.store, ctx.roster
+def _command(
+    ctx: Context, principal: Principal, msg: Inbound, admin_name: str, bot_username: str
+) -> Decision:
+    store, roster, member = ctx.store, ctx.roster, principal.member
     head, _, args = msg.text.strip().partition(" ")
     name = head.lstrip("/").split("@", 1)[0].lower()
     if "@" in head and bot_username and head.split("@", 1)[1].lower() != bot_username.lower():
         return Decision("skip", "command for another bot")
     if name in ("start", "help"):
         return Decision("skip", f"/{name}", HELP.format(admin=admin_name))
+    if name == "skills":
+        if msg.caller.chat_type != "dm":
+            return Decision("skip", "/skills in group", "Ask me that in our direct chat.")
+        return Decision("skip", "/skills", skills.describe(ctx, principal))
     if name in ADMIN_COMMANDS and member.role != "admin":
         return Decision("skip", f"/{name} refused", f"That command is for {admin_name}.")
     if name in ADMIN_COMMANDS and msg.caller.chat_type != "dm":
@@ -177,8 +183,8 @@ def _command(ctx: Context, member, msg: Inbound, admin_name: str, bot_username: 
         ids = [ref.strip()] + [r["id"] for r in store.records_of_document(ref.strip())]
         n = store.revoke_grants(member_to.id, ids)
         return Decision("skip", "/revoke", f"Revoked {n} grant(s) for {member_to.short}.")
-    if name in ("skills", "export"):
-        return Decision("skip", f"/{name}", "Not available yet.")
+    if name == "export":
+        return Decision("skip", "/export", "Not available yet.")
     if name == "demo":
         return Decision("skip", "/demo", "That command only works in the judge demo.")
     return Decision("skip", "unknown command", "I don't know that command. Try /help.")

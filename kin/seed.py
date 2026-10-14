@@ -2,7 +2,8 @@
 
 Records come from `kin.intake.records_for`, the same mapping a confirmed intake uses, applied to
 each document's ground truth (fixtures/expected.json describes the same outcome). Approved
-excerpts take their audience from the document's `views`. Originals are stored Admin-only.
+excerpts take their audience from the document's `views`. Originals are stored Admin-only. Week 0
+also holds the Monday skill the Admin confirmed (`seed.skills`).
 """
 
 from __future__ import annotations
@@ -14,6 +15,7 @@ from typing import Any
 from kin.fixtures import ROOT as FIXTURES
 from kin.fixtures import load_documents, load_expected
 from kin.intake import med_label, records_for
+from kin.skills import add_skill
 from kin.store import Store
 
 # Week 0: what the family's Kin already held before the discharge paperwork arrived.
@@ -96,7 +98,7 @@ def load_fixture_documents(
 def load_week0(
     store: Store, root: Path = FIXTURES, admin: str = "mei_ling", tz: str = "Asia/Singapore"
 ) -> dict[str, list[str]]:
-    """Week 0: the WEEK0 documents plus the pre-admission schedule from fixtures/expected.json.
+    """Week 0: the WEEK0 documents, the pre-admission schedule and the Monday skill.
 
     Seed medication records keep their expected IDs (e.g. `seed:metformin-850`) so intake can
     supersede them; Losartan and the memo come from the clinic-memo document itself.
@@ -141,4 +143,5 @@ def load_week0(
                 tz=tz,
                 label=med_label(f),
             )
+    out["skills"] = [add_skill(store, s, tz) for s in load_expected(root)["seed"].get("skills", [])]
     return out

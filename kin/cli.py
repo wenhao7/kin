@@ -144,7 +144,7 @@ def serve() -> None:
         locale=locale,
         search=TavilyClient(api_key=tavily_key) if tavily_key else None,
     )
-    schedule.start(store, roster, ctx.sender, tz)
+    schedule.start(ctx)
     uvicorn.run(create_app(ctx, s.api_token.get_secret_value()), host=s.api_host, port=s.api_port)
 
 

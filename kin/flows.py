@@ -2,7 +2,7 @@
 
 The Admin is asked one question at a time (a stored prompt with reply-keyboard options); a tap
 arrives as ordinary DM text and lands in `handle_prompt`. Nothing reaches the group or another
-member without an explicit Admin answer.
+member without an explicit Admin answer. Other members' only prompt is a skill's Done.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ import logging
 import threading
 from pathlib import Path
 
-from kin import intake, share
+from kin import intake, share, skills
 from kin.context import Context
 from kin.extract import classify, extract
 from kin.translate import to_mandarin
@@ -71,11 +71,16 @@ def send_draft(ctx: Context, draft: dict) -> None:
     _ask_admin(ctx, "draft", draft["id"], text, options)
 
 
-def handle_prompt(ctx: Context, text: str) -> str | None:
-    """The Admin's DM text while a prompt is open; None when it is not an answer (agent turn)."""
-    admin = _admin(ctx)
-    prompt = ctx.store.current_prompt(admin.id)
+def handle_prompt(ctx: Context, member, text: str) -> str | None:
+    """A member's DM text while a prompt is open; None when it is not an answer (agent turn)."""
+    prompt = ctx.store.current_prompt(member.id)
     if prompt is None:
+        return None
+    if prompt["kind"] == "skill":
+        is_done = text.strip().rstrip(".!").lower() == skills.DONE.lower()
+        return skills.done(ctx, member, prompt) if is_done else None
+    admin = _admin(ctx)
+    if member.id != admin.id:
         return None
     options = json.loads(prompt["options"])
     if prompt["kind"] == "share":

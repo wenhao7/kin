@@ -2,7 +2,7 @@
   "demo_day": "2026-10-26",
   "timezone": "Asia/Singapore",
   "seed": {
-    "about": "Active state before Week 0 intake: the pre-admission schedule and the Month −4 memo (the recall source).",
+    "about": "Active state before Week 0 intake: the pre-admission schedule, the Month −4 memo (the recall source) and the Monday skill the Admin confirmed.",
     "records": [
       {
         "id": "seed:amlodipine",
@@ -87,6 +87,20 @@
         "records": [
           "seed:atorvastatin"
         ]
+      }
+    ],
+    "skills": [
+      {
+        "id": "skill:monday-pill-organiser",
+        "title": "Monday pill organiser",
+        "instruction": "Every Monday 08:00, remind Siti to refill the pill organiser and tell Mei Ling when done.",
+        "day": "mon",
+        "time": "08:00",
+        "assignee": "siti",
+        "message": "Refill the pill organiser for the week.",
+        "report_to": "mei_ling",
+        "confirmed_by": "mei_ling",
+        "source": "Kin skill, confirmed by Mei Ling"
       }
     ]
   },
@@ -419,5 +433,16 @@
     ],
     "include_domains": "locale/sg/locale.yaml lookup_allow_domains",
     "answer": "describes the public criteria with the source link; does not decide eligibility"
+  },
+  "skill": {
+    "case": "reusable skill survives a restart",
+    "trigger": "Mon 26 Oct 2026 08:00 Asia/Singapore, after `make down && make up`",
+    "recipient": "siti",
+    "expect": "one DM to Siti with a Done button; Done → Mei Ling is told; a second tick sends nothing",
+    "skills_command": {
+      "mei_ling": "listed",
+      "wei_jie": "listed",
+      "siti": "listed"
+    }
   }
 }

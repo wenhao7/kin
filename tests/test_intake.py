@@ -3,6 +3,7 @@
 import base64
 import json
 import re
+from dataclasses import replace
 from datetime import date, datetime
 from pathlib import Path
 from types import SimpleNamespace
@@ -136,7 +137,7 @@ def test_discharge_intake_end_to_end(kin):
     assert "“Glibpizide”, which matches no record. Did you mean Glipizide?" in draft_msg
     send(kin, ADMIN, photo="p2")  # page 2 joins the same draft
     assert len(kin.store.open_drafts("mei_ling")) == 1
-    assert send(kin, ADMIN, "Glipizide")["reason"] == "admin answer"
+    assert send(kin, ADMIN, "Glipizide")["reason"] == "prompt answer"
     assert to(kin, ADMIN)[-1].endswith("Confirm to file it and set the reminders?")
     send(kin, ADMIN, "Confirm")
 
@@ -185,20 +186,20 @@ def test_reminders_send_once_even_after_a_restart(kin, tmp_path):
     send(kin, ADMIN, photo="p1")
     send(kin, ADMIN, "Glipizide")
     send(kin, ADMIN, "Confirm")
-    eight = datetime(2026, 10, 26, 8, 0, 20, tzinfo=ZoneInfo(TZ))
-    roster = kin.ctx.roster
+    eight = datetime(2026, 10, 27, 8, 0, 20, tzinfo=ZoneInfo(TZ))  # a Tuesday: no skill
     before = len(to(kin, CARER))
-    assert schedule.tick(kin.store, roster, kin.sender, TZ, eight) == 1
+    assert schedule.tick(kin.ctx, eight) == 1
     message = to(kin, CARER)[-1]
     assert message.startswith("Reminder (08:00):") and "Metformin 500 mg" in message
     assert "Glipizide" not in message
-    restarted = Store(kin.store.db_path, kin.store.originals_dir)
+    restarted = replace(kin.ctx, store=Store(kin.store.db_path, kin.store.originals_dir))
     later = eight.replace(minute=3)
-    assert schedule.tick(restarted, roster, kin.sender, TZ, later) == 0
+    assert schedule.tick(restarted, later) == 0
     assert len(to(kin, CARER)) == before + 1
     after_course = datetime(2026, 10, 28, 8, 30, 5, tzinfo=ZoneInfo(TZ))
-    schedule.tick(restarted, roster, kin.sender, TZ, after_course)
-    assert not [e for e in restarted.active_events() if e["label"].startswith("Amoxicillin")]
+    schedule.tick(restarted, after_course)
+    events = restarted.store.active_events()
+    assert not [e for e in events if e["label"].startswith("Amoxicillin")]
 
 
 def test_discarded_draft_files_nothing(kin):
