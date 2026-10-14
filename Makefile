@@ -20,7 +20,7 @@ fixtures: ## Render the synthetic fixture to fixtures/renders (PDF + PNG; needs 
 seed: ## Reset the kin store to the Week 0 fixture (synthetic data only; restarts kin)
 	docker compose stop kin
 	docker compose run --rm --no-deps kin seed --reset
-	docker compose start kin
+	docker compose up -d kin
 
 check: ## Verify keys, policy/locale, models (incl. one vision call), Telegram bot, Tavily
 	$(UV) run kin check
