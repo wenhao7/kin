@@ -25,6 +25,7 @@ class Policy:
     share_request_on_none: list[str] = field(default_factory=list)
     delivery: dict = field(default_factory=dict)
     projections: dict[str, dict[str, list[str]]] = field(default_factory=dict)
+    share_keywords: dict[str, list[str]] = field(default_factory=dict)
 
     def level(self, role: str, category: str) -> tuple[str, str | None]:
         """Return (level, qualifier) for a role/category, e.g. ("write", "own")."""
@@ -94,6 +95,9 @@ def load_policy(path: Path) -> Policy:
         matrix={k: {r: str(v) for r, v in row.items()} for k, row in data["matrix"].items()},
         share_request_on_none=list(data.get("share_request_on_none", [])),
         delivery=dict(data.get("delivery", {})),
+        share_keywords={
+            c: [str(w).lower() for w in ws] for c, ws in (data.get("share_keywords") or {}).items()
+        },
         projections={
             c: {r: list(fs) for r, fs in by_role.items()}
             for c, by_role in (data.get("projections") or {}).items()

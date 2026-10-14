@@ -128,6 +128,32 @@ def retrieve(
             }
         )
         shown[row["id"]] = sorted(visible)
+    # Standing grants: in the grantee's own DM only, the approved excerpt and source, no fields.
+    if principal.chat_type == "dm" and member.role is not None:
+        seen = {r["id"] for r in out}
+        for g in store.standing_grants(member.id):
+            row = store.record(g["record_id"])
+            if row is None or row["id"] in seen:
+                continue
+            fields = json.loads(row["fields"])
+            excerpts = [
+                {"text": e["text"], "source": e["document_id"]}
+                for e in store.excerpts(json.loads(row["excerpt_ids"]))
+            ]
+            if not excerpts:
+                continue
+            out.append(
+                {
+                    "id": row["id"],
+                    "version": row["version"],
+                    "category": row["category"],
+                    "fields": {"source": fields.get("source", "")},
+                    "excerpts": excerpts,
+                    "shared_by": g["approved_by"],
+                    "_score": _relevance(query, fields),
+                }
+            )
+            shown[row["id"]] = ["source", "excerpt"]
     out.sort(key=lambda r: -r["_score"])
     out = out[:limit]
     for r in out:
