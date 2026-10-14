@@ -26,6 +26,22 @@ members:
     role: carer
     language: en
 
+# Household routine. Kin proposes reminder times from a document's own words ("in the morning"
+# → morning) and the Admin confirms every schedule before anything is active. Local times.
+household:
+  medicines_by: siti        # receives medicine reminders
+  appointments_by: mei_ling # attends appointments; reminded the evening before
+  times:
+    before_breakfast: "07:30"
+    morning: "08:00"
+    breakfast: "08:00"
+    lunch: "13:00"
+    dinner: "19:00"
+    night: "21:30"
+    three_times_after_food: ["08:30", "13:30", "19:30"]
+  appointment_reminder: "19:00"
+  refill_days_ahead: 3
+
 # Unknown senders get no role and see nothing (fail closed). The disposable judge fixture assigns
 # roles with `/demo` instead (docs/07-demo-plan.md). Language for anyone not listed:
 default_language: en

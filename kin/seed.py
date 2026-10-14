@@ -1,17 +1,19 @@
 """Load fixture documents into the store as confirmed records (tests, Week 0 state, demo reset).
 
-`records_from_fixture` maps one document's ground truth to the records an Admin-confirmed intake
-would produce (fixtures/expected.json describes the same outcome). Approved excerpts take their
-audience from the document's `views`. Originals are stored Admin-only.
+Records come from `kin.intake.records_for`, the same mapping a confirmed intake uses, applied to
+each document's ground truth (fixtures/expected.json describes the same outcome). Approved
+excerpts take their audience from the document's `views`. Originals are stored Admin-only.
 """
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
 from kin.fixtures import ROOT as FIXTURES
 from kin.fixtures import load_documents, load_expected
+from kin.intake import med_label, records_for
 from kin.store import Store
 
 # Week 0: what the family's Kin already held before the discharge paperwork arrived.
@@ -25,104 +27,18 @@ EXCERPT_CATEGORY = {
 }
 
 
-def _source(doc: dict[str, Any]) -> str:
-    return f"{doc['title']}, {doc['date']}"
+def _household() -> dict[str, Any]:
+    from kin.members import load_roster
+
+    return load_roster(Path("config") / "members.yaml").household
 
 
-def records_from_fixture(doc: dict[str, Any]) -> list[dict[str, Any]]:
-    f, src, t = doc["fields"], _source(doc), doc["type"]
-    if t == "discharge_summary":
-        meds = [
-            {
-                "category": "medication",
-                "fields": {
-                    "drug": m["drug"],
-                    "strength": m["strength"],
-                    "directions": m["directions"],
-                    "change": m["change"],
-                    "source": src,
-                },
-                "excerpts": ["medication-changes"],
-                "assignee": "siti",
-            }
-            for m in f["medications_after"]
-        ]
-        medical = {
-            "category": "medical",
-            "fields": {
-                "summary": f"Hospital stay {f['admission_date']} to {f['discharge_date']}; "
-                "medication changes on discharge.",
-                "diagnoses": f["diagnoses"],
-                "care_instructions": [f["follow_up"][2]],
-                "source": src,
-            },
-            "excerpts": ["return-advice"],
-        }
-        return [medical, *meds]
-    if t == "medication_label":
-        return [
-            {
-                "category": "medication",
-                "fields": {**{k: f[k] for k in ("drug", "strength", "directions")}, "source": src},
-                "excerpts": [],
-                "assignee": "siti",
-            },
-            {
-                "category": "medication",
-                "fields": {
-                    "drug": f["drug"],
-                    "quantity": f["quantity"],
-                    "dispensed": f["dispensed_date"],
-                    "pharmacy": f["pharmacy"],
-                    "source": src,
-                },
-                "excerpts": [],
-            },
-        ]
-    if t == "appointment_slip":
-        return [
-            {
-                "category": "appointments",
-                "fields": {**f, "doctor": doc["render"]["doctor"], "source": src},
-                "excerpts": [],
-                "assignee": "mei_ling",
-            }
-        ]
-    if t == "clinic_memo":
-        change = f["medication_changes"][0]
-        return [
-            {
-                "category": "medical",
-                "fields": {
-                    "summary": f"Cardiology review, {f['date']}.",
-                    "notes": f["notes"],
-                    "source": src,
-                },
-                "excerpts": [],
-            },
-            {
-                "category": "medication",
-                "fields": {
-                    "drug": change["drug"],
-                    "change": f"{change['change']} on {f['date']} ({f['clinician']})",
-                    "directions": change["dose"],
-                    "source": src,
-                },
-                "excerpts": ["plan"],
-            },
-        ]
-    if t == "insurance_letter":
-        return [{"category": "finance", "fields": {**f, "source": src}, "excerpts": ["status"]}]
-    if t == "carer_note":
-        return [
-            {
-                "category": "observations",
-                "fields": {"date": f["date"], "observations": f["observations"], "source": src},
-                "excerpts": [],
-                "created_by": doc.get("author", "siti"),
-            }
-        ]
-    raise ValueError(f"no mapping for {t}")
+def _active_schedule_drugs(store: Store) -> set[str]:
+    return {
+        json.loads(r["fields"]).get("drug", "").lower()
+        for r in store.active_records(["medication"])
+        if r["assignee"]
+    }
 
 
 def load_fixture_documents(
@@ -130,6 +46,7 @@ def load_fixture_documents(
 ) -> dict[str, list[str]]:
     """Store originals, approved excerpts and confirmed records; return {doc id: record ids}."""
     docs = {d["id"]: d for d in load_documents(root)}
+    household = _household()
     out: dict[str, list[str]] = {}
     for doc_id in ids or list(docs):
         doc = docs[doc_id]
@@ -162,16 +79,22 @@ def load_fixture_documents(
                 fields=r["fields"],
                 created_by=r.get("created_by", admin),
                 document_id=doc_id,
-                excerpt_ids=[excerpt_ids[n] for n in r["excerpts"]],
+                excerpt_ids=[excerpt_ids[n] for n in r["excerpts"] if n in excerpt_ids],
                 assignee=r.get("assignee"),
             )
-            for r in records_from_fixture(doc)
+            for r in records_for(
+                doc["type"],
+                doc["fields"],
+                household,
+                _active_schedule_drugs(store),
+                extra={"doctor": doc["render"].get("doctor"), "author": doc.get("author")},
+            )
         ]
     return out
 
 
 def load_week0(
-    store: Store, root: Path = FIXTURES, admin: str = "mei_ling"
+    store: Store, root: Path = FIXTURES, admin: str = "mei_ling", tz: str = "Asia/Singapore"
 ) -> dict[str, list[str]]:
     """Week 0: the WEEK0 documents plus the pre-admission schedule from fixtures/expected.json.
 
@@ -195,4 +118,27 @@ def load_week0(
             )
         )
     out["seed"] = seeded
+    by_drug = {
+        json.loads(r["fields"]).get("drug", "").lower(): r["id"]
+        for r in store.active_records(["medication"])
+        if r["assignee"]
+    }
+    seed_drug = {r["id"]: r.get("drug", "").lower() for r in load_expected(root)["seed"]["records"]}
+    for e in load_expected(root)["seed"]["events"]:
+        for rid in e["records"]:
+            record_id = rid if store.record(rid) else by_drug.get(seed_drug.get(rid, ""))
+            row = store.record(record_id) if record_id else None
+            if row is None:
+                continue
+            f = json.loads(row["fields"])
+            store.add_event(
+                event_id=f"{e['id']}:{row['id']}",
+                record_id=row["id"],
+                record_version=row["version"],
+                assignee=e["assignee"],
+                kind="daily",
+                at=e["time"],
+                tz=tz,
+                label=med_label(f),
+            )
     return out

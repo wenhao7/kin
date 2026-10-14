@@ -8,7 +8,7 @@ non-admin `default_role`, and never admin.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
@@ -33,6 +33,13 @@ class Roster:
     members: list[Member]
     default_role: str | None
     default_language: str
+    household: dict = field(default_factory=dict)
+
+    def by_id(self, member_id: str) -> Member | None:
+        return next((m for m in self.members if m.id == member_id), None)
+
+    def admin(self) -> Member | None:
+        return next((m for m in self.members if m.role == "admin"), None)
 
     def by_telegram_id(self, telegram_id: str) -> Member:
         """The member for a Telegram user ID, or a guest with `default_role` (usually none)."""
@@ -97,4 +104,5 @@ def load_roster(path: Path, admin_telegram_id: str = "", member_ids: str = "") -
         members=members,
         default_role=data.get("default_role"),
         default_language=data.get("default_language", "en"),
+        household=dict(data.get("household") or {}),
     )

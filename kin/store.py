@@ -35,7 +35,19 @@ CREATE TABLE IF NOT EXISTS records (
 CREATE INDEX IF NOT EXISTS records_category ON records (category, status);
 CREATE TABLE IF NOT EXISTS events (
   id TEXT PRIMARY KEY, record_id TEXT NOT NULL, record_version INTEGER NOT NULL,
-  assignee TEXT NOT NULL, due_at TEXT NOT NULL, tz TEXT NOT NULL, status TEXT NOT NULL);
+  assignee TEXT NOT NULL, kind TEXT NOT NULL, at TEXT NOT NULL, until TEXT, tz TEXT NOT NULL,
+  label TEXT NOT NULL, status TEXT NOT NULL, last_sent TEXT);
+CREATE TABLE IF NOT EXISTS drafts (
+  id TEXT PRIMARY KEY, admin TEXT NOT NULL, document_ids TEXT NOT NULL, doc_type TEXT NOT NULL,
+  fields TEXT NOT NULL, issues TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS prompts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, member TEXT NOT NULL, kind TEXT NOT NULL, ref TEXT NOT NULL,
+  options TEXT NOT NULL, status TEXT NOT NULL, at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS share_requests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, asker TEXT NOT NULL, category TEXT NOT NULL,
+  question TEXT NOT NULL, record_ids TEXT NOT NULL, chat_id TEXT NOT NULL, status TEXT NOT NULL,
+  at TEXT NOT NULL, decided_at TEXT);
 CREATE TABLE IF NOT EXISTS grants (
   id INTEGER PRIMARY KEY AUTOINCREMENT, record_id TEXT NOT NULL, record_version INTEGER NOT NULL,
   grantee TEXT NOT NULL, scope TEXT NOT NULL, approved_by TEXT NOT NULL, at TEXT NOT NULL,
@@ -212,6 +224,201 @@ class Store:
                 )
             )
 
+    def record(self, record_id: str) -> sqlite3.Row | None:
+        """Latest version of a record, whatever its status."""
+        with self._db() as db:
+            return db.execute(
+                "SELECT * FROM records WHERE id=? ORDER BY version DESC LIMIT 1", (record_id,)
+            ).fetchone()
+
+    def supersede(self, old_id: str, new_id: str) -> None:
+        """Mark a record superseded and cancel its pending events, in one transaction."""
+        with self._db() as db:
+            db.execute(
+                "UPDATE records SET status='superseded', superseded_by=?"
+                " WHERE id=? AND status='active'",
+                (new_id, old_id),
+            )
+            db.execute(
+                "UPDATE events SET status='cancelled' WHERE record_id=? AND status='active'",
+                (old_id,),
+            )
+
+    # --- events --------------------------------------------------------------------------
+    def add_event(
+        self,
+        *,
+        event_id: str,
+        record_id: str,
+        record_version: int,
+        assignee: str,
+        kind: str,
+        at: str,
+        tz: str,
+        label: str,
+        until: str | None = None,
+    ) -> bool:
+        """Insert an event once; a stable ID makes re-activation idempotent. True if new."""
+        with self._db() as db:
+            cur = db.execute(
+                "INSERT OR IGNORE INTO events (id, record_id, record_version, assignee, kind, at,"
+                " until, tz, label, status) VALUES (?,?,?,?,?,?,?,?,?, 'active')",
+                (event_id, record_id, record_version, assignee, kind, at, until, tz, label),
+            )
+            return cur.rowcount == 1
+
+    def active_events(self) -> list[sqlite3.Row]:
+        with self._db() as db:
+            return list(db.execute("SELECT * FROM events WHERE status='active' ORDER BY at"))
+
+    def claim_event(self, event_id: str, stamp: str) -> bool:
+        """Atomically mark an event sent for `stamp` (local date or datetime); False if it was."""
+        with self._db() as db:
+            cur = db.execute(
+                "UPDATE events SET last_sent=? WHERE id=? AND status='active'"
+                " AND (last_sent IS NULL OR last_sent<>?)",
+                (stamp, event_id, stamp),
+            )
+            return cur.rowcount == 1
+
+    def finish_event(self, event_id: str) -> None:
+        with self._db() as db:
+            db.execute("UPDATE events SET status='done' WHERE id=?", (event_id,))
+
+    # --- drafts and prompts --------------------------------------------------------------
+    def save_draft(self, draft: dict[str, Any]) -> None:
+        with self._db() as db:
+            db.execute(
+                "INSERT INTO drafts VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET"
+                " document_ids=excluded.document_ids, doc_type=excluded.doc_type,"
+                " fields=excluded.fields, issues=excluded.issues, status=excluded.status,"
+                " updated_at=excluded.updated_at",
+                (
+                    draft["id"],
+                    draft["admin"],
+                    json.dumps(draft["document_ids"]),
+                    draft["doc_type"],
+                    json.dumps(draft["fields"], ensure_ascii=False),
+                    json.dumps(draft["issues"], ensure_ascii=False),
+                    draft["status"],
+                    draft.get("created_at") or now(),
+                    now(),
+                ),
+            )
+
+    def draft(self, draft_id: str) -> dict[str, Any] | None:
+        with self._db() as db:
+            row = db.execute("SELECT * FROM drafts WHERE id=?", (draft_id,)).fetchone()
+        return None if row is None else _draft(row)
+
+    def open_drafts(self, admin: str) -> list[dict[str, Any]]:
+        with self._db() as db:
+            rows = db.execute(
+                "SELECT * FROM drafts WHERE admin=? AND status='open' ORDER BY created_at", (admin,)
+            ).fetchall()
+        return [_draft(r) for r in rows]
+
+    def open_prompt(self, member: str, kind: str, ref: str, options: list[str]) -> int:
+        """Ask one question at a time: closes the member's earlier open prompt."""
+        with self._db() as db:
+            db.execute(
+                "UPDATE prompts SET status='done' WHERE member=? AND status='open'", (member,)
+            )
+            cur = db.execute(
+                "INSERT INTO prompts (member, kind, ref, options, status, at)"
+                " VALUES (?,?,?,?,'open',?)",
+                (member, kind, ref, json.dumps(options, ensure_ascii=False), now()),
+            )
+            return int(cur.lastrowid)
+
+    def current_prompt(self, member: str) -> sqlite3.Row | None:
+        with self._db() as db:
+            return db.execute(
+                "SELECT * FROM prompts WHERE member=? AND status='open' ORDER BY id DESC LIMIT 1",
+                (member,),
+            ).fetchone()
+
+    def close_prompt(self, prompt_id: int) -> None:
+        with self._db() as db:
+            db.execute("UPDATE prompts SET status='done' WHERE id=?", (prompt_id,))
+
+    # --- sharing -------------------------------------------------------------------------
+    def add_share_request(
+        self, *, asker: str, category: str, question: str, record_ids: list[str], chat_id: str
+    ) -> int:
+        with self._db() as db:
+            cur = db.execute(
+                "INSERT INTO share_requests (asker, category, question, record_ids, chat_id,"
+                " status, at) VALUES (?,?,?,?,?,'pending',?)",
+                (asker, category, question, json.dumps(record_ids), chat_id, now()),
+            )
+            return int(cur.lastrowid)
+
+    def share_request(self, request_id: int) -> sqlite3.Row | None:
+        with self._db() as db:
+            return db.execute("SELECT * FROM share_requests WHERE id=?", (request_id,)).fetchone()
+
+    def decide_share(self, request_id: int, status: str) -> bool:
+        with self._db() as db:
+            cur = db.execute(
+                "UPDATE share_requests SET status=?, decided_at=? WHERE id=? AND status='pending'",
+                (status, now(), request_id),
+            )
+            return cur.rowcount == 1
+
+    def add_grant(
+        self, *, record_id: str, record_version: int, grantee: str, scope: str, approved_by: str
+    ) -> int:
+        with self._db() as db:
+            cur = db.execute(
+                "INSERT INTO grants (record_id, record_version, grantee, scope, approved_by, at)"
+                " VALUES (?,?,?,?,?,?)",
+                (record_id, record_version, grantee, scope, approved_by, now()),
+            )
+            return int(cur.lastrowid)
+
+    def consume_grant(self, grant_id: int) -> None:
+        with self._db() as db:
+            db.execute(
+                "UPDATE grants SET consumed_at=? WHERE id=? AND consumed_at IS NULL",
+                (now(), grant_id),
+            )
+
+    def standing_grants(self, grantee: str) -> list[sqlite3.Row]:
+        """Unrevoked standing grants whose record version is still the active one."""
+        with self._db() as db:
+            return list(
+                db.execute(
+                    "SELECT g.* FROM grants g JOIN records r ON r.id=g.record_id"
+                    " AND r.version=g.record_version WHERE g.grantee=? AND g.scope='standing'"
+                    " AND g.revoked_at IS NULL AND r.status='active'",
+                    (grantee,),
+                )
+            )
+
+    def revoke_grants(self, grantee: str, record_ids: list[str]) -> int:
+        if not record_ids:
+            return 0
+        marks = ",".join("?" * len(record_ids))
+        with self._db() as db:
+            cur = db.execute(
+                f"UPDATE grants SET revoked_at=? WHERE grantee=? AND revoked_at IS NULL"
+                f" AND consumed_at IS NULL"
+                f" AND record_id IN ({marks})",
+                [now(), grantee, *record_ids],
+            )
+            return cur.rowcount
+
+    def records_of_document(self, document_id: str) -> list[sqlite3.Row]:
+        with self._db() as db:
+            return list(
+                db.execute(
+                    "SELECT r.* FROM records r WHERE r.document_id=? AND r.status='active'"
+                    " AND r.version=(SELECT MAX(version) FROM records WHERE id=r.id)",
+                    (document_id,),
+                )
+            )
+
     # --- audit ---------------------------------------------------------------------------
     def audit(
         self,
@@ -260,3 +467,16 @@ class Store:
                     [f'%"{i}"%' for i in ids] + [limit],
                 )
             )
+
+
+def _draft(row: sqlite3.Row) -> dict[str, Any]:
+    return {
+        "id": row["id"],
+        "admin": row["admin"],
+        "document_ids": json.loads(row["document_ids"]),
+        "doc_type": row["doc_type"],
+        "fields": json.loads(row["fields"]),
+        "issues": json.loads(row["issues"]),
+        "status": row["status"],
+        "created_at": row["created_at"],
+    }
