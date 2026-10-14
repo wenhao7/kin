@@ -10,7 +10,7 @@ Built for the [Nebius x NVIDIA Global AI Hackathon](https://nebiusglobalaihackat
 
 ## Status
 
-The containerised Hermes gateway runs on Nebius with Kin's plugin: caller identity from the gateway, routing before the model, `kin_ask`/`kin_note`. `kin serve` holds the SQLite store and `retrieve(query, principal)` with role, group and field-level policy and an audit log. Intake, reminders and sharing are not implemented yet. Nano Omni is dedicated-only on Token Factory, so photo extraction uses a public vision model chosen at D0: MiniCPM-V 4.5 (`make models`). See [ROADMAP.md](ROADMAP.md).
+The containerised Hermes gateway runs on Nebius with Kin's plugin: caller identity from the gateway, routing before the model, `kin_ask`/`kin_note`. `kin serve` holds the SQLite store and `retrieve(query, principal)` with role, group and field-level policy and an audit log. Intake (photo → draft → Admin checks → active records), reminders, the approved bilingual group post and the share flow are implemented and covered by tests; live checks with all roles wait for the second test account. Nano Omni is dedicated-only on Token Factory, so photo extraction uses a public vision model chosen at D0: MiniCPM-V 4.5 (`make models`). See [ROADMAP.md](ROADMAP.md).
 
 ## Why
 

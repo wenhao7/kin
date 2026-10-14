@@ -32,19 +32,19 @@ Sequential deliverables. Tick a box only with recorded evidence. No time estimat
 - [x] Principal derived from the gateway's authenticated sender and chat; `retrieve(query, principal)` is the only read path; category and field projection applied before model context; unknown identity/category fails closed. Evidence: `kin/retrieve.py`; `tests/test_retrieve.py`, `tests/test_api.py`, `tests/test_plugin.py` (Admin, Family, Carer, unknown sender, spoofed chats, forged tool arguments, originals, group-wide field limits).
 - [x] Hermes native memory, session search and file/terminal tools disabled over family data; group and DM contexts separated. Evidence: `hermes/config.yaml` applied (`make hermes-config`); `hermes prompt-size --platform telegram` lists clarify, todo and vision only; sessions keyed per chat and user.
 - [x] Kin plugin in Hermes (caller from the gateway session, `pre_gateway_dispatch` routing, Kin's tools); kin API on the internal network only with `KIN_API_TOKEN`; `/who_saw` Admin-only. MCP is not used: it carries no caller identity. Evidence: live in the test group and Admin DM: unaddressed group text ignored, group and DM questions answered through `kin_ask` (group capped to every member's fields), voice note and document replies, `/who_saw` refused in the group and answered in DM; audit rows in the kin store.
-- [ ] Minimum privacy tests pass through the real gateway path (03-privacy-boundaries.md). Note: passing through the plugin path in tests: forged principal, no direct store access (only Kin's tools), no Hermes memory or session search, unknown sender, mixed original requested by Carer. Live runs for Family, Carer and an unknown sender wait for the second account; the finance share flow, revoked grant and translation tests come with D3, the Tavily test with D4.
+- [ ] Minimum privacy tests pass through the real gateway path (03-privacy-boundaries.md). Note: passing through the plugin path in tests: forged principal, no direct store access (only Kin's tools), no Hermes memory or session search, unknown sender, mixed original requested by Carer. The finance share flow, revoked grant and translation tests pass in `tests/test_intake.py`. Live runs for Family, Carer and an unknown sender wait for the second account; the Tavily test comes with D4.
 
 **Done when:** Admin, Family, Carer and an unknown sender each receive exactly their permitted fields; spoofed principals and a mixed original fail closed. Met through the plugin code path for all four and live for the Admin; live Family/Carer/unknown checks follow with the second account.
 
 ## D3 · Intake, confirmation, reminders, sharing
 
-- [ ] Admin DM photo → extractor → draft records with source excerpts; mixed originals stay Admin-only.
-- [ ] Admin confirms category, medication/appointment details, assignee, timezone; conflicts and unreadable fields block activation.
-- [ ] Activation creates events; supersession cancels future events; restart does not duplicate reminders.
-- [ ] Admin-confirmed summary to the group in English and Mandarin; carer reminder in DM with the source excerpt.
-- [ ] Finance question → neutral group reply → Admin DM Yes / No / Just this once (reply keyboard, resolved by the hook) → private answer; audited. Kin sends through the Bot API; a refused DM asks the member to tap Start.
+- [x] Admin DM photo → extractor → draft records with source excerpts; mixed originals stay Admin-only. Evidence: `kin/extract.py` (thinking off; section headings detected first, 12/12 on the fixture pages), `kin/intake.py`, `tests/test_intake.py`.
+- [x] Admin confirms category, medication/appointment details, assignee, timezone; conflicts and unreadable fields block activation. Evidence: name check (Glibpizide → Glipizide?), 9:30 vs 10:30 conflict, one question at a time, Confirm only when all are settled (`tests/test_intake.py`).
+- [x] Activation creates events; supersession cancels future events; restart does not duplicate reminders. Evidence: Metformin 850 mg and Glipizide reminders cancelled, new schedule and course end date, a second tick after restart sends nothing (`tests/test_intake.py`).
+- [x] Admin-confirmed summary to the group in English and Mandarin; carer reminder in DM with the source excerpt. Evidence: group post only after "Post to group", group-visible fields only (no diagnoses, finance or IDs); Mandarin via Super with medicine names masked (3/3 live translations kept every name and number).
+- [x] Finance question → neutral group reply → Admin DM Yes / No / Just this once (reply keyboard, resolved by the hook) → private answer; audited. Kin sends through the Bot API; a refused DM asks the member to tap Start. Evidence: once, standing (DM only, excerpt only), `/revoke` and No (`tests/test_intake.py`).
 
-**Done when:** a confirmed synthetic intake yields the right reminder and summaries, supersession cancels the old reminder, and sharing works without leaking the original.
+**Done when:** a confirmed synthetic intake yields the right reminder and summaries, supersession cancels the old reminder, and sharing works without leaking the original. Met in the automated tests with fixture extractions; the live run with real photos and all roles is deferred to one bulk test with the second account.
 
 ## D4 · Recall, lookup, reusable skill
 

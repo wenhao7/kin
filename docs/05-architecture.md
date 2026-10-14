@@ -33,11 +33,12 @@ Hermes is the conversation runtime and the only Telegram poller. The kin service
 
 | Inbound | Handling | Agent turn |
 |---|---|---|
-| Photo or PDF in the Admin's DM | Kin stores the original as restricted; from D3 it extracts and replies with the draft | Skipped |
+| Photo in the Admin's DM | Kin stores the original as restricted, extracts it in the background and replies with the draft (PDFs: not yet) | Skipped |
 | Photo elsewhere (group, other DMs) | Not ingested; Kin replies that documents go to the Admin by DM | Skipped |
-| Admin taps Confirm / Discard on a draft, or Yes / No / Just this once on a share request (D3) | Kin activates, discards, grants or refuses, and notifies | Skipped |
+| Admin's answer to the open question (a draft issue, Confirm / Discard, Post to group / Don't post, Yes / No / Just this once) | Kin applies it and asks the next question, activates, posts, grants or refuses | Skipped |
+| A question about `finance`/`legal` from someone without access (`share_keywords`) | Share request to the Admin; the asker gets the same neutral reply whether or not a record exists | Skipped |
 | Voice note or audio | Fixed reply: Kin can't listen yet, please type it | Skipped |
-| Any `/command`: `/help`, `/start`, and for the Admin `/roles`, `/who_saw`, `/skills`, `/export`; `/demo` in the judge fixture | Handled by Kin; other commands, including Hermes' own (`/model`, `/new`…), get "Try /help" | Skipped |
+| Any `/command`: `/help`, `/start`, and for the Admin in DM `/roles`, `/who_saw`, `/reminders`, `/revoke`, `/skills`, `/export`; `/demo` in the judge fixture | Handled by Kin; other commands, including Hermes' own (`/model`, `/new`…), get "Try /help" | Skipped |
 | Group text that doesn't say "Kin", @mention the bot or reply to one of Kin's messages | Ignored | Skipped |
 | Any other text | — | Runs, with Kin's tools |
 
@@ -46,7 +47,6 @@ Hermes is the conversation runtime and the only Telegram poller. The kin service
 | Tool | Does |
 |---|---|
 | `kin_ask(question)` | `retrieve(query, principal)`: permitted fields and approved excerpts for this caller in this chat, with fixed answering rules (sources, "I don't know", no advice); from D3 a blocked `finance`/`legal` question starts the share flow |
-| `kin_correct(text)` | D3. Admin only: corrections to the pending draft ("dose is 500 mg"); Kin re-validates and re-shows the draft |
 | `kin_note(text)` | Saves a note the caller owns (refused for roles without `write` on notes) |
 | `kin_lookup(topic)` | D4. Public scheme rules via Tavily with the locale allow-list; Kin builds the query and rejects names and record content |
 | `kin_teach(instruction)` | Admin only, optional (D6): a structured skill with a confirmed trigger and recipients |
@@ -72,7 +72,7 @@ SQLite plus a private file store on the `data/` volume: members, versioned recor
 
 ## Flows
 
-**Intake:** hook verifies the sender is Admin in DM → store the original as restricted → extractor proposes fields and spans → classify → draft shown with uncertain fields and a Confirm / Discard keyboard; corrections via `kin_correct` → Admin confirms → records and events committed → confirmed summary to the group, reminder to the carer's DM.
+**Intake:** hook verifies the sender is Admin in DM → original stored as restricted → the extractor classifies the document, detects which section headings the page shows, and transcribes only those sections (asked for a section on the other page, it copies a table it can see) → pages of one discharge summary sent within 20 minutes join one draft → code checks the draft: a medicine name that matches no known record ("Glibpizide" → Glipizide?), a date with two different times across documents, fields the model marked unreadable → one question at a time with reply-keyboard answers ("I'll type it" for a typed correction) → Confirm → records active, same-drug records superseded and their reminders cancelled, reminders created at the household times the draft showed, refills computed, appointment reminder the evening before → the carer gets the new schedule by DM → the Admin approves the group post (English, plus Mandarin when a roster member prefers `zh`) → posted. Medicine names are masked while Super translates and restored after; the Mandarin is dropped if any name or number is missing.
 
 **Ask:** text addressed to Kin → Super calls `kin_ask` (caller from the session) → `retrieve(query, principal)` → permitted fields and excerpt → Super composes → sources and destination validated → deliver and audit.
 

@@ -19,7 +19,7 @@ Refusal: *"I can't advise on that — I keep the records and the schedule. From 
 
 ## Confirmation and schedule state
 
-Records move **extracted → confirmed → active → superseded**. Confirmation names the record version, details, source, times and timezone, assignee and end conditions. Ambiguity, unreadable text or conflicting instructions block activation; no model tier arbitrates a medical decision. Activation creates events; supersession cancels obsolete future events atomically; retries reuse event and delivery IDs. Refill estimates are labelled calculations from confirmed quantity, never dispensing advice. Translations keep the same confirmed values and sources.
+Records move **extracted → confirmed → active → superseded**. Confirmation names the record version, details, source, times and timezone, assignee and end conditions. Ambiguity, unreadable text or conflicting instructions block activation; no model tier arbitrates a medical decision. Activation creates events; supersession cancels obsolete future events atomically; retries reuse event and delivery IDs. Refill estimates are labelled calculations from confirmed quantity, never dispensing advice. Translations keep the same confirmed values and sources: medicine names are masked during translation and restored, and a translation that loses any name or number is discarded. A medicine name the extractor reads that matches no known record is put to the Admin, never corrected silently (the fixture's low-resolution photo reads Glipizide as "Glibpizide", and once as "Gliclazide", a different drug).
 
 ## Grounding
 
