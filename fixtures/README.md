@@ -9,7 +9,7 @@ Demo day (Week 0) is Mon 26 Oct 2026, timezone Asia/Singapore.
 | Path | Content |
 |---|---|
 | `documents/<id>.json` | Ground truth for one document: `fields` as a correct transcription reads them (every value is printed verbatim, so they double as source spans), `excerpts` approved for other roles, `categories`, expected `views` per role, `render`-only details |
-| `expected.json` | Expected outcomes: seed schedule, intake drafts and confirmations (conflict, supersession, low-confidence field, refill), recall, denied requests, the share flow, the minimum privacy tests, the public lookup |
+| `expected.json` | Expected outcomes: seed schedule and the Admin-confirmed Monday skill, intake drafts and confirmations (conflict, supersession, low-confidence field, refill), recall, denied requests, the share flow, the minimum privacy tests, the public lookup, the skill after a restart |
 | `templates/` | HTML/CSS per document type; `base.css` carries the watermark and footer |
 | `fonts/` | Kalam (SIL Open Font License, `OFL.txt`) for the handwritten carer note |
 | `renders/` | `make fixtures` output: `<id>.pdf` and `<id>-p<n>.png` (150 dpi), deterministic |

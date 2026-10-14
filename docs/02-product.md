@@ -39,7 +39,7 @@ Categories: `medical`, `medication`, `appointments`, `tasks`, `observations`, `f
 
 **Reusable skill.** One preconfigured, Admin-confirmed instruction survives restart: "Every Monday 08:00, remind Siti to refill the pill organiser and tell Mei Ling when done." Recipients are re-authorised at execution; `/skills` shows permitted descriptions.
 
-**Public lookup.** Public scheme rules (e.g. Home Caregiving Grant, CHAS) via Tavily, built from a public topic and the locale allow-list; family names, IDs and record text never enter the query. Kin returns the public source and does not decide eligibility.
+**Public lookup.** Public scheme rules (e.g. Home Caregiving Grant, CHAS) via Tavily: the query is the name of a scheme listed in the locale pack, searched on the locale's allow-listed sites, so family names, IDs and record text never enter it. Kin returns the public source and does not decide eligibility.
 
 ## Chat conventions
 

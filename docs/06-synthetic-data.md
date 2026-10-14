@@ -49,4 +49,4 @@ Discharge summary (2 pages); medication labels ×5; appointment slips ×3; lab r
 
 ## Locale pack (Singapore)
 
-`locale/sg/locale.yaml`: languages `en`, `zh`; timezone; lookup allow-list (scheme pages on gov.sg, AIC, MOH, CPF, HealthHub, CHAS; the demo clinics are fictional, so lookups cover public schemes only); document types and fields; local terms (polyclinic, MC, helper, CHAS, MediSave, Home Caregiving Grant, LPA). Swapping the locale replaces the folder.
+`locale/sg/locale.yaml`: languages `en`, `zh`; timezone; lookup allow-list (scheme pages on gov.sg, AIC, MOH, CPF, HealthHub, CHAS; the demo clinics are fictional, so lookups cover public schemes only) and the schemes Kin may look up (`lookup_topics`; the query is the scheme's name alone); document types and fields; local terms (polyclinic, MC, helper, CHAS, MediSave, Home Caregiving Grant, LPA). Swapping the locale replaces the folder.

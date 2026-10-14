@@ -31,7 +31,7 @@ Kin does not process audio: no public audio-capable model is listed on Token Fac
 
 ## Data flow
 
-Records live on family-controlled storage; Telegram transports messages and media; approved context goes to Nebius for inference; Tavily receives validated public topics only. Self-hosting the store does not keep all information local. Health and financial data about an identifiable person is personal data under Singapore's PDPA; the demo is synthetic and any real use needs its own consent, retention and provider assessment.
+Records live on family-controlled storage; Telegram transports messages and media; approved context goes to Nebius for inference; Tavily receives only the names of public schemes listed in the locale pack. Self-hosting the store does not keep all information local. Health and financial data about an identifiable person is personal data under Singapore's PDPA; the demo is synthetic and any real use needs its own consent, retention and provider assessment.
 
 ## Minimum validation (before D5)
 
