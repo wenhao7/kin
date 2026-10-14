@@ -72,11 +72,13 @@ def effective_level(policy: Policy, principal: Principal, category: str, group_r
     return level, qualifier
 
 
-def _fields_for_all(policy: Policy, roles: list[str], category: str, level: str):
-    """Intersection of the roles' projections at `level`: None = every field, [] = nothing."""
+def fields_for_all(policy: Policy, roles: list[str], category: str):
+    """Fields every one of these roles may see, each at its own level (the group's cap decides
+    only whether the category is shown): None = every field, [] = nothing."""
     allowed: set[str] | None = None
     for role in set(roles):
-        names = policy.fields_for(role, category, level) if role in policy.roles else []
+        known = role in policy.roles and category in policy.categories
+        names = policy.fields_for(role, category, policy.level(role, category)[0]) if known else []
         if names is None:
             continue
         allowed = set(names) if allowed is None else allowed & set(names)
@@ -106,7 +108,7 @@ def retrieve(
             continue  # other qualifiers (emergency_contacts) are not served yet: fail closed
         # In the group every member reads the answer: fields and excerpts must suit every role.
         readers = group_roles if principal.chat_type == "group" else [member.role]
-        names = _fields_for_all(policy, readers, row["category"], level)
+        names = fields_for_all(policy, readers, row["category"])
         fields = json.loads(row["fields"])
         visible = {k: v for k, v in fields.items() if names is None or k in names}
         if not visible:

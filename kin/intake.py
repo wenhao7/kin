@@ -689,14 +689,14 @@ def household_view(policy, roles: list[str], record_rows: list[Any]) -> list[dic
     """What the whole group may see of these records (group level, intersected projections)."""
     import json
 
-    from kin.retrieve import _fields_for_all
+    from kin.retrieve import fields_for_all
 
     out = []
     for row in record_rows:
         level = policy.group_level(row["category"], roles)
         if level == "none":
             continue
-        names = _fields_for_all(policy, roles, row["category"], level)
+        names = fields_for_all(policy, roles, row["category"])
         f = json.loads(row["fields"])
         visible = {k: v for k, v in f.items() if names is None or k in names}
         if visible:

@@ -162,6 +162,7 @@ def test_discharge_intake_end_to_end(kin):
     send(kin, ADMIN, "Post to group")
     en, zh = to(kin, GROUP)
     assert "Metformin 500 mg" in en and "Glipizide: stopped" in en and "Unchanged:" in en
+    assert "Return to the Emergency Department" in en  # care instructions suit every member
     for secret in ("pneumonia", "Orchidline", "DEMO-NOT-A-REAL-ID", "Hypertension"):
         assert secret not in en and secret not in zh
     assert zh.startswith("家庭护理更新") and "Metformin" in zh and "⟦" not in zh
