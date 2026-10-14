@@ -56,6 +56,9 @@
       "medication_changes",
       "excerpt:plan"
     ],
-    "carer": []
+    "carer": [
+      "medication_changes",
+      "excerpt:plan"
+    ]
   }
 }

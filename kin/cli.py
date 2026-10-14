@@ -125,8 +125,12 @@ def serve() -> None:
     if not s.api_token.get_secret_value():
         console.print("[red]KIN_API_TOKEN is empty; the API would refuse every call.[/red]")
         raise typer.Exit(code=1)
-    tz = yaml.safe_load(s.locale_file.read_text(encoding="utf-8")).get("timezone", "UTC")
+    locale = yaml.safe_load(s.locale_file.read_text(encoding="utf-8"))
+    tz = locale.get("timezone", "UTC")
     key = s.nebius_api_key.get_secret_value()
+    tavily_key = s.tavily_api_key.get_secret_value()
+    if tavily_key:
+        from tavily import TavilyClient
     ctx = Context(
         store=store,
         policy=policy,
@@ -137,6 +141,8 @@ def serve() -> None:
         client=OpenAI(api_key=key, base_url=s.nebius_base_url) if key else None,
         model_vision=s.model_vision,
         model_super=s.model_super,
+        locale=locale,
+        search=TavilyClient(api_key=tavily_key) if tavily_key else None,
     )
     schedule.start(store, roster, ctx.sender, tz)
     uvicorn.run(create_app(ctx, s.api_token.get_secret_value()), host=s.api_host, port=s.api_port)

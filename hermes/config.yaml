@@ -34,7 +34,7 @@ agent:
   # are shared across every user and chat, so they would bypass Kin's per-person boundaries; Kin's
   # store is the family's memory and Kin runs the skills. clarify, todo and vision are off too:
   # photos go to Kin's intake and Kin asks its one clarifying question in plain text. Left: Kin's
-  # own tools (kin_ask, kin_note).
+  # own tools (kin_ask, kin_note, kin_lookup).
   disabled_toolsets:
     - terminal
     - code_execution
@@ -75,6 +75,16 @@ skills:
 # model is listed on Token Factory for our key.
 stt:
   enabled: false
+
+# Kin checks each final reply before it is sent (the plugin's transform_llm_output hook). Text
+# streamed or sent between tool calls would skip that check, so both stay off for Telegram.
+streaming:
+  enabled: false
+display:
+  platforms:
+    telegram:
+      streaming: false
+      interim_assistant_messages: false
 
 telegram:
   require_mention: false        # from D2 the Kin plugin gates group text itself (docs/05-architecture.md)

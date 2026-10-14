@@ -2,6 +2,7 @@
 
 Every request carries `caller` as the gateway supplied it. Tool endpoints take no identity of
 their own: whatever a model passes in a tool's arguments, only `caller` decides the principal.
+`/outbound` sees every final reply before Hermes sends it (kin.answer).
 """
 
 from __future__ import annotations
@@ -13,18 +14,11 @@ from typing import Any
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 
-from kin import flows
+from kin import answer, flows, lookup
 from kin.context import Context
 from kin.inbound import Inbound, decide
 from kin.retrieve import Caller, Refused, principal_for, retrieve
 
-ANSWER_RULES = (
-    "Answer only from these records, which are all this person may see in this chat. "
-    "Name the source (document and date) for every statement about the person being cared for, "
-    "and quote excerpts word for word. If nothing here answers the question, say you don't know. "
-    "Never mention or guess at anything not listed. Organise, never advise: no diagnosis, dosing "
-    "or interpretation."
-)
 MAX_UPLOAD = 15 * 1024 * 1024
 
 
@@ -58,6 +52,16 @@ class AskIn(BaseModel):
 class NoteIn(BaseModel):
     caller: CallerIn
     text: str = Field(min_length=1, max_length=2000)
+
+
+class LookupIn(BaseModel):
+    caller: CallerIn
+    topic: str = Field(default="", max_length=500)
+
+
+class OutboundIn(BaseModel):
+    caller: CallerIn
+    text: str = Field(default="", max_length=20000)
 
 
 def create_app(ctx: Context, token: str) -> FastAPI:
@@ -97,6 +101,8 @@ def create_app(ctx: Context, token: str) -> FastAPI:
             filename=body.filename,
         )
         decision = decide(ctx, msg, sender.username())
+        if decision.action == "pass":
+            ctx.turns.begin(msg.caller, msg.text)  # an agent turn starts: nothing returned yet
         if decision.intake:
             background.add_task(flows.run_intake, ctx, decision.intake)
         delivery = None
@@ -115,7 +121,52 @@ def create_app(ctx: Context, token: str) -> FastAPI:
     @app.post("/tools/ask", dependencies=[Depends(authorised)])
     def ask(body: AskIn) -> dict[str, Any]:
         result = retrieve(store, policy, principal(body.caller), body.question)
-        return {"records": result.records, "rules": ANSWER_RULES}
+        ctx.turns.add(body.caller.to_caller(), records=[r["id"] for r in result.records])
+        return {"records": result.records, "rules": answer.rules(ctx.household)}
+
+    @app.post("/tools/lookup", dependencies=[Depends(authorised)])
+    def lookup_tool(body: LookupIn) -> dict[str, Any]:
+        p = principal(body.caller)
+        if p.member.role is None:
+            return {"error": "Kin answers only the family's members."}
+        topic = lookup.match(ctx.locale, body.topic)
+        if topic is None:
+            names = [t["name"] for t in lookup.topics(ctx.locale)]
+            store.audit(principal=p.member.id, action="lookup", decision="no topic")
+            return {"error": "Not a public scheme Kin can look up.", "schemes": names}
+        if ctx.search is None:
+            return {"error": "Public lookups are not set up."}
+        query = lookup.query_for(topic)
+        try:
+            results = lookup.search(ctx.search, ctx.locale, topic)
+        except Exception:  # noqa: BLE001 - nothing personal was sent; say it failed
+            results = None
+        store.audit(
+            principal=p.member.id,
+            action="lookup",
+            decision="failed" if results is None else ("allowed" if results else "empty"),
+            chat_type=p.chat_type,
+            chat_id=p.chat_id,
+            query=query,
+            destination=p.chat_id,
+        )
+        if results is None:
+            return {"error": "The lookup failed. Try again later."}
+        sources = [{"title": r["title"], "url": r["url"]} for r in results]
+        ctx.turns.add(body.caller.to_caller(), sources=sources)
+        return {"scheme": topic["name"], "results": results, "rules": lookup.LOOKUP_RULES}
+
+    @app.post("/outbound", dependencies=[Depends(authorised)])
+    def outbound(body: OutboundIn) -> dict[str, str]:
+        caller = body.caller.to_caller()
+        try:
+            p = principal_for(caller, roster, group_chat_id)
+        except Refused:
+            return {"text": answer.WITHHELD, "decision": "refused"}
+        if p.member.role is None:
+            return {"text": answer.WITHHELD, "decision": "unknown sender"}
+        text, decision = answer.finish(ctx, caller, p, body.text)
+        return {"text": text, "decision": decision}
 
     @app.post("/tools/note", dependencies=[Depends(authorised)])
     def note(body: NoteIn) -> dict[str, Any]:

@@ -1,10 +1,11 @@
-"""What the kin service's handlers share: store, policy, roster, Telegram sender, model client."""
+"""What the kin service's handlers share: store, policy, roster, sender, model and search."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+from kin.answer import Turns
 from kin.members import Roster
 from kin.policy import Policy
 from kin.store import Store
@@ -33,6 +34,9 @@ class Context:
     client: Any = None  # OpenAI-compatible Token Factory client; None disables model calls
     model_vision: str = ""
     model_super: str = ""
+    locale: dict[str, Any] = field(default_factory=dict)  # locale/<id>/locale.yaml
+    search: Any = None  # Tavily client; None disables public lookups
+    turns: Turns = field(default_factory=Turns)
 
     @property
     def household(self) -> dict[str, Any]:

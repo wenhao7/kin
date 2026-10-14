@@ -1,9 +1,9 @@
-"""Kin plugin for Hermes: identity, inbound routing and tools.
+"""Kin plugin for Hermes: identity, inbound routing, tools and the outbound check.
 
 See docs/05-architecture.md (Hermes ↔ Kin).
 Thin by design: every decision is made by the kin service. The caller (Telegram user, chat, chat
-type) always comes from the gateway — the session context for tools, the message source for the
-hook — and never from a model's arguments. Standard library only.
+type) always comes from the gateway — the session context for tools and replies, the message
+source for inbound — and never from a model's arguments. Standard library only.
 """
 
 from __future__ import annotations
@@ -23,6 +23,7 @@ logger = logging.getLogger("kin.plugin")
 KIN_API_URL = os.environ.get("KIN_API_URL", "http://kin:8765").rstrip("/")
 MAX_UPLOAD = 15 * 1024 * 1024
 UNAVAILABLE = "Kin is restarting. Please try again in a minute."
+OUTBOUND_TIMEOUT = 10  # well inside Hermes' 30 s hook limit, after which a reply would go unchecked
 
 
 def post(path: str, payload: dict[str, Any], timeout: float = 20) -> dict[str, Any]:
@@ -87,6 +88,19 @@ ASK_SCHEMA = {
         "required": ["question"],
     },
 }
+LOOKUP_SCHEMA = {
+    "name": "kin_lookup",
+    "description": (
+        "Look up a public government scheme (grants, subsidies, schemes such as the Home "
+        "Caregiving Grant or CHAS) on official websites. Pass only the scheme's name; never "
+        "names, ages or anything from the family's records. Returns public pages with links."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {"topic": {"type": "string", "description": "The scheme's name."}},
+        "required": ["topic"],
+    },
+}
 NOTE_SCHEMA = {
     "name": "kin_note",
     "description": (
@@ -145,6 +159,25 @@ async def pre_gateway_dispatch(
     return {"action": "skip", "reason": result.get("reason", "handled by kin")}
 
 
+def transform_llm_output(response_text: str = "", platform: str = "", **_: Any) -> str | None:
+    """Every final reply goes past Kin before Hermes sends it: Kin withholds anything this chat
+    may not see and adds the approved excerpts and sources. None leaves the reply as it is."""
+    caller = session_caller()
+    if not response_text or "telegram" not in (str(platform), caller["platform"]):
+        return None
+    if caller["platform"] != "telegram" or not caller["user_id"]:
+        logger.warning("Telegram reply without a session caller; not sent")
+        return UNAVAILABLE
+    result = post(
+        "/outbound", {"caller": caller, "text": response_text}, timeout=OUTBOUND_TIMEOUT
+    )
+    if "error" in result:
+        logger.warning("kin outbound check failed: %s", result["error"])
+        return UNAVAILABLE  # fail closed: an unchecked reply is not sent
+    text = result.get("text") or ""
+    return text if text and text != response_text else None
+
+
 async def _notify(gateway: Any, chat_id: str, chat_type: str) -> None:
     if chat_type != "dm" or gateway is None:
         return
@@ -163,4 +196,11 @@ def register(ctx: Any) -> None:
     ctx.register_tool(
         name="kin_note", toolset="kin", schema=NOTE_SCHEMA, handler=_tool("/tools/note", "text")
     )
+    ctx.register_tool(
+        name="kin_lookup",
+        toolset="kin",
+        schema=LOOKUP_SCHEMA,
+        handler=_tool("/tools/lookup", "topic"),
+    )
     ctx.register_hook("pre_gateway_dispatch", pre_gateway_dispatch)
+    ctx.register_hook("transform_llm_output", transform_llm_output)

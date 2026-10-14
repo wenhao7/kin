@@ -20,9 +20,11 @@ TOKEN = "test-token"
 class FakeSender:
     def __init__(self):
         self.sent = []
+        self.keyboards = []
 
     def send(self, chat_id, text, reply_to=None, keyboard=None):
         self.sent.append((chat_id, text))
+        self.keyboards.append(keyboard)
         return {"ok": True, "error": None}
 
     def username(self):

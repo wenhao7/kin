@@ -26,9 +26,12 @@ members:
     role: carer
     language: en
 
-# Household routine. Kin proposes reminder times from a document's own words ("in the morning"
+# The household. Kin proposes reminder times from a document's own words ("in the morning"
 # → morning) and the Admin confirms every schedule before anything is active. Local times.
 household:
+  care_recipient:           # who the records are about, and how Kin names them in chat
+    name: Mdm Tan Siew Lan
+    call: Ah Ma
   medicines_by: siti        # receives medicine reminders
   appointments_by: mei_ling # attends appointments; reminded the evening before
   times:

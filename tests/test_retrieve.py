@@ -106,7 +106,8 @@ def test_group_answers_suit_every_member(env):
     assert all(not r["excerpts"] or r["category"] != "finance" for r in res.records)
     family = ask(env, FAMILY, chat_type="group")
     assert field_names(family, "medical") <= {"care_instructions", "source"}  # not the summary
-    assert all(not r["excerpts"] for r in family.records)  # no excerpt is approved for everyone
+    shared = {e["id"] for r in family.records for e in r["excerpts"]}
+    assert shared == {"clinic-memo#plan", "discharge-summary#return-advice"}  # approved for all
 
 
 def test_originals_are_never_returned(env):

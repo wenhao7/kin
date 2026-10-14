@@ -15,6 +15,30 @@ lookup_allow_domains:
   - chas.sg
   - gov.sg
 
+# Public schemes Kin can look up (`kin_lookup`). The Tavily query is built from the scheme's name
+# alone; whatever else the asker or the model wrote never leaves Kin. Aliases only help matching.
+lookup_topics:
+  - name: Home Caregiving Grant
+    aliases: [HCG, caregiving grant]
+  - name: Caregivers Training Grant
+    aliases: [CTG, caregiver training]
+  - name: Seniors' Mobility and Enabling Fund
+    aliases: [SMF, mobility fund, wheelchair subsidy]
+  - name: Community Health Assist Scheme
+    aliases: [CHAS]
+  - name: Pioneer Generation Package
+    aliases: [Pioneer Generation, PG card]
+  - name: Merdeka Generation Package
+    aliases: [Merdeka Generation, MG card]
+  - name: CareShield Life
+    aliases: [ElderShield]
+  - name: Migrant Domestic Worker Levy Concession
+    aliases: [levy concession, helper levy]
+  - name: Lasting Power of Attorney
+    aliases: [LPA]
+  - name: Respite care
+    aliases: [respite]
+
 # Terms the intake classifier and answer composer should recognise as local vocabulary.
 terms:
   polyclinic: "public primary-care clinic"

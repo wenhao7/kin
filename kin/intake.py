@@ -122,7 +122,8 @@ def records_for(
     extra: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """Records a confirmed document produces (also used to seed the fixture). `excerpts` are the
-    names of approved excerpts to attach when the caller has them (the fixture does)."""
+    names of approved excerpts to attach when the caller has them (the fixture does); `quote`
+    names the record's fields that are printed text, which a confirmed intake files as excerpts."""
     src = source_of(doc_type, fields)
     times = household.get("times", {})
     meds_by = household.get("medicines_by")
@@ -148,6 +149,7 @@ def records_for(
                     "category": "medical",
                     "fields": {**medical, "source": src},
                     "excerpts": ["return-advice"],
+                    "quote": ["care_instructions"],
                 }
             )
         for m in fields.get("medications_after") or []:
@@ -165,6 +167,7 @@ def records_for(
                     },
                     "assignee": meds_by,
                     "excerpts": ["medication-changes"],
+                    "quote": ["drug", "strength", "directions", "change"],
                 }
             )
     elif doc_type == "medication_label":
@@ -182,6 +185,7 @@ def records_for(
                     "source": src,
                 },
                 "excerpts": [],
+                "quote": ["drug", "strength", "directions"],
             }
         )
         if str(fields.get("drug", "")).lower() not in active_drugs:
@@ -216,6 +220,7 @@ def records_for(
                 },
                 "assignee": household.get("appointments_by"),
                 "excerpts": [],
+                "quote": ["instructions"],
             }
         )
     elif doc_type == "clinic_memo":
@@ -245,11 +250,17 @@ def records_for(
                     },
                     "assignee": meds_by,
                     "excerpts": ["plan"],
+                    "quote": ["drug", "directions"],
                 }
             )
     elif doc_type == "insurance_letter":
         out.append(
-            {"category": "finance", "fields": {**fields, "source": src}, "excerpts": ["status"]}
+            {
+                "category": "finance",
+                "fields": {**fields, "source": src},
+                "excerpts": ["status"],
+                "quote": ["status"],
+            }
         )
     elif doc_type == "carer_note":
         out.append(
@@ -262,6 +273,7 @@ def records_for(
                 },
                 "created_by": extra.get("author") or meds_by,
                 "excerpts": [],
+                "quote": ["observations"],
             }
         )
     else:
@@ -552,10 +564,33 @@ def _event_id(record_id: str, version: int, at: str) -> str:
     return hashlib.sha1(f"{record_id}:{version}:{at}".encode()).hexdigest()[:16]
 
 
+def quotes(record: dict[str, Any]) -> tuple[list[str], list[str]]:
+    """(excerpt texts, field names) from a record's printed fields: list items one by one, the
+    cells of a table row joined with " · ". Values are as transcribed and confirmed."""
+    f = record["fields"]
+    names = [n for n in record.get("quote", []) if f.get(n)]
+    texts = [str(x) for n in names if isinstance(f[n], list) for x in f[n] if str(x).strip()]
+    cells = [str(f[n]).strip() for n in names if not isinstance(f[n], list)]
+    if any(cells):
+        texts.append(" · ".join(c for c in cells if c))
+    return texts, names
+
+
+def excerpt_audience(policy, category: str, names: list[str]) -> list[str]:
+    """Roles that may read every quoted field of this category (policy matrix and projections)."""
+    roles = []
+    for role in policy.roles:
+        level, _ = policy.level(role, category)
+        allowed = policy.fields_for(role, category, level)
+        if level != "none" and (allowed is None or set(names) <= set(allowed)):
+            roles.append(role)
+    return roles
+
+
 def activate(
-    store: Store, draft: dict[str, Any], household: dict[str, Any], tz: str
+    store: Store, policy, draft: dict[str, Any], household: dict[str, Any], tz: str
 ) -> dict[str, Any]:
-    """File a confirmed draft: records, supersession, events. Idempotent per draft."""
+    """File a confirmed draft: records with their excerpts, supersession, events."""
     import json
 
     f, t = draft["fields"], draft["doc_type"]
@@ -566,11 +601,24 @@ def activate(
     }
     created, superseded, events = [], [], []
     for r in records_for(t, f, household, set(active)):
+        texts, names = quotes(r)
+        audience = excerpt_audience(policy, r["category"], names)
+        excerpt_ids = [
+            store.add_excerpt(
+                document_id=draft["document_ids"][0],
+                text=text,
+                category=r["category"],
+                audience=audience,
+                approved_by=draft["admin"],
+            )
+            for text in texts
+        ]
         rid = store.add_record(
             category=r["category"],
             fields=r["fields"],
             created_by=r.get("created_by") or draft["admin"],
             document_id=draft["document_ids"][0],
+            excerpt_ids=excerpt_ids,
             assignee=r.get("assignee"),
         )
         created.append(rid)

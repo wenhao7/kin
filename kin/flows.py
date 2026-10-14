@@ -116,7 +116,7 @@ def handle_prompt(ctx: Context, text: str) -> str | None:
 
 def confirm(ctx: Context, draft: dict) -> str:
     """Activate a confirmed draft, tell the carer, and offer the group post."""
-    result = intake.activate(ctx.store, draft, ctx.household, ctx.tz)
+    result = intake.activate(ctx.store, ctx.policy, draft, ctx.household, ctx.tz)
     rows = [ctx.store.record(rid) for rid in result["records"]]
     _tell_carer(ctx, rows, draft)
     view = intake.household_view(ctx.policy, ctx.store.member_roles(), rows)

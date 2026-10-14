@@ -131,3 +131,26 @@ def test_hook_fails_closed_when_kin_is_down(registered):
     plugin.post = lambda path, payload, timeout=20: {"error": "kin unavailable", "status": 0}
     hooks["pre_gateway_dispatch"] = plugin.pre_gateway_dispatch
     assert dispatch(hooks, Event(Source(ADMIN, ADMIN, "dm"), "hi"))["action"] == "skip"
+
+
+def test_replies_pass_kin_before_they_are_sent(registered):
+    make, _, _ = registered
+    plugin, tools, hooks = make(session(FAMILY, "group"))
+    UNAVAILABLE = plugin.UNAVAILABLE  # noqa: N806
+    assert set(tools) == {"kin_ask", "kin_note", "kin_lookup"}
+    event = Event(Source(FAMILY, GROUP, "group"), "Kin, what did Dr Tan change?")
+    assert dispatch(hooks, event) == {"action": "allow"}
+    tools["kin_ask"]({"question": "what did Dr Tan change?"})
+    check = hooks["transform_llm_output"]
+    answer = "Dr Tan started Losartan 50 mg once a day (Clinic memo, 26 Jun 2026)."
+    out = check(response_text=answer, session_id="s", platform="telegram", turn_id="t")
+    assert out.startswith(answer) and "“Plan: start losartan 50 mg" in out
+    withheld = check(response_text="Orchidline Assurance is assessing it.")
+    assert withheld == "I can't share that here."
+    assert check(response_text="Hello.") is None  # nothing to add or withhold: sent as written
+    plugin.post = lambda path, payload, timeout=20: {"error": "kin unavailable", "status": 0}
+    assert check(response_text="Hello.") == UNAVAILABLE  # unchecked replies are not sent
+    _, _, cli_hooks = make({"HERMES_SESSION_PLATFORM": "cli"})
+    assert cli_hooks["transform_llm_output"](response_text="Hello.") is None
+    _, _, lost = make({})  # a Telegram turn whose caller is missing is not sent unchecked
+    assert lost["transform_llm_output"](response_text="Hi.", platform="telegram") == UNAVAILABLE
