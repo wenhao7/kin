@@ -5,6 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from kin.api import create_app
+from kin.context import Context
 from kin.inbound import VOICE_REPLY
 from kin.members import load_roster
 from kin.policy import load_policy
@@ -35,14 +36,14 @@ def api(tmp_path):
     store.sync_roster(roster)
     load_fixture_documents(store)
     sender = FakeSender()
-    app = create_app(
+    ctx = Context(
         store=store,
         policy=load_policy(ROOT / "config" / "policy.yaml"),
         roster=roster,
         sender=sender,
         group_chat_id=GROUP,
-        token=TOKEN,
     )
+    app = create_app(ctx, TOKEN)
     client = TestClient(app)
     client.headers["Authorization"] = f"Bearer {TOKEN}"
     return client, store, sender
@@ -112,7 +113,7 @@ def test_only_the_admin_dm_stores_documents(api):
         r["reason"] == "documents go through the Admin" and "to Mei Ling by" in sender.sent[-1][1]
     )
     r = inbound(client, ADMIN, kind="photo", file_b64=photo, filename="label.jpg")
-    assert r["reason"] == "original stored"
+    assert r["reason"] == "original stored" and sender.sent[-1][1] == "Saved privately."
     stored = list((store.originals_dir).glob("doc-*.jpg"))
     assert len(stored) == 1 and stored[0].read_bytes() == b"\xff\xd8fake-jpeg"
 

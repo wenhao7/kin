@@ -11,9 +11,9 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from kin.members import Roster
+from kin import flows, share
+from kin.context import Context
 from kin.retrieve import Caller, Refused, principal_for
-from kin.store import Store
 
 VOICE_REPLY = "I can't listen to voice notes yet. Could you type it instead?"
 OTHER_MEDIA_REPLY = "I can read text, photos and documents, but not this kind of message."
@@ -23,7 +23,7 @@ HELP = (
     'In the group, start with "Kin" or reply to one of my messages.\n'
     "Documents go to {admin} by direct message, who checks them before anything is filed."
 )
-ADMIN_COMMANDS = {"roles", "who_saw", "skills", "export"}
+ADMIN_COMMANDS = {"roles", "who_saw", "reminders", "revoke", "skills", "export"}
 
 
 @dataclass
@@ -42,6 +42,7 @@ class Decision:
     action: str  # "pass" | "skip"
     reason: str
     reply: str | None = None
+    intake: str | None = None  # document ID to read in the background
 
 
 def addressed_to_kin(text: str, bot_username: str) -> bool:
@@ -50,11 +51,10 @@ def addressed_to_kin(text: str, bot_username: str) -> bool:
     return bool(bot_username) and f"@{bot_username}".lower() in text.lower()
 
 
-def decide(
-    store: Store, roster: Roster, group_chat_id: str, msg: Inbound, bot_username: str = ""
-) -> Decision:
+def decide(ctx: Context, msg: Inbound, bot_username: str = "") -> Decision:
+    store, roster = ctx.store, ctx.roster
     try:
-        principal = principal_for(msg.caller, roster, group_chat_id)
+        principal = principal_for(msg.caller, roster, ctx.group_chat_id)
     except Refused as exc:
         return Decision("skip", f"refused: {exc}")
     member = principal.member
@@ -71,7 +71,7 @@ def decide(
 
     if msg.kind in ("photo", "document"):
         if member.role == "admin" and in_dm and msg.content:
-            store.add_document(
+            doc_id = store.add_document(
                 kind=msg.kind,
                 title=msg.filename or "Photo",
                 categories=[],
@@ -79,11 +79,9 @@ def decide(
                 content=msg.content,
                 suffix=_suffix(msg.filename, msg.kind),
             )
-            return Decision(
-                "skip",
-                "original stored",
-                "Saved privately. I'll read documents and draft the records once intake is on.",
-            )
+            reading = ctx.client is not None and bool(ctx.model_vision)
+            reply = "Saved privately. Reading it now…" if reading else "Saved privately."
+            return Decision("skip", "original stored", reply, intake=doc_id if reading else None)
         reply = (
             "Please send documents to me by direct message, so the original stays private."
             if member.role == "admin"
@@ -93,13 +91,31 @@ def decide(
         return Decision("skip", "documents go through the Admin", reply)
 
     if msg.kind == "command" or msg.text.startswith("/"):
-        return _command(store, roster, member, msg, admin_name, bot_username)
+        return _command(ctx, member, msg, admin_name, bot_username)
 
     if msg.kind != "text":
         return Decision("skip", "unsupported media", None if not in_dm else OTHER_MEDIA_REPLY)
 
     if not in_dm and not (msg.reply_to_kin or addressed_to_kin(msg.text, bot_username)):
         return Decision("skip", "group chatter not addressed to Kin")
+    if member.role == "admin" and in_dm:
+        handled = flows.handle_prompt(ctx, msg.text)
+        if handled is not None:
+            return Decision("skip", "admin answer", handled or None)
+    category = share.blocked_category(ctx.policy, member, msg.text)
+    if category:
+        reply = share.start(
+            ctx.store,
+            ctx.policy,
+            roster,
+            ctx.sender,
+            member,
+            category,
+            msg.text,
+            principal.chat_id,
+            principal.chat_type,
+        )
+        return Decision("skip", f"share request: {category}", reply)
     return Decision("pass", "agent turn")
 
 
@@ -109,7 +125,8 @@ def _suffix(filename: str | None, kind: str) -> str:
     return ".jpg" if kind == "photo" else ""
 
 
-def _command(store, roster, member, msg: Inbound, admin_name: str, bot_username: str) -> Decision:
+def _command(ctx: Context, member, msg: Inbound, admin_name: str, bot_username: str) -> Decision:
+    store, roster = ctx.store, ctx.roster
     head, _, args = msg.text.strip().partition(" ")
     name = head.lstrip("/").split("@", 1)[0].lower()
     if "@" in head and bot_username and head.split("@", 1)[1].lower() != bot_username.lower():
@@ -139,6 +156,27 @@ def _command(store, roster, member, msg: Inbound, admin_name: str, bot_username:
             f"{r['at'][:16]} {r['principal']} ({r['chat_type']}): {r['decision']}" for r in rows
         ]
         return Decision("skip", "/who_saw", f"Shown {ref}:\n" + "\n".join(lines))
+    if name == "reminders":
+        events = store.active_events()
+        if not events:
+            return Decision("skip", "/reminders", "No reminders are scheduled.")
+        lines = []
+        for e in events:
+            who = roster.by_id(e["assignee"])
+            when = f"daily {e['at']}" if e["kind"] == "daily" else e["at"].replace("T", " ")
+            until = f" until {e['until']}" if e["until"] else ""
+            lines.append(f"{when}{until} → {who.short if who else e['assignee']}: {e['label']}")
+        return Decision("skip", "/reminders", "Scheduled reminders:\n" + "\n".join(lines))
+    if name == "revoke":
+        target, _, ref = args.strip().partition(" ")
+        member_to = roster.by_id(target.strip()) or next(
+            (m for m in roster.members if m.short.lower() == target.strip().lower()), None
+        )
+        if member_to is None or not ref.strip():
+            return Decision("skip", "/revoke", "Usage: /revoke <member id> <record or document id>")
+        ids = [ref.strip()] + [r["id"] for r in store.records_of_document(ref.strip())]
+        n = store.revoke_grants(member_to.id, ids)
+        return Decision("skip", "/revoke", f"Revoked {n} grant(s) for {member_to.short}.")
     if name in ("skills", "export"):
         return Decision("skip", f"/{name}", "Not available yet.")
     if name == "demo":

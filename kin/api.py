@@ -8,16 +8,15 @@ from __future__ import annotations
 
 import base64
 import hmac
-from typing import Any, Protocol
+from typing import Any
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 
+from kin import flows
+from kin.context import Context
 from kin.inbound import Inbound, decide
-from kin.members import Roster
-from kin.policy import Policy
 from kin.retrieve import Caller, Refused, principal_for, retrieve
-from kin.store import Store
 
 ANSWER_RULES = (
     "Answer only from these records, which are all this person may see in this chat. "
@@ -27,18 +26,6 @@ ANSWER_RULES = (
     "or interpretation."
 )
 MAX_UPLOAD = 15 * 1024 * 1024
-
-
-class Sender(Protocol):
-    def send(
-        self,
-        chat_id: str,
-        text: str,
-        reply_to: str | None = None,
-        keyboard: list[str] | None = None,
-    ) -> dict[str, Any]: ...
-
-    def username(self) -> str: ...
 
 
 class CallerIn(BaseModel):
@@ -73,10 +60,10 @@ class NoteIn(BaseModel):
     text: str = Field(min_length=1, max_length=2000)
 
 
-def create_app(
-    *, store: Store, policy: Policy, roster: Roster, sender: Sender, group_chat_id: str, token: str
-) -> FastAPI:
+def create_app(ctx: Context, token: str) -> FastAPI:
     app = FastAPI(title="kin", docs_url=None, redoc_url=None, openapi_url=None)
+    store, policy, roster, sender = ctx.store, ctx.policy, ctx.roster, ctx.sender
+    group_chat_id = ctx.group_chat_id
 
     def authorised(authorization: str = Header(default="")) -> None:
         expected = f"Bearer {token}"
@@ -94,7 +81,7 @@ def create_app(
         return {"ok": True}
 
     @app.post("/inbound", dependencies=[Depends(authorised)])
-    def inbound(body: InboundIn) -> dict[str, str]:
+    def inbound(body: InboundIn, background: BackgroundTasks) -> dict[str, str]:
         content = None
         if body.file_b64:
             content = base64.b64decode(body.file_b64)
@@ -109,7 +96,9 @@ def create_app(
             content=content,
             filename=body.filename,
         )
-        decision = decide(store, roster, group_chat_id, msg, sender.username())
+        decision = decide(ctx, msg, sender.username())
+        if decision.intake:
+            background.add_task(flows.run_intake, ctx, decision.intake)
         delivery = None
         if decision.reply:
             delivery = sender.send(body.caller.chat_id, decision.reply, reply_to=msg.message_id)

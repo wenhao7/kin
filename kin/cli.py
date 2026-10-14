@@ -113,23 +113,33 @@ def _runtime():
 def serve() -> None:
     """Run the kin API used by the Kin plugin in Hermes (compose network only)."""
     import uvicorn
+    import yaml
+    from openai import OpenAI
 
+    from kin import schedule
     from kin.api import create_app
+    from kin.context import Context
     from kin.telegram import TelegramSender
 
     s, roster, policy, store = _runtime()
     if not s.api_token.get_secret_value():
         console.print("[red]KIN_API_TOKEN is empty; the API would refuse every call.[/red]")
         raise typer.Exit(code=1)
-    api = create_app(
+    tz = yaml.safe_load(s.locale_file.read_text(encoding="utf-8")).get("timezone", "UTC")
+    key = s.nebius_api_key.get_secret_value()
+    ctx = Context(
         store=store,
         policy=policy,
         roster=roster,
         sender=TelegramSender(s.telegram_bot_token.get_secret_value()),
         group_chat_id=s.group_chat_id,
-        token=s.api_token.get_secret_value(),
+        tz=tz,
+        client=OpenAI(api_key=key, base_url=s.nebius_base_url) if key else None,
+        model_vision=s.model_vision,
+        model_super=s.model_super,
     )
-    uvicorn.run(api, host=s.api_host, port=s.api_port, log_level="info")
+    schedule.start(store, roster, ctx.sender, tz)
+    uvicorn.run(create_app(ctx, s.api_token.get_secret_value()), host=s.api_host, port=s.api_port)
 
 
 @app.command()
