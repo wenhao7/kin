@@ -150,7 +150,7 @@ def confirm(ctx: Context, draft: dict) -> str:
     if en:
         drugs = [json.loads(r["fields"]).get("drug", "") for r in rows if r is not None]
         zh = (
-            to_mandarin(ctx.client, ctx.model_super, en, drugs)
+            to_mandarin(ctx.client, ctx.model_super, en, drugs + _names(ctx))
             if _needs_mandarin(ctx) and ctx.client
             else None
         )
@@ -171,6 +171,11 @@ def confirm(ctx: Context, draft: dict) -> str:
         )
         return ""
     return "\n".join(lines)
+
+
+def _names(ctx: Context) -> list[str]:
+    """People's names stay as written in the Mandarin post, like medicine names."""
+    return [n for m in ctx.roster.members for n in (m.short, m.name) if n]
 
 
 def _needs_mandarin(ctx: Context) -> bool:

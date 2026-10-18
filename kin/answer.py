@@ -28,7 +28,8 @@ ANSWER_RULES = (
     "question, say you don't know. Never mention or guess at anything not listed. A medicine can "
     "have more than one record (its schedule and its pharmacy label): mention each medicine once. "
     "Kin adds the approved excerpts below your answer, so don't repeat them, and never show "
-    "record IDs. Organise, never "
+    "record IDs. Kin never sends original documents or photos to anyone: if asked for one, say "
+    "so plainly and offer what these records show instead. Organise, never "
     "advise: no diagnosis, dosing or interpretation."
 )
 
@@ -40,8 +41,8 @@ def rules(household: dict[str, Any], admin: str = "") -> str:
         call = f", whom the family calls {who['call']}" if who.get("call") else ""
         about = f"These records are about {who['name']}{call}. "
     documents = (
-        f" Documents reach Kin only through {admin}, by direct message: if one would answer the "
-        f"question, say {admin} can send it; never ask anyone else for documents."
+        f" If a document Kin doesn't have would answer the question, say that {admin} can send it "
+        "to Kin; never ask anyone else to send or share documents."
         if admin
         else ""
     )

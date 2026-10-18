@@ -1,9 +1,10 @@
 """Mandarin versions of Admin-confirmed group posts (Super on Token Factory).
 
-Translation may not add, drop or alter facts. Medicine names are swapped for placeholder tokens
-before translating and restored after, so they stay exactly as on the label (the model otherwise
-translates them, sometimes into a different drug). The result is discarded, and only English is
-posted, unless every token and every number of the English text survives.
+Translation may not add, drop or alter facts. Medicine and people's names are swapped for
+placeholder tokens before translating and restored after, so they stay exactly as written (the
+model otherwise translates them, sometimes into a different drug or other characters). The
+result is discarded, and only English is posted, unless every token and every number of the
+English text survives.
 """
 
 from __future__ import annotations
@@ -14,7 +15,7 @@ from typing import Any
 PROMPT = (
     "Translate this family care update into Simplified Chinese for an older family member. "
     "Translate the instructions fully. Keep every token like ⟦M1⟧ exactly as it is (they stand "
-    "for medicine names) and copy every number exactly. Do not add, drop or explain anything. "
+    "for names) and copy every number exactly. Do not add, drop or explain anything. "
     "Reply with only the translation."
 )
 
