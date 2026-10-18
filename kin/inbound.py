@@ -103,6 +103,8 @@ def decide(ctx: Context, msg: Inbound, bot_username: str = "") -> Decision:
         if handled is not None:
             return Decision("skip", "prompt answer", handled or None)
     category = share.blocked_category(ctx.policy, member, msg.text)
+    if category and in_dm and share.granted(store, member, category):
+        category = None  # already shared: answered from the approved excerpts, DM only
     if category:
         reply = share.start(
             ctx.store,

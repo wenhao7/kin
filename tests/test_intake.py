@@ -248,6 +248,10 @@ def test_share_flow_once_standing_revoke_and_no(kin):
     shared = [r for r in ask(kin, FAMILY) if r["category"] == "finance"]
     assert shared and set(shared[0]["fields"]) == {"source"} and shared[0]["excerpts"]
     assert all(r["category"] != "finance" for r in ask(kin, FAMILY, "group"))  # never in group
+    assert send(kin, FAMILY, "What did the insurer say?")["action"] == "pass"  # no new request
+    group = send(kin, FAMILY, "Kin, what did the insurer say?", chat_type="group")
+    assert group["reason"] == "share request: finance"
+    send(kin, ADMIN, "No")
 
     send(kin, ADMIN, "/revoke wei_jie insurance-letter", kind="command")
     assert to(kin, ADMIN)[-1] == "Revoked 1 grant(s) for Wei Jie."

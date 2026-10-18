@@ -3,7 +3,8 @@
 Detection is by keywords (config/policy.yaml `share_keywords`), never by a model, and the asker
 gets the same neutral reply whether or not a matching record exists. The Admin answers Yes
 (standing grant for the matched records), Just this once (one answer) or No; the answer goes to
-the asker's DM as the approved excerpt only, never the original.
+the asker's DM as the approved excerpt only, never the original. With a standing grant the
+member's later questions in DM go to the agent, which sees only the shared excerpts.
 """
 
 from __future__ import annotations
@@ -32,6 +33,12 @@ def blocked_category(policy: Policy, member: Member, text: str) -> str | None:
         if any(re.search(rf"\b{re.escape(w)}\b", lowered) for w in words):
             return category
     return None
+
+
+def granted(store: Store, member: Member, category: str) -> bool:
+    """Whether the member holds a standing grant on an active record of this category."""
+    rows = (store.record(g["record_id"]) for g in store.standing_grants(member.id))
+    return any(r is not None and r["category"] == category for r in rows)
 
 
 def _matching(store: Store, category: str, question: str) -> list[Any]:
