@@ -17,6 +17,9 @@ from typing import Any
 from kin.retrieve import Caller, Principal, hidden_values, norm, visible
 
 WITHHELD = "I can't share that here."
+# Citation markers some models add, e.g. 【{"id":"rec-18551cb6ff"}】: record IDs mean nothing to
+# the family, so they never reach the chat.
+MARKERS = re.compile(r"\s*【[^】]*】|\s*\[\{\s*\"id\"\s*:\s*\"[^\"]*\"\s*\}\]")
 MAX_EXCERPTS = 3
 ANCHORS = ("drug", "department", "clinic", "title", "insurer")
 ANSWER_RULES = (
@@ -24,7 +27,8 @@ ANSWER_RULES = (
     "Name the source (document and date) for every statement. If nothing here answers the "
     "question, say you don't know. Never mention or guess at anything not listed. A medicine can "
     "have more than one record (its schedule and its pharmacy label): mention each medicine once. "
-    "Kin adds the approved excerpts below your answer, so don't repeat them. Organise, never "
+    "Kin adds the approved excerpts below your answer, so don't repeat them, and never show "
+    "record IDs. Organise, never "
     "advise: no diagnosis, dosing or interpretation."
 )
 
@@ -80,6 +84,7 @@ def finish(ctx, caller: Caller, principal: Principal, text: str) -> tuple[str, s
     """(reply to send, decision). The reply is the model's text, withheld or with sources added."""
     store, policy = ctx.store, ctx.policy
     turn = ctx.turns.pop(caller)
+    text = MARKERS.sub("", text)
     shown = visible(store, policy, principal)
     low = norm(text)
     # Repeating the asker's own words reveals nothing; withholding them would ("Does she have

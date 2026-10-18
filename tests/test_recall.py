@@ -44,6 +44,14 @@ def test_group_recall_gets_the_month_minus_4_change_with_its_excerpt(kin):  # no
     assert shown[0]["action"] == "answer" and shown[0]["chat_type"] == "group"
 
 
+def test_citation_markers_never_reach_the_chat(kin):  # noqa: F811
+    turn(kin, FAMILY, "Kin, what did Dr Tan change?", "group")
+    marked = 'Dr Tan started Losartan 50 mg【{"id":"rec-18551cb6ff"}】 (Clinic memo, 26 Jun 2026).'
+    out = reply(kin, FAMILY, marked, "group")["text"]
+    assert out.startswith("Dr Tan started Losartan 50 mg (Clinic memo, 26 Jun 2026).")
+    assert "rec-" not in out and "【" not in out
+
+
 def test_quoted_excerpts_are_not_repeated_and_uncited_ones_not_added(kin):  # noqa: F811
     turn(kin, FAMILY, "Kin, what did Dr Tan change?", "group")
     quoted = "The memo says: “Plan: start losartan 50 mg once a day in the morning.”"
