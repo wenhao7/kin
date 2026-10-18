@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS drafts (
   updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS prompts (
   id INTEGER PRIMARY KEY AUTOINCREMENT, member TEXT NOT NULL, kind TEXT NOT NULL, ref TEXT NOT NULL,
-  options TEXT NOT NULL, status TEXT NOT NULL, at TEXT NOT NULL);
+  options TEXT NOT NULL, status TEXT NOT NULL, at TEXT NOT NULL, text TEXT NOT NULL DEFAULT '');
 CREATE TABLE IF NOT EXISTS share_requests (
   id INTEGER PRIMARY KEY AUTOINCREMENT, asker TEXT NOT NULL, category TEXT NOT NULL,
   question TEXT NOT NULL, record_ids TEXT NOT NULL, chat_id TEXT NOT NULL, status TEXT NOT NULL,
@@ -75,6 +75,9 @@ class Store:
         self.originals_dir.mkdir(parents=True, exist_ok=True)
         with self._db() as db:
             db.executescript(SCHEMA)
+            columns = {r["name"] for r in db.execute("PRAGMA table_info(prompts)")}
+            if "text" not in columns:  # stores created before prompts were queued
+                db.execute("ALTER TABLE prompts ADD COLUMN text TEXT NOT NULL DEFAULT ''")
 
     @contextmanager
     def _db(self) -> Iterator[sqlite3.Connection]:
@@ -319,18 +322,48 @@ class Store:
             ).fetchall()
         return [_draft(r) for r in rows]
 
-    def open_prompt(self, member: str, kind: str, ref: str, options: list[str]) -> int:
-        """Ask one question at a time: closes the member's earlier open prompt."""
+    def open_prompt(
+        self,
+        member: str,
+        kind: str,
+        ref: str,
+        options: list[str],
+        text: str = "",
+        queued: bool = False,
+    ) -> int:
+        """Record a question (open, or queued behind the open one); a newer question about the
+        same thing (kind and ref) replaces the older one. See kin.prompts."""
         with self._db() as db:
             db.execute(
-                "UPDATE prompts SET status='done' WHERE member=? AND status='open'", (member,)
+                "UPDATE prompts SET status='done' WHERE member=? AND kind=? AND ref=?"
+                " AND status IN ('open','queued')",
+                (member, kind, ref),
             )
             cur = db.execute(
-                "INSERT INTO prompts (member, kind, ref, options, status, at)"
-                " VALUES (?,?,?,?,'open',?)",
-                (member, kind, ref, json.dumps(options, ensure_ascii=False), now()),
+                "INSERT INTO prompts (member, kind, ref, options, status, at, text)"
+                " VALUES (?,?,?,?,?,?,?)",
+                (
+                    member,
+                    kind,
+                    ref,
+                    json.dumps(options, ensure_ascii=False),
+                    "queued" if queued else "open",
+                    now(),
+                    text,
+                ),
             )
             return int(cur.lastrowid)
+
+    def next_queued(self, member: str) -> sqlite3.Row | None:
+        """The oldest waiting question, now marked open; None when nothing waits."""
+        with self._db() as db:
+            row = db.execute(
+                "SELECT * FROM prompts WHERE member=? AND status='queued' ORDER BY id LIMIT 1",
+                (member,),
+            ).fetchone()
+            if row is not None:
+                db.execute("UPDATE prompts SET status='open' WHERE id=?", (row["id"],))
+            return row
 
     def current_prompt(self, member: str) -> sqlite3.Row | None:
         with self._db() as db:

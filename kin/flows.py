@@ -1,8 +1,9 @@
 """Conversations Kin drives itself: intake drafts, the Admin's answers, group posts, sharing.
 
-The Admin is asked one question at a time (a stored prompt with reply-keyboard options); a tap
-arrives as ordinary DM text and lands in `handle_prompt`. Nothing reaches the group or another
-member without an explicit Admin answer. Other members' only prompt is a skill's Done.
+The Admin is asked one question at a time (kin.prompts: reply-keyboard options, later questions
+wait their turn); a tap arrives as ordinary DM text and lands in `handle_prompt`. Nothing reaches
+the group or another member without an explicit Admin answer. Other members' only prompt is a
+skill's Done.
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ import logging
 import threading
 from pathlib import Path
 
-from kin import intake, share, skills
+from kin import intake, prompts, share, skills
 from kin.context import Context
 from kin.extract import classify, extract
 from kin.translate import to_mandarin
@@ -29,9 +30,7 @@ def _admin(ctx: Context):
 
 
 def _ask_admin(ctx: Context, kind: str, ref: str, text: str, options: list[str]) -> None:
-    admin = _admin(ctx)
-    ctx.store.open_prompt(admin.id, kind, ref, options)
-    ctx.sender.send(admin.telegram_id, text, keyboard=options)
+    prompts.ask(ctx.store, ctx.sender, _admin(ctx), kind, ref, text, options)
 
 
 def run_intake(ctx: Context, document_id: str) -> None:
@@ -72,10 +71,21 @@ def send_draft(ctx: Context, draft: dict) -> None:
 
 
 def handle_prompt(ctx: Context, member, text: str) -> str | None:
-    """A member's DM text while a prompt is open; None when it is not an answer (agent turn)."""
+    """A member's DM text while a prompt is open; None when it is not an answer (agent turn).
+    Kin sends its reply here, before the next waiting question."""
     prompt = ctx.store.current_prompt(member.id)
     if prompt is None:
         return None
+    reply = _answer(ctx, member, prompt, text)
+    if reply is None and ctx.store.current_prompt(member.id) is not None:
+        return None  # not an answer: the question stays open
+    if reply:
+        ctx.sender.send(member.telegram_id, reply)
+    prompts.advance(ctx.store, ctx.sender, member)
+    return None if reply is None else ""
+
+
+def _answer(ctx: Context, member, prompt, text: str) -> str | None:
     if prompt["kind"] == "skill":
         is_done = text.strip().rstrip(".!").lower() == skills.DONE.lower()
         return skills.done(ctx, member, prompt) if is_done else None

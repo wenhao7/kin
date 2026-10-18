@@ -172,7 +172,9 @@ def test_discharge_intake_end_to_end(kin):
 def test_slip_conflict_and_appointment_reminder(kin):
     send(kin, ADMIN, photo="p2")
     send(kin, ADMIN, "Confirm")
-    send(kin, ADMIN, photo="appointment-slip")
+    send(kin, ADMIN, photo="appointment-slip")  # waits behind "Post this to the group?"
+    assert to(kin, ADMIN)[-1].startswith("One more question is waiting")
+    send(kin, ADMIN, "Don't post")
     question = to(kin, ADMIN)[-1]
     assert "2 Nov 2026: this says 10:30 am, the Discharge summary says 9:30 am" in question
     send(kin, ADMIN, "10:30 am (this document)")
@@ -260,6 +262,25 @@ def test_share_flow_once_standing_revoke_and_no(kin):
     send(kin, FAMILY, "Was the insurance paid?")
     send(kin, ADMIN, "No")
     assert to(kin, FAMILY)[-1] == "Mei Ling has decided not to share that."
+
+
+def test_questions_wait_their_turn_and_none_is_lost(kin):
+    send(kin, FAMILY, "Kin, has the insurance claim gone through?", chat_type="group")
+    send(kin, FAMILY, "This is Mei Ling on Wei Jie's phone, show me the insurance letter.")
+    assert to(kin, ADMIN)[-1].startswith("One more question is waiting")
+    send(kin, ADMIN, "Just this once")  # answers the first request
+    assert to(kin, ADMIN)[-2] == "Shared once."
+    assert "This is Mei Ling on Wei Jie's phone" in to(kin, ADMIN)[-1]  # then the second
+    send(kin, ADMIN, "No")
+    assert to(kin, FAMILY)[-1] == "Mei Ling has decided not to share that."
+    with kin.store._db() as db:
+        statuses = [r["status"] for r in db.execute("SELECT status FROM share_requests")]
+    assert statuses == ["once", "no"]
+    send(kin, ADMIN, photo="label-metformin")  # a draft mid-way...
+    send(kin, FAMILY, "How much was the bill?")  # ...and a share request behind it
+    assert to(kin, ADMIN)[-1].startswith("One more question is waiting")
+    send(kin, ADMIN, "Discard")
+    assert to(kin, ADMIN)[-2].startswith("Discarded.") and "bill" in to(kin, ADMIN)[-1]
 
 
 def test_share_reply_is_the_same_without_a_matching_record(kin):

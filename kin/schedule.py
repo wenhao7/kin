@@ -98,7 +98,7 @@ def tick(ctx, now: datetime | None = None) -> int:
             delivery = "sent" if result.get("ok") else f"failed: {result.get('error')}"
             sent += int(bool(result.get("ok")))
             if skill is not None and result.get("ok"):
-                store.open_prompt(member.id, "skill", skill["id"], [skills.DONE])
+                store.open_prompt(member.id, "skill", skill["id"], [skills.DONE], text)
         store.audit(
             principal=assignee,
             action="skill" if skill is not None else "reminder",

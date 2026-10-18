@@ -13,6 +13,7 @@ import json
 import re
 from typing import Any
 
+from kin import prompts
 from kin.members import Member, Roster
 from kin.policy import Policy
 from kin.store import Store
@@ -81,8 +82,7 @@ def start(
         lines.append("No matching record; answering Yes shares nothing.")
     lines.append(f"Share with {member.short}?")
     if admin and admin.telegram_id:
-        store.open_prompt(admin.id, "share", str(request_id), OPTIONS)
-        sender.send(admin.telegram_id, "\n".join(lines), keyboard=OPTIONS)
+        prompts.ask(store, sender, admin, "share", str(request_id), "\n".join(lines), OPTIONS)
     store.audit(
         principal=member.id,
         action="share_request",
