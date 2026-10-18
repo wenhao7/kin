@@ -93,6 +93,7 @@ class Store:
         with self._db() as db:
             keep = [m.id for m in roster.members]
             db.execute(f"DELETE FROM members WHERE id NOT IN ({','.join('?' * len(keep))})", keep)
+            db.execute("UPDATE members SET telegram_id=NULL")  # IDs may move between members
             for m in roster.members:
                 db.execute(
                     "INSERT INTO members (id, telegram_id, name, role, language) VALUES (?,?,?,?,?)"

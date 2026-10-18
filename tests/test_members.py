@@ -26,3 +26,13 @@ def test_member_ids_parsing_and_duplicate_mapping():
     roster = load_roster(ROOT / "config" / "members.yaml", "111", "wei_jie:111")
     roles = load_policy(ROOT / "config" / "policy.yaml").roles
     assert any("more than one member" in p for p in roster.validate(roles, ["en", "zh"]))
+
+
+def test_a_telegram_account_can_move_between_members(tmp_path):
+    from kin.store import Store
+
+    store = Store(tmp_path / "kin.sqlite3", tmp_path / "originals")
+    for mapping in ("wei_jie:555", "siti:555", "wei_jie:555"):  # re-mapped between demo takes
+        store.sync_roster(load_roster(ROOT / "config" / "members.yaml", "111", mapping))
+        ids = {m["id"]: m["telegram_id"] for m in store.members()}
+        assert ids[mapping.split(":")[0]] == "555" and list(ids.values()).count("555") == 1
