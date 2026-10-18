@@ -142,7 +142,7 @@ def decide(
             f"{asker.short}, please open a chat with me and tap Start so I can reply privately.",
         )
     store.audit(
-        principal=admin.id,
+        principal=asker.id if asker else admin.id,  # who was shown it (only the Admin decides)
         action="share_decision",
         decision=status,
         records=record_ids,

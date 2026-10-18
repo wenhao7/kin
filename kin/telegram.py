@@ -38,12 +38,25 @@ class TelegramSender:
                 "allow_sending_without_reply": True,
             }
         if keyboard:
+            short = len(keyboard) <= 3 and all(len(k) <= 20 for k in keyboard)
+            rows = [keyboard] if short else [[k] for k in keyboard]  # long labels: one per row
             payload["reply_markup"] = {
-                "keyboard": [[{"text": k} for k in keyboard]],
+                "keyboard": [[{"text": k} for k in row] for row in rows],
                 "one_time_keyboard": True,
                 "resize_keyboard": True,
             }
         data = self._call("sendMessage", payload)
+        return {"ok": bool(data.get("ok")), "error": data.get("description")}
+
+    def set_commands(self, commands: list[tuple[str, str]], chat_id: str) -> dict[str, Any]:
+        """This chat's command menu; it outranks the broader menus Hermes registers."""
+        data = self._call(
+            "setMyCommands",
+            {
+                "commands": [{"command": c, "description": d} for c, d in commands],
+                "scope": {"type": "chat", "chat_id": int(chat_id)},
+            },
+        )
         return {"ok": bool(data.get("ok")), "error": data.get("description")}
 
     def username(self) -> str:

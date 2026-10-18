@@ -14,6 +14,7 @@ import threading
 from pathlib import Path
 
 from kin import intake, prompts, share, skills
+from kin.admin import PICKERS, answer_picker
 from kin.context import Context
 from kin.extract import classify, extract
 from kin.translate import to_mandarin
@@ -86,6 +87,8 @@ def handle_prompt(ctx: Context, member, text: str) -> str | None:
 
 
 def _answer(ctx: Context, member, prompt, text: str) -> str | None:
+    if prompt["kind"] in PICKERS:
+        return answer_picker(ctx, prompt, text)
     if prompt["kind"] == "skill":
         is_done = text.strip().rstrip(".!").lower() == skills.DONE.lower()
         return skills.done(ctx, member, prompt) if is_done else None
@@ -151,7 +154,7 @@ def confirm(ctx: Context, draft: dict) -> str:
             if _needs_mandarin(ctx) and ctx.client
             else None
         )
-        draft["fields"]["_summary"] = {"en": en, "zh": zh}
+        draft["fields"]["_summary"] = {"en": en, "zh": zh, "records": result["records"]}
         ctx.store.save_draft(draft)
         preview = en + (
             f"\n\n{zh}"
@@ -188,6 +191,7 @@ def post_summary(ctx: Context, draft_id: str) -> str:
         decision="approved",
         chat_type="group",
         chat_id=ctx.group_chat_id,
+        records=summary.get("records", []),
         destination=ctx.group_chat_id,
         delivery="sent" if result.get("ok") else "failed",
     )
@@ -225,6 +229,14 @@ def _tell_carer(ctx: Context, rows: list, draft: dict) -> None:
         )
         return
     result = ctx.sender.send(carer.telegram_id, text)
+    ctx.store.audit(
+        principal=carer.id,
+        action="schedule",
+        decision="confirmed",
+        records=[r["id"] for r in rows if r is not None],
+        destination=carer.telegram_id,
+        delivery="sent" if result.get("ok") else "failed",
+    )
     if not result.get("ok"):
         ctx.sender.send(
             ctx.group_chat_id,

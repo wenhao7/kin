@@ -4,7 +4,8 @@ Draft checks, group-post approvals, share requests and a skill's Done are answer
 reply-keyboard option, which arrives as ordinary DM text, so only one question can be open per
 member. A question that arrives while another is open waits in a queue (the member is told one is
 waiting) and is sent once the open one is answered. The next question about the same thing (the
-next issue of one draft) replaces it in place.
+next issue of one draft) replaces it in place. A picker the member asked for (a command's
+choices) goes first: the open question is put back at the front of the queue.
 """
 
 from __future__ import annotations
@@ -14,8 +15,20 @@ import json
 WAITING = "One more question is waiting. I'll ask it once you've answered this one."
 
 
-def ask(store, sender, member, kind: str, ref: str, text: str, options: list[str]) -> None:
+def ask(
+    store,
+    sender,
+    member,
+    kind: str,
+    ref: str,
+    text: str,
+    options: list[str],
+    first: bool = False,
+) -> None:
     current = store.current_prompt(member.id)
+    if current is not None and first and (current["kind"], current["ref"]) != (kind, ref):
+        store.requeue(current["id"])
+        current = None
     if current is None or (current["kind"], current["ref"]) == (kind, ref):
         store.open_prompt(member.id, kind, ref, options, text)
         sender.send(member.telegram_id, text, keyboard=options or None)

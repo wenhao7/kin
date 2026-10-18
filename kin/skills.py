@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from kin.retrieve import Principal, retrieve
+from kin.retrieve import Principal, visible
 from kin.store import Store
 
 DONE = "Done"
@@ -67,8 +67,17 @@ def next_run(at: str, now: datetime) -> datetime:
 
 def describe(ctx, principal: Principal) -> str:
     """`/skills`: the skills this member may see, with their next and last run."""
-    found = retrieve(ctx.store, ctx.policy, principal, "skills", limit=1000).records
+    found = visible(ctx.store, ctx.policy, principal) if principal.member.role else []
     mine = [r for r in found if r["category"] == "tasks" and r["fields"].get("kind") == "skill"]
+    ctx.store.audit(
+        principal=principal.member.id,
+        action="skills",
+        decision="allowed" if mine else "empty",
+        chat_type=principal.chat_type,
+        chat_id=principal.chat_id,
+        records=[r["id"] for r in mine],
+        destination=principal.chat_id,
+    )
     if not mine:
         return "No skills are set up for you."
     now = datetime.now(ZoneInfo(ctx.tz))

@@ -354,6 +354,11 @@ class Store:
             )
             return int(cur.lastrowid)
 
+    def requeue(self, prompt_id: int) -> None:
+        """Put an open question back in the queue; its age keeps it first in line."""
+        with self._db() as db:
+            db.execute("UPDATE prompts SET status='queued' WHERE id=?", (prompt_id,))
+
     def next_queued(self, member: str) -> sqlite3.Row | None:
         """The oldest waiting question, now marked open; None when nothing waits."""
         with self._db() as db:

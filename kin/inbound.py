@@ -11,7 +11,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from kin import flows, share, skills
+from kin import admin, flows, share, skills
 from kin.context import Context
 from kin.retrieve import Caller, Principal, Refused, principal_for
 
@@ -23,6 +23,11 @@ HELP = (
     'In the group, start with "Kin" or reply to one of my messages.\n'
     "Documents go to {admin} by direct message, who checks them before anything is filed."
 )
+HELP_ADMIN = (
+    "\n\nIn our chat you can also use /reminders, /who_saw (who has been shown a document), "
+    "/revoke (stop sharing something), /skills and /roles. Tap / to see them."
+)
+HELP_MEMBER = "\n\n/skills shows what I do for you on a schedule."
 ADMIN_COMMANDS = {"roles", "who_saw", "reminders", "revoke", "export"}
 
 
@@ -136,7 +141,10 @@ def _command(
     if "@" in head and bot_username and head.split("@", 1)[1].lower() != bot_username.lower():
         return Decision("skip", "command for another bot")
     if name in ("start", "help"):
-        return Decision("skip", f"/{name}", HELP.format(admin=admin_name))
+        extra = ""
+        if msg.caller.chat_type == "dm":
+            extra = HELP_ADMIN if member.role == "admin" else HELP_MEMBER
+        return Decision("skip", f"/{name}", HELP.format(admin=admin_name) + extra)
     if name == "skills":
         if msg.caller.chat_type != "dm":
             return Decision("skip", "/skills in group", "Ask me that in our direct chat.")
@@ -154,16 +162,7 @@ def _command(
         ]
         return Decision("skip", "/roles", "Roster:\n" + "\n".join(lines))
     if name == "who_saw":
-        ref = args.strip()
-        if not ref:
-            return Decision("skip", "/who_saw", "Usage: /who_saw <record or document id>")
-        rows = store.audit_for(ref)
-        if not rows:
-            return Decision("skip", "/who_saw", f"No one has been shown {ref}.")
-        lines = [
-            f"{r['at'][:16]} {r['principal']} ({r['chat_type']}): {r['decision']}" for r in rows
-        ]
-        return Decision("skip", "/who_saw", f"Shown {ref}:\n" + "\n".join(lines))
+        return Decision("skip", "/who_saw", admin.who_saw(ctx, member, args) or None)
     if name == "reminders":
         events = store.active_events()
         if not events:
@@ -176,15 +175,7 @@ def _command(
             lines.append(f"{when}{until} → {who.short if who else e['assignee']}: {e['label']}")
         return Decision("skip", "/reminders", "Scheduled reminders:\n" + "\n".join(lines))
     if name == "revoke":
-        target, _, ref = args.strip().partition(" ")
-        member_to = roster.by_id(target.strip()) or next(
-            (m for m in roster.members if m.short.lower() == target.strip().lower()), None
-        )
-        if member_to is None or not ref.strip():
-            return Decision("skip", "/revoke", "Usage: /revoke <member id> <record or document id>")
-        ids = [ref.strip()] + [r["id"] for r in store.records_of_document(ref.strip())]
-        n = store.revoke_grants(member_to.id, ids)
-        return Decision("skip", "/revoke", f"Revoked {n} grant(s) for {member_to.short}.")
+        return Decision("skip", "/revoke", admin.revoke(ctx, member, args) or None)
     if name == "export":
         return Decision("skip", "/export", "Not available yet.")
     if name == "demo":

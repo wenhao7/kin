@@ -21,10 +21,15 @@ class FakeSender:
     def __init__(self):
         self.sent = []
         self.keyboards = []
+        self.menus = {}
 
     def send(self, chat_id, text, reply_to=None, keyboard=None):
         self.sent.append((chat_id, text))
         self.keyboards.append(keyboard)
+        return {"ok": True, "error": None}
+
+    def set_commands(self, commands, chat_id):
+        self.menus[chat_id] = [c for c, _ in commands]
         return {"ok": True, "error": None}
 
     def username(self):
@@ -132,7 +137,9 @@ def test_commands_belong_to_kin_and_admin_ones_are_refused(api):
     inbound(client, ADMIN, kind="command", text="/who_saw clinic-memo", chat_type="group")
     assert sender.sent[-1] == (GROUP, "Ask me that in our direct chat.")  # never in the group
     inbound(client, ADMIN, kind="command", text="/who_saw clinic-memo")
-    assert "wei_jie" in sender.sent[-1][1]
+    report = sender.sent[-1][1]
+    assert report.startswith("Clinic memo, 26 Jun 2026\nThe original stays with you")
+    assert "Nothing from it has been sent" in report and "answering Wei Jie (1)" in report
 
 
 def test_tool_identity_comes_only_from_caller(api):

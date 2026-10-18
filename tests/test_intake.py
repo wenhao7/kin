@@ -256,7 +256,9 @@ def test_share_flow_once_standing_revoke_and_no(kin):
     send(kin, ADMIN, "No")
 
     send(kin, ADMIN, "/revoke wei_jie insurance-letter", kind="command")
-    assert to(kin, ADMIN)[-1] == "Revoked 1 grant(s) for Wei Jie."
+    assert to(kin, ADMIN)[-1] == (
+        "Done: Kin won't answer Wei Jie from the Insurance letter, 24 Oct 2026 any more."
+    )
     assert all(r["category"] != "finance" for r in ask(kin, FAMILY))
 
     send(kin, FAMILY, "Was the insurance paid?")

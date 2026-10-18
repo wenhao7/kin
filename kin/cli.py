@@ -116,7 +116,7 @@ def serve() -> None:
     import yaml
     from openai import OpenAI
 
-    from kin import schedule
+    from kin import admin, schedule
     from kin.api import create_app
     from kin.context import Context
     from kin.telegram import TelegramSender
@@ -144,6 +144,9 @@ def serve() -> None:
         locale=locale,
         search=TavilyClient(api_key=tavily_key) if tavily_key else None,
     )
+    failed = admin.install_menus(ctx)
+    if failed:
+        console.print(f"[yellow]Command menus not set for: {', '.join(failed)}[/yellow]")
     schedule.start(ctx)
     uvicorn.run(create_app(ctx, s.api_token.get_secret_value()), host=s.api_host, port=s.api_port)
 
