@@ -38,7 +38,7 @@ Hermes is the conversation runtime and the only Telegram poller. The kin service
 | An answer to the open question: the Admin's (a draft issue, Confirm / Discard, Post to group / Don't post, Yes / No / Just this once) or a skill's Done from its assignee | Kin applies it and asks the next question, activates, posts, grants or refuses, or tells the Admin the task is done | Skipped |
 | A question about `finance`/`legal` from someone without access (`share_keywords`) | Share request to the Admin; the asker gets the same neutral reply whether or not a record exists | Skipped |
 | Voice note or audio | Fixed reply: Kin can't listen yet, please type it | Skipped |
-| Any `/command`: `/help`, `/start`, `/skills` (in DM, the skills this member may see), and for the Admin in DM `/roles`, `/who_saw`, `/reminders`, `/revoke`, `/export`; `/demo` in the judge fixture | Handled by Kin; other commands, including Hermes' own (`/model`, `/new`…), get "Try /help" | Skipped |
+| Any `/command`: `/help`, `/start`, `/skills` (in DM, the skills this member may see), and for the Admin in DM `/roles`, `/who_saw`, `/reminders`, `/revoke`, `/export`; `/demo` in the judge fixture. `/who_saw` and `/revoke` offer documents or active shares as buttons (`kin/admin.py`); Kin sets each chat's command menu at start, which outranks the menus Hermes registers | Handled by Kin; other commands, including Hermes' own (`/model`, `/new`…), get "Try /help" | Skipped |
 | Group text that doesn't say "Kin", @mention the bot or reply to one of Kin's messages | Ignored | Skipped |
 | Any other text | — | Runs, with Kin's tools |
 
