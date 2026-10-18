@@ -34,6 +34,7 @@ def test_group_recall_gets_the_month_minus_4_change_with_its_excerpt(kin):  # no
     case = EXPECTED["recall"][0]
     found = turn(kin, FAMILY, case["question"], "group")
     assert "Ah Ma" in found["rules"] and "Mdm Tan Siew Lan" in found["rules"]
+    assert "Mei Ling can send it" in found["rules"]
     assert "152/88" not in json.dumps(found["records"])
     answer = "Dr Tan started Losartan 50 mg once a day in the morning (Clinic memo, 26 Jun 2026)."
     out = reply(kin, FAMILY, answer, "group")

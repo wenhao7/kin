@@ -33,12 +33,19 @@ ANSWER_RULES = (
 )
 
 
-def rules(household: dict[str, Any]) -> str:
+def rules(household: dict[str, Any], admin: str = "") -> str:
     who = household.get("care_recipient") or {}
-    if not who.get("name"):
-        return ANSWER_RULES
-    call = f", whom the family calls {who['call']}" if who.get("call") else ""
-    return f"These records are about {who['name']}{call}. " + ANSWER_RULES
+    about = ""
+    if who.get("name"):
+        call = f", whom the family calls {who['call']}" if who.get("call") else ""
+        about = f"These records are about {who['name']}{call}. "
+    documents = (
+        f" Documents reach Kin only through {admin}, by direct message: if one would answer the "
+        f"question, say {admin} can send it; never ask anyone else for documents."
+        if admin
+        else ""
+    )
+    return about + ANSWER_RULES + documents
 
 
 class Turns:

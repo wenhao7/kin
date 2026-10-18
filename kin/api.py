@@ -122,7 +122,9 @@ def create_app(ctx: Context, token: str) -> FastAPI:
     def ask(body: AskIn) -> dict[str, Any]:
         result = retrieve(store, policy, principal(body.caller), body.question)
         ctx.turns.add(body.caller.to_caller(), records=[r["id"] for r in result.records])
-        return {"records": result.records, "rules": answer.rules(ctx.household)}
+        admin = roster.admin()
+        rules = answer.rules(ctx.household, admin.short if admin else "")
+        return {"records": result.records, "rules": rules}
 
     @app.post("/tools/lookup", dependencies=[Depends(authorised)])
     def lookup_tool(body: LookupIn) -> dict[str, Any]:
