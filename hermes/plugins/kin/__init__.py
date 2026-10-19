@@ -149,6 +149,8 @@ async def pre_gateway_dispatch(
     if payload is None:
         return None
     result = await asyncio.to_thread(post, "/inbound", payload)
+    if result.get("reset"):
+        _reset_sessions(session_store, payload["caller"]["user_id"])
     if result.get("action") == "pass":
         return {"action": "allow"}
     if "error" in result:
@@ -176,6 +178,22 @@ def transform_llm_output(response_text: str = "", platform: str = "", **_: Any) 
         return UNAVAILABLE  # fail closed: an unchecked reply is not sent
     text = result.get("text") or ""
     return text if text and text != response_text else None
+
+
+def _reset_sessions(session_store: Any, user_id: str) -> int:
+    """Start fresh conversations for this user (DM and group): the judge demo switched role, so
+    nothing said as one family member may carry into another. Keys end in ":<user id>"."""
+    if session_store is None or not user_id:
+        return 0
+    done = 0
+    try:
+        keys = [k for k in list(getattr(session_store, "_entries", {})) if ":telegram:" in k]
+        for key in keys:
+            if key.endswith(f":{user_id}") and session_store.reset_session(key) is not None:
+                done += 1
+    except Exception:  # noqa: BLE001 - Kin's reply check still withholds what this role can't see
+        logger.warning("could not reset the conversations of a demo tester")
+    return done
 
 
 async def _notify(gateway: Any, chat_id: str, chat_type: str) -> None:

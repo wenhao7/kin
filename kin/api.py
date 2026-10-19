@@ -66,8 +66,8 @@ class OutboundIn(BaseModel):
 
 def create_app(ctx: Context, token: str) -> FastAPI:
     app = FastAPI(title="kin", docs_url=None, redoc_url=None, openapi_url=None)
-    store, policy, roster, sender = ctx.store, ctx.policy, ctx.roster, ctx.sender
-    group_chat_id = ctx.group_chat_id
+    store, policy, sender = ctx.store, ctx.policy, ctx.sender
+    group_chat_id = ctx.group_chat_id  # the roster is ctx.roster: the judge demo rebuilds it
 
     def authorised(authorization: str = Header(default="")) -> None:
         expected = f"Bearer {token}"
@@ -76,7 +76,7 @@ def create_app(ctx: Context, token: str) -> FastAPI:
 
     def principal(caller: CallerIn):
         try:
-            return principal_for(caller.to_caller(), roster, group_chat_id)
+            return principal_for(caller.to_caller(), ctx.roster, group_chat_id)
         except Refused as exc:
             raise HTTPException(403, str(exc)) from exc
 
@@ -85,7 +85,7 @@ def create_app(ctx: Context, token: str) -> FastAPI:
         return {"ok": True}
 
     @app.post("/inbound", dependencies=[Depends(authorised)])
-    def inbound(body: InboundIn, background: BackgroundTasks) -> dict[str, str]:
+    def inbound(body: InboundIn, background: BackgroundTasks) -> dict[str, Any]:
         content = None
         if body.file_b64:
             content = base64.b64decode(body.file_b64)
@@ -114,20 +114,23 @@ def create_app(ctx: Context, token: str) -> FastAPI:
                 remove_keyboard=decision.remove_keyboard,
             )
         store.audit(
-            principal=roster.by_telegram_id(body.caller.user_id).id,
+            principal=ctx.roster.by_telegram_id(body.caller.user_id).id,
             action=f"inbound:{body.kind}",
             decision=decision.reason,
             chat_type=body.caller.chat_type,
             chat_id=body.caller.chat_id,
             delivery=None if delivery is None else ("sent" if delivery["ok"] else "failed"),
         )
-        return {"action": decision.action, "reason": decision.reason}
+        out = {"action": decision.action, "reason": decision.reason}
+        if decision.reset_sessions:
+            out["reset"] = True
+        return out
 
     @app.post("/tools/ask", dependencies=[Depends(authorised)])
     def ask(body: AskIn) -> dict[str, Any]:
         result = retrieve(store, policy, principal(body.caller), body.question)
         ctx.turns.add(body.caller.to_caller(), records=[r["id"] for r in result.records])
-        admin = roster.admin()
+        admin = ctx.roster.admin()
         rules = answer.rules(ctx.household, admin.short if admin else "")
         return {"records": result.records, "rules": rules}
 
@@ -167,7 +170,7 @@ def create_app(ctx: Context, token: str) -> FastAPI:
     def outbound(body: OutboundIn) -> dict[str, str]:
         caller = body.caller.to_caller()
         try:
-            p = principal_for(caller, roster, group_chat_id)
+            p = principal_for(caller, ctx.roster, group_chat_id)
         except Refused:
             return {"text": answer.WITHHELD, "decision": "refused"}
         if p.member.role is None:

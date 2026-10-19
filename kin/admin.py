@@ -15,6 +15,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from kin import prompts
+from kin.members import account_of
 
 CANCEL = "Cancel"
 PICKERS = ("who_saw", "revoke")  # a reply that is not an option closes them (see flows)
@@ -30,16 +31,23 @@ MENUS = {
     "member": [("skills", "What Kin does for you on a schedule"), ("help", "What Kin does")],
     "group": [("help", "What Kin does")],
 }
+DEMO_ENTRY = ("demo", "Judge demo: switch role, sample photos, Monday 08:00")
 
 
 def install_menus(ctx) -> list[str]:
-    """Per-chat command menus (they outrank Hermes' broader menus); returns any failures."""
+    """Per-chat command menus (they outrank Hermes' broader menus); returns any failures.
+    One menu per Telegram account: the Admin's when the account holds the Admin's seat."""
+    menus: dict[str, str] = {}
+    for m in ctx.roster.members:
+        account = account_of(m.telegram_id)
+        if account and menus.get(account) != "admin":
+            menus[account] = "admin" if m.role == "admin" else "member"
+    if ctx.group_chat_id:
+        menus[ctx.group_chat_id] = "group"
     failed = []
-    roster = ctx.roster.members
-    chats = [(m.telegram_id, "admin" if m.role == "admin" else "member") for m in roster]
-    chats.append((ctx.group_chat_id, "group"))
-    for chat_id, menu in chats:
-        if chat_id and not ctx.sender.set_commands(MENUS[menu], chat_id).get("ok"):
+    for chat_id, menu in menus.items():
+        commands = MENUS[menu] + ([DEMO_ENTRY] if getattr(ctx, "demo", False) else [])
+        if not ctx.sender.set_commands(commands, chat_id).get("ok"):
             failed.append(f"{menu}:{chat_id}")
     return failed
 

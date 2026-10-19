@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     members_file: Path = Field(default=Path("./config/members.yaml"), alias="KIN_MEMBERS_FILE")
     api_host: str = Field(default="127.0.0.1", alias="KIN_API_HOST")
     api_port: int = Field(default=8765, alias="KIN_API_PORT")
+    # Judge demo (docs/07-demo-plan.md): synthetic fixture only; anyone may take the family's
+    # seats with /demo, and reminders run on /demo monday instead of the clock.
+    demo: bool = Field(default=False, alias="KIN_DEMO")
     # Shared secret between the Kin plugin in Hermes and the kin API; empty refuses every call.
     api_token: SecretStr = Field(default=SecretStr(""), alias="KIN_API_TOKEN")
 

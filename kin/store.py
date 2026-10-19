@@ -52,6 +52,8 @@ CREATE TABLE IF NOT EXISTS grants (
   id INTEGER PRIMARY KEY AUTOINCREMENT, record_id TEXT NOT NULL, record_version INTEGER NOT NULL,
   grantee TEXT NOT NULL, scope TEXT NOT NULL, approved_by TEXT NOT NULL, at TEXT NOT NULL,
   consumed_at TEXT, revoked_at TEXT);
+CREATE TABLE IF NOT EXISTS demo_accounts (
+  telegram_id TEXT PRIMARY KEY, acting TEXT NOT NULL, at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS audit (
   id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, principal TEXT NOT NULL,
   chat_type TEXT, chat_id TEXT, action TEXT NOT NULL, query TEXT, records TEXT NOT NULL,
@@ -499,6 +501,48 @@ class Store:
                     delivery,
                 ),
             )
+
+    # --- judge demo (KIN_DEMO): one tester holds every member's seat (kin.demo) -------------
+    def demo_accounts(self) -> dict[str, str]:
+        with self._db() as db:
+            rows = db.execute("SELECT telegram_id, acting FROM demo_accounts")
+            return {r["telegram_id"]: r["acting"] for r in rows}
+
+    def demo_claim(self, telegram_id: str, acting: str) -> bool:
+        """Give this account every seat, acting as `acting`; True if another tester lost them."""
+        with self._db() as db:
+            others = db.execute(
+                "DELETE FROM demo_accounts WHERE telegram_id<>?", (telegram_id,)
+            ).rowcount
+            db.execute(
+                "INSERT INTO demo_accounts VALUES (?,?,?) ON CONFLICT(telegram_id)"
+                " DO UPDATE SET acting=excluded.acting, at=excluded.at",
+                (telegram_id, acting, now()),
+            )
+        return others > 0
+
+    def demo_release(self, telegram_id: str) -> None:
+        with self._db() as db:
+            db.execute("DELETE FROM demo_accounts WHERE telegram_id=?", (telegram_id,))
+
+    def reset(self) -> None:
+        """Remove every record, document, event, prompt, grant and audit row (demo reset)."""
+        with self._db() as db:
+            for table in (
+                "documents",
+                "excerpts",
+                "records",
+                "events",
+                "drafts",
+                "prompts",
+                "share_requests",
+                "grants",
+                "audit",
+            ):
+                db.execute(f"DELETE FROM {table}")
+        for path in self.originals_dir.glob("*"):
+            if path.is_file():
+                path.unlink()
 
     def audit_for(self, ref: str, limit: int = 20) -> list[sqlite3.Row]:
         """Audit entries that exposed a record (or any record of a document)."""

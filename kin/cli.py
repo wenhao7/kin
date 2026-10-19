@@ -77,6 +77,14 @@ def hermes_config(
     typer.echo(hermes_config_script(template), nl=False)
 
 
+@app.command("hermes-clear-sessions")
+def hermes_clear_sessions() -> None:
+    """Print the script that deletes every Telegram conversation (used by `make demo-reset`)."""
+    from kin.hermes_config import clear_sessions_script
+
+    typer.echo(clear_sessions_script(), nl=False)
+
+
 @app.command("render-fixtures")
 def render_fixtures() -> None:
     """Render the synthetic fixture to fixtures/renders (needs `make setup-data`)."""
@@ -119,9 +127,12 @@ def serve() -> None:
     from kin import admin, schedule
     from kin.api import create_app
     from kin.context import Context
+    from kin.members import load_roster
     from kin.telegram import TelegramSender
 
     s, roster, policy, store = _runtime()
+    if s.demo:  # judge demo: seats come from /demo, never from the environment
+        roster = load_roster(s.members_file)
     if not s.api_token.get_secret_value():
         console.print("[red]KIN_API_TOKEN is empty; the API would refuse every call.[/red]")
         raise typer.Exit(code=1)
@@ -143,11 +154,20 @@ def serve() -> None:
         model_super=s.model_super,
         locale=locale,
         search=TavilyClient(api_key=tavily_key) if tavily_key else None,
+        demo=s.demo,
+        base_roster=roster,
     )
+    if s.demo:
+        from kin.demo import DemoSender, apply
+
+        ctx.sender = DemoSender(ctx.sender, ctx)
+        apply(ctx)
+        console.print("[yellow]Judge demo: /demo assigns roles; reminders run on /demo monday.")
     failed = admin.install_menus(ctx)
     if failed:
         console.print(f"[yellow]Command menus not set for: {', '.join(failed)}[/yellow]")
-    schedule.start(ctx)
+    if not s.demo:  # in the demo, reminders run on /demo monday, not at a judge's 3 am
+        schedule.start(ctx)
     uvicorn.run(create_app(ctx, s.api_token.get_secret_value()), host=s.api_host, port=s.api_port)
 
 

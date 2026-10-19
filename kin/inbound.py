@@ -11,7 +11,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from kin import admin, flows, share, skills
+from kin import admin, demo, flows, share, skills
 from kin.context import Context
 from kin.retrieve import Caller, Principal, Refused, principal_for
 
@@ -65,6 +65,7 @@ class Decision:
     reply: str | None = None
     intake: str | None = None  # document ID to read in the background
     remove_keyboard: bool = False
+    reset_sessions: bool = False  # judge demo: the tester switched role
 
 
 def addressed_to_kin(text: str, bot_username: str) -> bool:
@@ -80,6 +81,13 @@ def decide(ctx: Context, msg: Inbound, bot_username: str = "") -> Decision:
     except Refused as exc:
         return Decision("skip", f"refused: {exc}")
     member = principal.member
+    if ctx.demo and principal.chat_type == "dm" and msg.text.startswith("/"):
+        name = msg.text.strip().partition(" ")[0].lstrip("/").split("@", 1)[0].lower()
+        if name == "demo":
+            reply, reset = demo.command(ctx, str(msg.caller.user_id), msg.text.partition(" ")[2])
+            return Decision("skip", "/demo", reply, reset_sessions=reset)
+        if member.role is None and name in ("start", "help"):
+            return Decision("skip", f"/{name} (demo)", demo.INTRO)
     if member.role is None:
         return Decision("skip", "unknown sender")
     admin = next((m for m in roster.members if m.role == "admin"), None)
@@ -110,6 +118,8 @@ def decide(ctx: Context, msg: Inbound, bot_username: str = "") -> Decision:
             else f"Please send documents to {admin_name} by direct message; "
             "they are checked before anything is filed."
         )
+        if ctx.demo and member.role != "admin":
+            reply = f"In the demo, documents come in as {admin_name}: send /demo admin first."
         return Decision("skip", "documents go through the Admin", reply)
 
     if msg.kind == "command" or msg.text.startswith("/"):
@@ -121,9 +131,10 @@ def decide(ctx: Context, msg: Inbound, bot_username: str = "") -> Decision:
     if not in_dm and not (msg.reply_to_kin or addressed_to_kin(msg.text, bot_username)):
         return Decision("skip", "group chatter not addressed to Kin")
     if in_dm:
-        handled = flows.handle_prompt(ctx, member, msg.text)
-        if handled is not None:
-            return Decision("skip", "prompt answer", handled or None)
+        for seat in roster.seats(member):  # in the demo one account answers for every member
+            handled = flows.handle_prompt(ctx, seat, msg.text)
+            if handled is not None:
+                return Decision("skip", "prompt answer", handled or None)
         if msg.text.strip().lower() in STALE_BUTTONS:  # a tap on an old keyboard: never the model's
             return Decision("skip", "stale button", ANSWERED, remove_keyboard=True)
     category = share.blocked_category(ctx.policy, member, msg.text)
@@ -165,6 +176,8 @@ def _command(
         extra = ""
         if msg.caller.chat_type == "dm":
             extra = HELP_ADMIN if member.role == "admin" else HELP_MEMBER
+            if ctx.demo:
+                extra += f"\n\nJudge demo: you're playing {member.short}. /demo to switch."
         return Decision("skip", f"/{name}", HELP.format(admin=admin_name) + extra)
     if name == "skills":
         if msg.caller.chat_type != "dm":

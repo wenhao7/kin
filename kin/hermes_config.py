@@ -33,6 +33,18 @@ def render(value: Any) -> str:
     return str(value)
 
 
+CLEAR_SESSIONS = (
+    "for id in $(hermes sessions list --source telegram --limit 10000 2>/dev/null"
+    " | grep -oE '[0-9]{8}_[0-9]{6}_[0-9a-f]+'); do"
+    ' hermes sessions delete --yes "$id" >/dev/null 2>&1 || true; done'
+)
+
+
+def clear_sessions_script() -> str:
+    """Delete every Telegram conversation (judge-demo reset); run with the gateway stopped."""
+    return "set -e\n" + CLEAR_SESSIONS + '\necho "Telegram sessions cleared"\n'
+
+
 def hermes_config_script(template: Path) -> str:
     """A bash script for the hermes container: set each key, drop MCP, install SOUL.md."""
     items = list(flatten(yaml.safe_load(Path(template).read_text(encoding="utf-8"))))
@@ -45,10 +57,6 @@ def hermes_config_script(template: Path) -> str:
     lines.append('cp /seed/SOUL.md "$HERMES_HOME/SOUL.md"')
     # Hermes stores each session's system prompt; delete Telegram sessions (open ones too) so the
     # new persona and tools apply at once. Family memory lives in Kin's store, not in sessions.
-    lines.append(
-        "for id in $(hermes sessions list --source telegram --limit 10000 2>/dev/null"
-        " | grep -oE '[0-9]{8}_[0-9]{6}_[0-9a-f]+'); do"
-        ' hermes sessions delete --yes "$id" >/dev/null 2>&1 || true; done'
-    )
+    lines.append(CLEAR_SESSIONS)
     lines.append(f'echo "applied {len(items)} keys and SOUL.md"')
     return "\n".join(lines) + "\n"

@@ -23,6 +23,8 @@ class Sender(Protocol):
 
     def set_commands(self, commands: list[tuple[str, str]], chat_id: str) -> dict[str, Any]: ...
 
+    def send_photo(self, chat_id: str, path: Any, caption: str = "") -> dict[str, Any]: ...
+
     def username(self) -> str: ...
 
 
@@ -40,6 +42,8 @@ class Context:
     locale: dict[str, Any] = field(default_factory=dict)  # locale/<id>/locale.yaml
     search: Any = None  # Tavily client; None disables public lookups
     turns: Turns = field(default_factory=Turns)
+    demo: bool = False  # judge demo (kin.demo): seats come from /demo, roster rebuilt on claims
+    base_roster: Roster | None = None
 
     @property
     def household(self) -> dict[str, Any]:

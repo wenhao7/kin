@@ -28,6 +28,11 @@ class FakeSender:
         self.keyboards.append("removed" if remove_keyboard else keyboard)
         return {"ok": True, "error": None}
 
+    def send_photo(self, chat_id, path, caption=""):
+        self.sent.append((chat_id, f"[photo {Path(path).name}] {caption}"))
+        self.keyboards.append(None)
+        return {"ok": True, "error": None}
+
     def set_commands(self, commands, chat_id):
         self.menus[chat_id] = [c for c, _ in commands]
         return {"ok": True, "error": None}

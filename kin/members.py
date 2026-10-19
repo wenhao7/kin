@@ -34,6 +34,9 @@ class Roster:
     default_role: str | None
     default_language: str
     household: dict = field(default_factory=dict)
+    # Judge demo only: Telegram account → the member it is speaking as. That account holds every
+    # seat, so members' telegram_id is "<account>#<member id>" (kin.demo).
+    acting: dict[str, str] = field(default_factory=dict)
 
     def by_id(self, member_id: str) -> Member | None:
         return next((m for m in self.members if m.id == member_id), None)
@@ -43,6 +46,10 @@ class Roster:
 
     def by_telegram_id(self, telegram_id: str) -> Member:
         """The member for a Telegram user ID, or a guest with `default_role` (usually none)."""
+        if str(telegram_id) in self.acting:
+            member = self.by_id(self.acting[str(telegram_id)])
+            if member is not None:
+                return member
         for m in self.members:
             if m.telegram_id and m.telegram_id == str(telegram_id):
                 return m
@@ -53,6 +60,16 @@ class Roster:
             language=self.default_language,
             telegram_id=str(telegram_id),
         )
+
+    def seats(self, member: Member) -> list[Member]:
+        """Every member this person's Telegram account speaks for, `member` first."""
+        account = account_of(member.telegram_id)
+        others = [
+            m
+            for m in self.members
+            if m.id != member.id and account and account_of(m.telegram_id) == account
+        ]
+        return [member, *others]
 
     def validate(self, roles: list[str], languages: list[str]) -> list[str]:
         problems: list[str] = []
@@ -72,6 +89,11 @@ class Roster:
         if len(ids) != len(set(ids)):
             problems.append("a Telegram ID is mapped to more than one member")
         return problems
+
+
+def account_of(telegram_id: str | None) -> str:
+    """The real Telegram chat behind a member's ID (judge-demo seats are "<account>#<member>")."""
+    return (telegram_id or "").split("#", 1)[0]
 
 
 def parse_member_ids(raw: str) -> dict[str, str]:

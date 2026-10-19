@@ -154,3 +154,32 @@ def test_replies_pass_kin_before_they_are_sent(registered):
     assert cli_hooks["transform_llm_output"](response_text="Hello.") is None
     _, _, lost = make({})  # a Telegram turn whose caller is missing is not sent unchecked
     assert lost["transform_llm_output"](response_text="Hi.", platform="telegram") == UNAVAILABLE
+
+
+def test_a_demo_role_switch_starts_fresh_conversations(registered):
+    make, _, _ = registered
+    plugin, _, hooks = make({})
+
+    class Sessions:
+        def __init__(self):
+            self._entries = {
+                "agent:main:telegram:dm:555": 1,
+                f"agent:main:telegram:group:{GROUP}:555": 1,
+                "agent:main:telegram:dm:5550": 1,  # another user whose ID merely starts the same
+                "agent:main:cli:555": 1,
+            }
+            self.reset = []
+
+        def reset_session(self, key):
+            self.reset.append(key)
+            return object()
+
+    store = Sessions()
+    reply = {"action": "skip", "reason": "/demo", "reset": True}
+    plugin.post = lambda path, payload, timeout=20: reply
+    event = Event(Source("555", "555", "dm"), "/demo family")
+    asyncio.run(plugin.pre_gateway_dispatch(event, gateway=None, session_store=store))
+    assert sorted(store.reset) == [
+        "agent:main:telegram:dm:555",
+        f"agent:main:telegram:group:{GROUP}:555",
+    ]

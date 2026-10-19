@@ -5,6 +5,7 @@ Sending with the same bot token alongside Hermes' `getUpdates` is allowed by Tel
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -49,6 +50,20 @@ class TelegramSender:
                 "resize_keyboard": True,
             }
         data = self._call("sendMessage", payload)
+        return {"ok": bool(data.get("ok")), "error": data.get("description")}
+
+    def send_photo(self, chat_id: str, path: Path, caption: str = "") -> dict[str, Any]:
+        try:
+            with open(path, "rb") as f:
+                r = httpx.post(
+                    f"{self._base}/sendPhoto",
+                    data={"chat_id": chat_id, "caption": caption},
+                    files={"photo": (Path(path).name, f, "image/jpeg")},
+                    timeout=60,
+                )
+            data = r.json()
+        except (httpx.HTTPError, ValueError, OSError) as exc:
+            return {"ok": False, "error": type(exc).__name__}
         return {"ok": bool(data.get("ok")), "error": data.get("description")}
 
     def set_commands(self, commands: list[tuple[str, str]], chat_id: str) -> dict[str, Any]:
