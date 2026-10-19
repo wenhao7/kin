@@ -46,7 +46,8 @@ def install_menus(ctx) -> list[str]:
         menus[ctx.group_chat_id] = "group"
     failed = []
     for chat_id, menu in menus.items():
-        commands = MENUS[menu] + ([DEMO_ENTRY] if getattr(ctx, "demo", False) else [])
+        demo = getattr(ctx, "demo", False) and menu != "group"  # /demo works in DMs only
+        commands = MENUS[menu] + ([DEMO_ENTRY] if demo else [])
         if not ctx.sender.set_commands(commands, chat_id).get("ok"):
             failed.append(f"{menu}:{chat_id}")
     return failed

@@ -58,12 +58,17 @@ def test_a_new_tester_sees_the_demo_intro_and_nothing_else(kin):
     assert send(kin, JUDGE, "Kin, what medicines?", chat_type="group")["reason"] == "unknown sender"
     assert cmd(kin, JUDGE, "/demo monday")["reason"] == "/demo"
     assert to(kin, JUDGE)[-1].startswith("Start with /demo admin")
+    assert send(kin, JUDGE, "/demo admin", kind="command", chat_type="group")["reason"] == (
+        "/demo in group"
+    )
+    assert to(kin, GROUP)[-1] == "Send /demo to me in a direct message."
 
 
 def test_one_account_plays_the_whole_family(kin):
     out = cmd(kin, JUDGE, "/demo admin")
     assert out["reset"] is True and to(kin, JUDGE)[-1].startswith("You're Mei Ling now")
     assert "who_saw" in kin.sender.menus[JUDGE] and "demo" in kin.sender.menus[JUDGE]
+    assert kin.sender.menus[GROUP] == ["help"]  # /demo works in DMs only
     cmd(kin, JUDGE, "/demo photos")
     assert [t for c, t in kin.sender.sent if c == JUDGE and t.startswith("[photo")][:2] == [
         "[photo discharge-summary-p1.jpg] Discharge summary, page 1",

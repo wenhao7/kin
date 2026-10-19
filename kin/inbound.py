@@ -81,12 +81,14 @@ def decide(ctx: Context, msg: Inbound, bot_username: str = "") -> Decision:
     except Refused as exc:
         return Decision("skip", f"refused: {exc}")
     member = principal.member
-    if ctx.demo and principal.chat_type == "dm" and msg.text.startswith("/"):
+    if ctx.demo and msg.text.startswith("/"):
         name = msg.text.strip().partition(" ")[0].lstrip("/").split("@", 1)[0].lower()
+        if name == "demo" and principal.chat_type != "dm":
+            return Decision("skip", "/demo in group", "Send /demo to me in a direct message.")
         if name == "demo":
             reply, reset = demo.command(ctx, str(msg.caller.user_id), msg.text.partition(" ")[2])
             return Decision("skip", "/demo", reply, reset_sessions=reset)
-        if member.role is None and name in ("start", "help"):
+        if member.role is None and name in ("start", "help") and principal.chat_type == "dm":
             return Decision("skip", f"/{name} (demo)", demo.INTRO)
     if member.role is None:
         return Decision("skip", "unknown sender")
