@@ -86,6 +86,16 @@ display:
       streaming: false
       interim_assistant_messages: false
 
+# Kin answers every slash command and sets the family chats' menus itself (kin/admin.py). Hermes'
+# own menu, shown wherever Kin hasn't set one (a judge before /demo), is cut to /help, which Kin
+# answers.
+platforms:
+  telegram:
+    extra:
+      command_menu:
+        max_commands: 1
+        priority: [help]
+
 telegram:
   require_mention: false        # from D2 the Kin plugin gates group text itself (docs/05-architecture.md)
   reply_to_mode: first
