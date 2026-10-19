@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 UV ?= uv
 
-.PHONY: help setup setup-data fixtures seed demo-reset check check-nospend models policy lint test docker-build up down logs hermes-init hermes-config hermes-doctor hermes-shell clean
+.PHONY: help setup setup-data fixtures seed demo-reset measure check check-nospend models policy lint test docker-build up down logs hermes-init hermes-config hermes-doctor hermes-shell clean
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -27,6 +27,9 @@ demo-reset: ## Judge demo: back to Week 0, testers signed out, conversations cle
 	docker compose run --rm --no-deps kin seed --reset
 	$(UV) run kin hermes-clear-sessions | docker compose run --rm --no-deps -T --entrypoint bash hermes -s
 	docker compose up -d
+
+measure: ## Time and price real calls for the README (spends a few cents and one Tavily credit)
+	$(UV) run kin measure
 
 check: ## Verify keys, policy/locale, models (incl. one vision call), Telegram bot, Tavily
 	$(UV) run kin check

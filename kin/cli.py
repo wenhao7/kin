@@ -77,6 +77,31 @@ def hermes_config(
     typer.echo(hermes_config_script(template), nl=False)
 
 
+@app.command()
+def measure() -> None:
+    """Time and price real calls for the README (one intake, translation, answer, lookup)."""
+    import yaml
+    from openai import OpenAI
+
+    from kin.measure import run, table
+
+    s = get_settings()
+    key = s.nebius_api_key.get_secret_value()
+    if not key:
+        console.print("[red]NEBIUS_API_KEY is empty.[/red]")
+        raise typer.Exit(code=1)
+    locale = yaml.safe_load(s.locale_file.read_text(encoding="utf-8"))
+    search = None
+    if s.tavily_api_key.get_secret_value():
+        from tavily import TavilyClient
+
+        search = TavilyClient(api_key=s.tavily_api_key.get_secret_value())
+    calls = run(OpenAI(api_key=key, base_url=s.nebius_base_url), s, search, locale)
+    typer.echo(table(calls))
+    total = sum(c.cost for c in calls)
+    typer.echo(f"\nTotal: {total:.4f} USD at list prices, plus Tavily credits.")
+
+
 @app.command("hermes-clear-sessions")
 def hermes_clear_sessions() -> None:
     """Print the script that deletes every Telegram conversation (used by `make demo-reset`)."""
