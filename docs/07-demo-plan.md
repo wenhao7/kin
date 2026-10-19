@@ -25,9 +25,11 @@ Readable fonts, no copyrighted music. Optional scenes (after-visit summary debri
 
 ## Judge access
 
-- Disposable synthetic fixture with the bot running; the judge joins via invite link and uses `/demo admin` / `/demo family` to act as either role (fixture-only command), so one person can complete both sides of sharing.
-- Test script in the README: supplied intake photo, confirmation, recall question, finance question and share decision, `/skills`, `/who_saw`, with expected results.
-- Reset command (`make demo-reset`, also nightly by host cron during judging) restores the fixture; sessions are isolated. Entrant-funded; no API key needed.
+- Disposable synthetic fixture with the bot running (`KIN_DEMO=true`, `kin/demo.py`); the judge joins the group via invite link and opens a DM with the bot. `/demo admin`, `/demo family` and `/demo carer` give their one account every member's seat and pick who they speak as, so one person completes both sides of sharing. Messages for a member they aren't playing arrive labelled ("For Mei Ling (Admin):"), and a tap on any of them answers for whoever was asked. A role switch starts fresh Hermes conversations.
+- `/demo photos` sends the discharge-summary pages and the appointment slip to send back as Mei Ling. `/demo monday` runs Monday 08:00 on the demo day (reminders and the skill), since the clock-driven scheduler is off in the demo. `/demo reset` restores Week 0.
+- One tester at a time: the next `/demo` signs the previous tester out.
+- Test script with expected results: README, "Try it (judges)". Bot and invite link go in Devpost's testing instructions, not the repo.
+- `make demo-reset` (nightly by host cron during judging) restores the fixture, signs testers out and deletes Telegram conversations. Entrant-funded; no API key needed.
 - Bot, endpoints and budget stay available through 16 Dec 2026, 04:00 SGT.
 
 ## Must work

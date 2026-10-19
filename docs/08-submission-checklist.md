@@ -4,10 +4,10 @@ Rules: [00-hackathon.md](00-hackathon.md). Unchecked boxes are unverified.
 
 ## Required
 
-- [ ] Personal AI flow runs Nemotron on Token Factory; persistent Kin memory, one reusable scheduled skill and controlled tools survive restart.
-- [ ] Chosen photo extractor works and is named (model ID; dedicated or public).
-- [ ] Identity and policy enforced before retrieval and delivery; minimum privacy and safety tests pass.
-- [ ] Intake requires Admin confirmation before a schedule activates; no diagnosis, dosing, interaction inference or silent conflict resolution.
+- [x] Personal AI flow runs Nemotron on Token Factory; persistent Kin memory, one reusable scheduled skill and controlled tools survive restart.
+- [x] Chosen photo extractor works and is named (model ID; dedicated or public).
+- [x] Identity and policy enforced before retrieval and delivery; minimum privacy and safety tests pass.
+- [x] Intake requires Admin confirmation before a schedule activates; no diagnosis, dosing, interaction inference or silent conflict resolution.
 - [ ] Self-service synthetic demo lets a judge complete both Admin and Family steps without the entrant.
 - [ ] Public Apache-2.0 repo with required source, verified setup README, description, track, feedback.
 - [ ] Public YouTube video (target 2:50) showing working minimum features; Mandarin output shown with English.
@@ -16,14 +16,14 @@ Rules: [00-hackathon.md](00-hackathon.md). Unchecked boxes are unverified.
 
 ## Product and bonus
 
-- [ ] Every tester opened a DM with the bot; IDs and roles verified before restricted data is available.
-- [ ] Judge fixture isolated; `/demo` cannot grant roles outside the fixture.
-- [ ] Only synthetic data; no raw documents, audit queries or paths exposed to lower roles.
-- [ ] README and video state what leaves the host (Telegram, Nebius inference, Tavily topics).
-- [ ] Tavily runtime lookup with a public-only query and the locale allow-list.
+- [x] Every tester opened a DM with the bot; IDs and roles verified before restricted data is available.
+- [x] Judge fixture isolated; `/demo` cannot grant roles outside the fixture (`KIN_DEMO` only; `tests/test_demo.py`).
+- [x] Only synthetic data; no raw documents, audit queries or paths exposed to lower roles.
+- [ ] README and video state what leaves the host (Telegram, Nebius inference, Tavily topics). README done; video at D9.
+- [x] Tavily runtime lookup with a public-only query and the locale allow-list.
 - [ ] City selected only if a Builders & Brews event was attended.
-- [ ] Audio, teach-by-chat, digests, viewer expiry, OpenShell and data map claimed only if their gates passed.
-- [ ] Keys and family volumes uncommitted; judge-period budget reserved.
+- [x] Audio, teach-by-chat, digests, viewer expiry, OpenShell and data map claimed only if their gates passed.
+- [ ] Keys and family volumes uncommitted; judge-period budget reserved. Keys and volumes uncommitted; the budget reserve is the owner's.
 
 ## Devpost description
 

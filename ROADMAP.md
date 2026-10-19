@@ -78,9 +78,12 @@ Fixed during validation: lost Admin questions (`kin/prompts.py`), follow-ups und
 
 ## D5 · Submission package and judge access
 
-- [ ] README separates implemented from planned; "How we use Nebius and NVIDIA" filled with measured values.
-- [ ] Self-service synthetic demo: judge joins a disposable fixture, uses `/demo` to act as Admin or Family, follows the test script (intake photo supplied, confirm, recall, share, `/skills`); `make demo-reset` (nightly during judging) isolates sessions. Repo public. Entrant-funded.
-- [ ] Devpost text and feedback drafted; access verified from a clean session.
+- [x] README separates implemented from planned; "How we use Nebius and NVIDIA" filled with measured values. Evidence: README "What works" and "Not built"; `make measure` on 19 Oct (intake of two photos USD 0.0026, an answer about USD 0.002), live turn times from the gateway log.
+- [ ] Self-service synthetic demo: judge joins a disposable fixture, uses `/demo` to act as Admin or Family, follows the test script (intake photo supplied, confirm, recall, share, `/skills`); `make demo-reset` (nightly during judging) isolates sessions. Repo public. Entrant-funded. Note:
+  - Built: `/demo admin|family|carer|photos|monday|reset` (`kin/demo.py`, `tests/test_demo.py`), `make demo-reset`, and the README test script.
+  - Still open: a run from a clean account, the invite link and the nightly cron (owner).
+  - The repo goes public at the end, by the owner.
+- [ ] Devpost text and feedback drafted; access verified from a clean session. Note: drafts in `docs/09-devpost.md`; the clean-session run is open.
 
 **Done when:** the submission could be filed with working memory, confirmed intake, sharing and the reusable skill.
 
