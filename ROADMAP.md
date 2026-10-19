@@ -7,7 +7,7 @@ Sequential deliverables. Tick a box only with recorded evidence. No time estimat
 ## Status
 
 - The kin service (`kin serve`) holds the store and enforces the policy at retrieval and on every reply; private intake with Admin confirmation, reminders, sharing, the public lookup and the Monday skill work. The containerised Hermes gateway runs on Nebius with the Kin plugin and Kin's persona, its memory/skills/cron/host tools off and the stack isolated from other deployments on the host.
-- Live validation on 18–19 Oct with two accounts (Admin on one phone; the second played Wei Jie, then Siti): D0, D2, D3 and D4 passed, including reminders, the restart check and the Monday skill. Still to run live: a share request asked in the group, and a check of the new Admin commands (`/who_saw`, `/revoke`, menus).
+- Live validation on 18–19 Oct with two accounts (Admin on one phone; the second played Wei Jie, then Siti): D0, D2, D3 and D4 passed, including reminders, the restart check and the Monday skill. On 19 Oct the group share request and the new Admin commands (`/who_saw`, `/revoke`, menus) passed too. Requests for an original and requests to post now get fixed replies.
 - Nano Omni is dedicated-only; the extractor chosen at D0 is `openbmb/MiniCPM-V-4_5` (`KIN_MODEL_VISION`).
 - Upgradient's Sandboxes approval does not affect Kin; D0 and D1 can proceed now.
 
