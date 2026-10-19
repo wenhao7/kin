@@ -8,7 +8,7 @@ import yaml
 from kin.answer import WITHHELD
 from kin.fixtures import load_expected
 from kin.seed import load_fixture_documents
-from tests.test_api import ADMIN, CARER, FAMILY, STRANGER, caller
+from tests.test_api import ADMIN, CARER, FAMILY, GROUP, STRANGER, caller
 from tests.test_intake import kin, send, to  # noqa: F401
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -153,3 +153,19 @@ def test_lookup_refuses_anything_but_a_listed_scheme(kin):  # noqa: F811
     assert lookup(kin, CARER, "Is the helper levy lower?")["scheme"] == (
         "Migrant Domestic Worker Levy Concession"
     )
+
+
+def test_asking_for_an_original_gets_a_fixed_reply(kin):  # noqa: F811
+    from kin.inbound import ORIGINALS_REPLY
+
+    for user, text, chat_type in [
+        (CARER, "Please send me the discharge letter.", "dm"),
+        (CARER, "Kin, can you send a photo of the medicine label?", "group"),
+        (ADMIN, "Forward me the discharge summary pdf", "dm"),
+    ]:
+        assert send(kin, user, text, chat_type=chat_type)["reason"] == "original requested"
+        assert to(kin, user if chat_type == "dm" else GROUP)[-1] == ORIGINALS_REPLY
+    for text in ("Can you send me the schedule?", "What does the discharge summary say?"):
+        assert send(kin, CARER, text)["action"] == "pass"  # questions about it still go to Kin
+    family = send(kin, FAMILY, "Send me the insurance letter")  # a share request comes first
+    assert family["reason"] == "share request: finance"

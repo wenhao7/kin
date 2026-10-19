@@ -32,6 +32,19 @@ ADMIN_COMMANDS = {"roles", "who_saw", "reminders", "revoke", "export"}
 # Button labels that only ever answer one of Kin's questions; with none open they are stale.
 STALE_BUTTONS = {"post to group", "don't post", "just this once", "cancel"}
 ANSWERED = "That question has already been answered."
+# Asking for a document or photo itself: originals never leave Kin, so the reply is fixed rather
+# than left to the model (which twice answered "Here is the discharge letter…" with nothing).
+_DOCS = (
+    r"(letter|document|summary|memo|label|slip|scan|pdf|photo|picture|original|file|copy|report)"
+)
+ORIGINAL_REQUEST = re.compile(
+    rf"\b(send|forward|e-?mail)\b[^.?!]{{0,40}}\b{_DOCS}s?\b|\b(copy|scan|pdf|photo|picture)\s+of\b",
+    re.IGNORECASE,
+)
+ORIGINALS_REPLY = (
+    "I can't send documents or photos: the originals stay private. Ask me what you'd like to know "
+    "from it, for example the medicines, the next appointment or the care instructions."
+)
 
 
 @dataclass
@@ -129,6 +142,8 @@ def decide(ctx: Context, msg: Inbound, bot_username: str = "") -> Decision:
             principal.chat_type,
         )
         return Decision("skip", f"share request: {category}", reply)
+    if ORIGINAL_REQUEST.search(msg.text):
+        return Decision("skip", "original requested", ORIGINALS_REPLY)
     return Decision("pass", "agent turn")
 
 
