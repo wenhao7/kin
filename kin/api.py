@@ -107,7 +107,12 @@ def create_app(ctx: Context, token: str) -> FastAPI:
             background.add_task(flows.run_intake, ctx, decision.intake)
         delivery = None
         if decision.reply:
-            delivery = sender.send(body.caller.chat_id, decision.reply, reply_to=msg.message_id)
+            delivery = sender.send(
+                body.caller.chat_id,
+                decision.reply,
+                reply_to=msg.message_id,
+                remove_keyboard=decision.remove_keyboard,
+            )
         store.audit(
             principal=roster.by_telegram_id(body.caller.user_id).id,
             action=f"inbound:{body.kind}",

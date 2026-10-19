@@ -30,8 +30,11 @@ class TelegramSender:
         text: str,
         reply_to: str | None = None,
         keyboard: list[str] | None = None,
+        remove_keyboard: bool = False,
     ) -> dict[str, Any]:
         payload: dict[str, Any] = {"chat_id": chat_id, "text": text}
+        if remove_keyboard:  # the question is answered: its buttons must not be tapped again
+            payload["reply_markup"] = {"remove_keyboard": True}
         if reply_to:
             payload["reply_parameters"] = {
                 "message_id": int(reply_to),

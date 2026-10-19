@@ -23,9 +23,9 @@ class FakeSender:
         self.keyboards = []
         self.menus = {}
 
-    def send(self, chat_id, text, reply_to=None, keyboard=None):
+    def send(self, chat_id, text, reply_to=None, keyboard=None, remove_keyboard=False):
         self.sent.append((chat_id, text))
-        self.keyboards.append(keyboard)
+        self.keyboards.append("removed" if remove_keyboard else keyboard)
         return {"ok": True, "error": None}
 
     def set_commands(self, commands, chat_id):

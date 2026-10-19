@@ -18,6 +18,7 @@ class Sender(Protocol):
         text: str,
         reply_to: str | None = None,
         keyboard: list[str] | None = None,
+        remove_keyboard: bool = False,
     ) -> dict[str, Any]: ...
 
     def set_commands(self, commands: list[tuple[str, str]], chat_id: str) -> dict[str, Any]: ...

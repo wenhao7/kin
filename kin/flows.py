@@ -81,7 +81,8 @@ def handle_prompt(ctx: Context, member, text: str) -> str | None:
     if reply is None and ctx.store.current_prompt(member.id) is not None:
         return None  # not an answer: the question stays open
     if reply:
-        ctx.sender.send(member.telegram_id, reply)
+        idle = ctx.store.current_prompt(member.id) is None and not ctx.store.has_queued(member.id)
+        ctx.sender.send(member.telegram_id, reply, remove_keyboard=idle)
     prompts.advance(ctx.store, ctx.sender, member)
     return None if reply is None else ""
 

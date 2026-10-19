@@ -359,6 +359,14 @@ class Store:
         with self._db() as db:
             db.execute("UPDATE prompts SET status='queued' WHERE id=?", (prompt_id,))
 
+    def has_queued(self, member: str) -> bool:
+        with self._db() as db:
+            return bool(
+                db.execute(
+                    "SELECT 1 FROM prompts WHERE member=? AND status='queued' LIMIT 1", (member,)
+                ).fetchone()
+            )
+
     def next_queued(self, member: str) -> sqlite3.Row | None:
         """The oldest waiting question, now marked open; None when nothing waits."""
         with self._db() as db:

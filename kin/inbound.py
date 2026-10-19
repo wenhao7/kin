@@ -29,6 +29,9 @@ HELP_ADMIN = (
 )
 HELP_MEMBER = "\n\n/skills shows what I do for you on a schedule."
 ADMIN_COMMANDS = {"roles", "who_saw", "reminders", "revoke", "export"}
+# Button labels that only ever answer one of Kin's questions; with none open they are stale.
+STALE_BUTTONS = {"post to group", "don't post", "just this once", "cancel"}
+ANSWERED = "That question has already been answered."
 
 
 @dataclass
@@ -48,6 +51,7 @@ class Decision:
     reason: str
     reply: str | None = None
     intake: str | None = None  # document ID to read in the background
+    remove_keyboard: bool = False
 
 
 def addressed_to_kin(text: str, bot_username: str) -> bool:
@@ -107,6 +111,8 @@ def decide(ctx: Context, msg: Inbound, bot_username: str = "") -> Decision:
         handled = flows.handle_prompt(ctx, member, msg.text)
         if handled is not None:
             return Decision("skip", "prompt answer", handled or None)
+        if msg.text.strip().lower() in STALE_BUTTONS:  # a tap on an old keyboard: never the model's
+            return Decision("skip", "stale button", ANSWERED, remove_keyboard=True)
     category = share.blocked_category(ctx.policy, member, msg.text)
     if category and in_dm and share.granted(store, member, category):
         category = None  # already shared: answered from the approved excerpts, DM only

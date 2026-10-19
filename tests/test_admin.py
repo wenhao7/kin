@@ -100,3 +100,20 @@ def test_long_options_get_a_row_each():
     rows = [p["reply_markup"]["keyboard"] for p in payloads]
     assert rows[0] == [[{"text": "Yes"}, {"text": "No"}]]
     assert rows[1] == [[{"text": MEMO}], [{"text": LETTER}], [{"text": "Cancel"}]]
+
+
+def test_answered_questions_take_their_buttons_away(kin):  # noqa: F811
+    send(kin, FAMILY, "How much was the hospital bill?")
+    send(kin, FAMILY, "Was the insurance paid?")  # a second question waits
+    send(kin, ADMIN, "No")
+    assert kin.sender.keyboards[-2] is None  # reply, then the next question with its buttons
+    assert kin.sender.keyboards[-1] == ["Yes", "No", "Just this once"]
+    send(kin, ADMIN, "No")
+    assert to(kin, ADMIN)[-1] == "Not shared." and kin.sender.keyboards[-1] == "removed"
+
+
+def test_a_stale_button_never_reaches_the_model(kin):  # noqa: F811
+    reply = send(kin, ADMIN, "Post to group")  # this morning: no question was open
+    assert reply == {"action": "skip", "reason": "stale button"}
+    assert to(kin, ADMIN)[-1] == "That question has already been answered."
+    assert kin.sender.keyboards[-1] == "removed"
