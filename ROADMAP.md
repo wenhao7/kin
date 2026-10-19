@@ -7,7 +7,7 @@ Sequential deliverables. Tick a box only with recorded evidence. No time estimat
 ## Status
 
 - The kin service (`kin serve`) holds the store and enforces the policy at retrieval and on every reply; private intake with Admin confirmation, reminders, sharing, the public lookup and the Monday skill work. The containerised Hermes gateway runs on Nebius with the Kin plugin and Kin's persona, its memory/skills/cron/host tools off and the stack isolated from other deployments on the host.
-- Live validation on 18 Oct with two accounts (Admin on one phone; the second played Wei Jie, then Siti): D0, D2 and the intake, sharing and recall parts of D3–D4 passed. Still to run live: reminders, the restart check and the Monday skill (Mon 08:00), and a share request asked in the group.
+- Live validation on 18–19 Oct with two accounts (Admin on one phone; the second played Wei Jie, then Siti): D0, D2, D3 and D4 passed, including reminders, the restart check and the Monday skill. Still to run live: a share request asked in the group, and a check of the new Admin commands (`/who_saw`, `/revoke`, menus).
 - Nano Omni is dedicated-only; the extractor chosen at D0 is `openbmb/MiniCPM-V-4_5` (`KIN_MODEL_VISION`).
 - Upgradient's Sandboxes approval does not affect Kin; D0 and D1 can proceed now.
 
@@ -62,9 +62,11 @@ Sequential deliverables. Tick a box only with recorded evidence. No time estimat
 - The English and Mandarin group post was approved and posted.
 - Shares worked once, standing, revoked and refused, and back-to-back requests waited their turn.
 
-Still to run live: reminders arriving, and the restart check.
+Live on 19 Oct:
+- At 08:00, 08:30 and 13:30, reminders followed the new schedule.
+- The restart check passed: after a full `make down && make up` at 13:30:33, the 13:30 reminder (sent at 13:30:20) was not sent again by 13:41.
 
-Fixed during validation: lost Admin questions (`kin/prompts.py`), follow-ups under a standing grant asking again, remapping an account, model citation markers, misleading replies about originals, and member names in Mandarin.
+Fixed during validation: lost Admin questions (`kin/prompts.py`), follow-ups under a standing grant asking again, remapping an account, model citation markers, misleading replies about originals, member names in Mandarin, and a stale "Post to group" tap that let the model claim it had posted (keyboards are now removed when answered; the persona forbids claimed actions).
 
 ## D4 · Recall, lookup, reusable skill
 
@@ -72,7 +74,7 @@ Fixed during validation: lost Admin questions (`kin/prompts.py`), follow-ups und
 - [x] One Tavily lookup in the main flow with a public-only query and the locale allow-list. Evidence: `kin_lookup` matches a scheme in `locale/sg/locale.yaml` (`lookup_topics`) and sends only its name ("Home Caregiving Grant: eligibility, amount and how to apply"), with `include_domains` from the allow-list. Other domains are dropped, the reply gets the source link and the query is audited. On the deployed stack it returned pages from moh.gov.sg, aic.sg and ask.gov.sg.
 - [x] One preconfigured Monday skill in Kin's scheduler survives restart; `/skills` shows it; recipients are authorised at execution. Evidence: `kin/skills.py`, a `tasks` record plus a weekly event, seeded as Admin-confirmed in Week 0. At Mon 08:00 after a restart it sends Siti one DM with a Done button, and a second tick after another restart sends nothing. Done reaches Mei Ling. `/skills` lists it in DM for Admin, Family and Carer, with the last run. With Siti removed from the roster nothing is sent and the Admin is told (`tests/test_skills.py`).
 
-**Done when:** a Family member gets the Month −4 change with its excerpt, a cited public lookup works, and the Monday reminder fires after a restart. Met in the automated tests and through the plugin's code path against the deployed kin API (recall excerpt, withheld leak, live Tavily lookup). Live on 18 Oct: recall in the group and in DM ended with the plan excerpt; Super chose `kin_lookup` and answered with AIC and MOH links without deciding eligibility; `/skills` was role-filtered and DM-only. Still to run live: the Monday skill at 08:00.
+**Done when:** a Family member gets the Month −4 change with its excerpt, a cited public lookup works, and the Monday reminder fires after a restart. Met in the automated tests and through the plugin's code path against the deployed kin API (recall excerpt, withheld leak, live Tavily lookup). Live on 18 Oct: recall in the group and in DM ended with the plan excerpt; Super chose `kin_lookup` and answered with AIC and MOH links without deciding eligibility; `/skills` was role-filtered and DM-only. Live on 19 Oct, the Monday skill fired at 08:00 as its own message with a Done button. Siti's Done reached Mei Ling, and `/skills` showed the last run.
 
 ## D5 · Submission package and judge access
 
