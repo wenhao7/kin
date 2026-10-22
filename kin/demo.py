@@ -32,8 +32,8 @@ ROLES = {
     "admin": (
         "the daughter who keeps the family's records. You see everything, and nothing reaches "
         "anyone else without your say.",
-        "Next: /demo photos, then send both pages back to me here. Then ask me “What did Dr Tan "
-        "write in the June memo?”",
+        "Next: /demo photos, then send both pages back to me here. Then ask me “What happened "
+        "at Ah Ma's June review with Dr Tan?”",
     ),
     "family": (
         "her brother overseas. You see the medicines, appointments and care instructions, not her "

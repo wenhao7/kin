@@ -68,7 +68,7 @@ def test_one_account_plays_the_whole_family(kin):
     out = cmd(kin, JUDGE, "/demo admin")
     claimed = to(kin, JUDGE)[-1]
     assert out["reset"] is True and claimed.startswith("A fresh demo family is ready. You're Mei")
-    assert "June memo" in claimed  # the tour's next step
+    assert "June review" in claimed  # the tour's next step
     assert "who_saw" in kin.sender.menus[JUDGE] and "demo" in kin.sender.menus[JUDGE]
     assert kin.sender.menus[GROUP] == ["help"]  # /demo works in DMs only
     cmd(kin, JUDGE, "/demo photos")
