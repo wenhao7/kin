@@ -229,7 +229,9 @@ def records_for(
             {
                 "category": "medical",
                 "fields": {
-                    "summary": f"{fields.get('clinic', 'Clinic')} review, {memo_date}.",
+                    "summary": f"{fields.get('clinic', 'Clinic')} review"
+                    + (f" with {clinician}" if clinician else "")
+                    + f", {memo_date}.",
                     "notes": fields.get("notes", []),
                     "source": src,
                 },
