@@ -27,6 +27,7 @@ ANSWER_RULES = (
     "Name the source (document and date) for every statement. If nothing here answers the "
     "question, say you don't know. Never mention or guess at anything not listed. A medicine can "
     "have more than one record (its schedule and its pharmacy label): mention each medicine once. "
+    "Say a person (a doctor, a family member) did something only if a record names them for it. "
     "Kin adds the approved excerpts below your answer, so don't repeat them, and never show "
     "record IDs. Kin never sends original documents or photos to anyone: if asked for one, say "
     "so plainly and offer what these records show instead. Organise, never "
@@ -34,7 +35,10 @@ ANSWER_RULES = (
 )
 
 
-def rules(household: dict[str, Any], admin: str = "") -> str:
+GROUP_RULE = " This reply goes to the whole family group: keep it to a few short lines."
+
+
+def rules(household: dict[str, Any], admin: str = "", group: bool = False) -> str:
     who = household.get("care_recipient") or {}
     about = ""
     if who.get("name"):
@@ -46,7 +50,7 @@ def rules(household: dict[str, Any], admin: str = "") -> str:
         if admin
         else ""
     )
-    return about + ANSWER_RULES + documents
+    return about + ANSWER_RULES + documents + (GROUP_RULE if group else "")
 
 
 class Turns:
@@ -79,13 +83,21 @@ def _words(text: str) -> set[str]:
     return set(re.findall(r"[a-z]{5,}", norm(text)))
 
 
-def cites(text: str, record: dict[str, Any]) -> bool:
-    """Whether a reply is about this record: it names it, or shares words with its excerpt."""
+def mention(text: str, record: dict[str, Any]) -> int | None:
+    """Where a reply first names this record, or None when it isn't about it. A reply that only
+    shares words with the record's excerpt counts too, after every named record."""
     low = norm(text)
     names = [norm(v) for k in ANCHORS if isinstance(v := record["fields"].get(k), str) and v]
-    if any(re.search(rf"\b{re.escape(n)}\b", low) for n in names):
-        return True
-    return any(len(_words(e["text"]) & _words(low)) >= 3 for e in record["excerpts"])
+    found = [m.start() for n in names if (m := re.search(rf"\b{re.escape(n)}\b", low))]
+    if found:
+        return min(found)
+    if any(len(_words(e["text"]) & _words(low)) >= 3 for e in record["excerpts"]):
+        return len(low)
+    return None
+
+
+def cites(text: str, record: dict[str, Any]) -> bool:
+    return mention(text, record) is not None
 
 
 def finish(ctx, caller: Caller, principal: Principal, text: str) -> tuple[str, str]:
@@ -112,7 +124,9 @@ def finish(ctx, caller: Caller, principal: Principal, text: str) -> tuple[str, s
         return WITHHELD, "withheld"
     by_id = {r["id"]: r for r in shown}
     cited = [by_id[i] for i in dict.fromkeys(turn["records"]) if i in by_id]
-    cited = [r for r in cited if cites(text, r)]
+    cited = sorted(  # excerpts follow the reply's order: the main point first
+        (r for r in cited if mention(text, r) is not None), key=lambda r: mention(text, r)
+    )
     lines, used = [], set()
     for r in cited:
         for e in r["excerpts"]:

@@ -128,10 +128,11 @@ def create_app(ctx: Context, token: str) -> FastAPI:
 
     @app.post("/tools/ask", dependencies=[Depends(authorised)])
     def ask(body: AskIn) -> dict[str, Any]:
-        result = retrieve(store, policy, principal(body.caller), body.question)
+        p = principal(body.caller)
+        result = retrieve(store, policy, p, body.question)
         ctx.turns.add(body.caller.to_caller(), records=[r["id"] for r in result.records])
         admin = ctx.roster.admin()
-        rules = answer.rules(ctx.household, admin.short if admin else "")
+        rules = answer.rules(ctx.household, admin.short if admin else "", p.chat_type == "group")
         return {"records": result.records, "rules": rules}
 
     @app.post("/tools/lookup", dependencies=[Depends(authorised)])
@@ -164,7 +165,8 @@ def create_app(ctx: Context, token: str) -> FastAPI:
             return {"error": "The lookup failed. Try again later."}
         sources = [{"title": r["title"], "url": r["url"]} for r in results]
         ctx.turns.add(body.caller.to_caller(), sources=sources)
-        return {"scheme": topic["name"], "results": results, "rules": lookup.LOOKUP_RULES}
+        rules = lookup.LOOKUP_RULES + (answer.GROUP_RULE if p.chat_type == "group" else "")
+        return {"scheme": topic["name"], "results": results, "rules": rules}
 
     @app.post("/outbound", dependencies=[Depends(authorised)])
     def outbound(body: OutboundIn) -> dict[str, str]:

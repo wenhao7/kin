@@ -35,6 +35,7 @@ def test_group_recall_gets_the_month_minus_4_change_with_its_excerpt(kin):  # no
     found = turn(kin, FAMILY, case["question"], "group")
     assert "Ah Ma" in found["rules"] and "Mdm Tan Siew Lan" in found["rules"]
     assert "Mei Ling can send it" in found["rules"]
+    assert "whole family group" in found["rules"] and "names them for it" in found["rules"]
     assert "152/88" not in json.dumps(found["records"])
     answer = "Dr Tan started Losartan 50 mg once a day in the morning (Clinic memo, 26 Jun 2026)."
     out = reply(kin, FAMILY, answer, "group")
@@ -103,6 +104,11 @@ def test_intake_records_carry_their_printed_lines_as_excerpts(kin):  # noqa: F81
         "“Metformin · 500 mg · 1 tablet twice a day with breakfast and dinner · "
         "Dose reduced from 850 mg” (Discharge summary, 23 Oct 2026)"
     )
+    turn(kin, FAMILY, "Kin, what changed?", "group")
+    text = "Metformin is now 500 mg and Glipizide is stopped. Losartan and Amlodipine: unchanged."
+    lines = reply(kin, FAMILY, text, "group")["text"].split("\n")
+    quoted = [line.split(" · ")[0] for line in lines]
+    assert quoted[-3:] == ["“Metformin", "“Glipizide", "“Losartan"]  # in the reply's order
 
 
 class FakeSearch:
@@ -115,6 +121,11 @@ class FakeSearch:
             "results": [
                 {"title": "Home Caregiving Grant (HCG) | AIC", "url": HCG, "content": "Up to $600"},
                 {"title": "Elsewhere", "url": "https://example.com/hcg", "content": "Not listed"},
+                {
+                    "title": "Old press release",  # dated figures: left out
+                    "url": "https://www.moh.gov.sg/newsroom/new-home-caregiving-grant",
+                    "content": "S$2,800 or less",
+                },
             ]
         }
 
@@ -134,7 +145,8 @@ def test_lookup_sends_only_the_scheme_name_to_allow_listed_sites(kin):  # noqa: 
     assert query == "Home Caregiving Grant: eligibility, amount and how to apply"
     assert not any(secret in query for secret in case["query_excludes"])
     assert kwargs["include_domains"] == LOCALE["lookup_allow_domains"]
-    assert [r["url"] for r in found["results"]] == [HCG]  # other domains are dropped
+    assert [r["url"] for r in found["results"]] == [HCG]  # other domains, press releases dropped
+    assert "whole family group" in found["rules"] and "don't offer to check" in found["rules"]
     assert "Don't say whether anyone in the family qualifies" in found["rules"]
     text = "The Home Caregiving Grant pays up to $600 a month; AIC decides who qualifies."
     out = reply(kin, FAMILY, text, "group")
