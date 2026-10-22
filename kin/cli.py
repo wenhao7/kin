@@ -142,15 +142,11 @@ def _runtime():
     return s, roster, policy, store
 
 
-@app.command()
-def serve() -> None:
-    """Run the kin API used by the Kin plugin in Hermes (compose network only)."""
-    import uvicorn
+def _context():
+    """Settings and the Context `serve` runs with (also used by `tick`)."""
     import yaml
     from openai import OpenAI
 
-    from kin import admin, schedule
-    from kin.api import create_app
     from kin.context import Context
     from kin.members import load_roster
     from kin.telegram import TelegramSender
@@ -158,27 +154,26 @@ def serve() -> None:
     s, roster, policy, store = _runtime()
     if s.demo:  # judge demo: seats come from /demo, never from the environment
         roster = load_roster(s.members_file)
-    if not s.api_token.get_secret_value():
-        console.print("[red]KIN_API_TOKEN is empty; the API would refuse every call.[/red]")
-        raise typer.Exit(code=1)
     locale = yaml.safe_load(s.locale_file.read_text(encoding="utf-8"))
-    tz = locale.get("timezone", "UTC")
     key = s.nebius_api_key.get_secret_value()
     tavily_key = s.tavily_api_key.get_secret_value()
+    search = None
     if tavily_key:
         from tavily import TavilyClient
+
+        search = TavilyClient(api_key=tavily_key)
     ctx = Context(
         store=store,
         policy=policy,
         roster=roster,
         sender=TelegramSender(s.telegram_bot_token.get_secret_value()),
         group_chat_id=s.group_chat_id,
-        tz=tz,
+        tz=locale.get("timezone", "UTC"),
         client=OpenAI(api_key=key, base_url=s.nebius_base_url) if key else None,
         model_vision=s.model_vision,
         model_super=s.model_super,
         locale=locale,
-        search=TavilyClient(api_key=tavily_key) if tavily_key else None,
+        search=search,
         demo=s.demo,
         base_roster=roster,
     )
@@ -187,6 +182,22 @@ def serve() -> None:
 
         ctx.sender = DemoSender(ctx.sender, ctx)
         apply(ctx)
+    return s, ctx
+
+
+@app.command()
+def serve() -> None:
+    """Run the kin API used by the Kin plugin in Hermes (compose network only)."""
+    import uvicorn
+
+    from kin import admin, schedule
+    from kin.api import create_app
+
+    s, ctx = _context()
+    if not s.api_token.get_secret_value():
+        console.print("[red]KIN_API_TOKEN is empty; the API would refuse every call.[/red]")
+        raise typer.Exit(code=1)
+    if s.demo:
         console.print("[yellow]Judge demo: /demo assigns roles; reminders run on /demo monday.")
     failed = admin.install_menus(ctx)
     if failed:
@@ -194,6 +205,23 @@ def serve() -> None:
     if not s.demo:  # in the demo, reminders run on /demo monday, not at a judge's 3 am
         schedule.start(ctx)
     uvicorn.run(create_app(ctx, s.api_token.get_secret_value()), host=s.api_host, port=s.api_port)
+
+
+@app.command()
+def tick(
+    at: str = typer.Option(..., help="Local time to run, e.g. 2026-10-26T08:00 (a Monday)."),
+) -> None:
+    """Send what is due at a given local time, now: reminders and skills for a video take.
+    Each is still sent only once per day (the same claim the scheduler uses)."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from kin import schedule
+
+    _, ctx = _context()
+    now = datetime.fromisoformat(at).replace(second=20, tzinfo=ZoneInfo(ctx.tz))
+    sent = schedule.tick(ctx, now)
+    console.print(f"{now:%a %d %b %H:%M}: {sent} message(s) sent.")
 
 
 @app.command()
