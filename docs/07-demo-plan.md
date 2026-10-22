@@ -11,6 +11,8 @@ Real Telegram DMs and group, Kin responding live; all data synthetic. Cuts for t
 
 ## Video (target 2:50)
 
+Full script, setup and narration: [10-video-script.md](10-video-script.md).
+
 | Time | Scene | On screen / spoken |
 |---|---|---|
 | 0:00–0:15 | The task | Synthetic discharge letter, pill boxes, the family chat; one in four adults is a caregiver, Singapore is super-aged this year |

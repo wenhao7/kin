@@ -105,7 +105,7 @@ Fixed during validation: lost Admin questions (`kin/prompts.py`), follow-ups und
 
 ## D9 · Video and submission
 
-- [ ] 2:50 script recorded from the real minimum: intake and confirmation, reminder, recall, sharing, skill, data flow.
+- [ ] 2:50 script recorded from the real minimum: intake and confirmation, reminder, recall, sharing, skill, data flow. Note: script, setup and narration in `docs/10-video-script.md`; `make tick` sends Monday 08:00 on demand for the reminder scene.
 - [ ] Public YouTube upload; Devpost fields, feedback, city declaration; judge access through 16 Dec, 04:00 SGT.
 
 **Done when:** Devpost confirms submission. Start recording no later than the final working burst.

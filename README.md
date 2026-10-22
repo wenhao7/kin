@@ -132,6 +132,7 @@ make up                # kin service + Hermes gateway (first start installs Herm
 make seed              # reset the store to the Week 0 synthetic fixture
 make hermes-config     # after editing hermes/config.yaml or hermes/SOUL.md
 make measure           # the table above (spends a few cents)
+make tick AT=2026-10-26T08:00   # send what's due at that time now (video takes)
 ```
 
 Judge demo: set `KIN_DEMO=true` and `TELEGRAM_ALLOW_ALL_USERS=true` in `.env`, run `make up`, then `make demo-reset`. Reset it nightly with cron, e.g. `0 4 * * * cd /path/to/kin && make demo-reset >> data/demo-reset.log 2>&1`. Use the demo only with the synthetic fixture.
@@ -165,6 +166,7 @@ tests/ · docs/ · .github/workflows/ci.yml
 | [07-demo-plan.md](docs/07-demo-plan.md) | Video script, judge access |
 | [08-submission-checklist.md](docs/08-submission-checklist.md) | Devpost checklist |
 | [09-devpost.md](docs/09-devpost.md) | Devpost description and feedback drafts |
+| [10-video-script.md](docs/10-video-script.md) | Video script, setup and narration |
 
 ## License
 
