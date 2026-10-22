@@ -43,11 +43,11 @@ The bot and the group invite link are in the Devpost submission's testing instru
 | 2 | Bot DM | `/demo photos`, then send page 1 and page 2 back (forward, or save and send) | "Reading it now…", then a draft from the Discharge summary, 23 Oct 2026. If Kin asks "Did you mean Glipizide?", tap it. Tap **Confirm** (about 10 s a page) |
 | 3 | Bot DM | Tap **Post to group** | The group gets the update in English and Mandarin: Metformin 500 mg, Glipizide stopped, Emergency Department advice; no diagnosis. A labelled copy of Siti's new schedule arrives too |
 | 4 | Bot DM | `/demo family` | You are Wei Jie, her brother overseas |
-| 5 | Group | `Kin, what did Dr Tan change at the last visit?` | Losartan 50 mg once a day in the morning, Clinic memo 26 Jun 2026, ending with the quoted plan line |
-| 6 | Group | `Kin, has the insurance claim gone through?` | The group sees only "I've asked Mei Ling to share that." Your DM gets "For Mei Ling (Admin): Wei Jie asked…" with buttons |
+| 5 | Group chat | `Kin, what did Dr Tan change at the last visit?` | Losartan 50 mg once a day in the morning, Clinic memo 26 Jun 2026, ending with the quoted plan line |
+| 6 | Group chat | `Kin, has the insurance claim gone through?` | The group sees only "I've asked Mei Ling to share that." Your DM gets "For Mei Ling (Admin): Wei Jie asked…" with buttons |
 | 7 | Bot DM | Tap **Just this once** | "Mei Ling shared this with you: “Your claim is under assessment…”", without the amount or claim number |
 | 8 | Bot DM | `What did Dr Tan write about her blood pressure?` and `Please send me the discharge letter.` | No clinical notes reach Wei Jie; originals are never sent |
-| 9 | Group | `Kin, is Ah Ma eligible for the Home Caregiving Grant?` | The published criteria with an aic.sg or moh.gov.sg link; Kin doesn't decide eligibility |
+| 9 | Group chat | `Kin, is Ah Ma eligible for the Home Caregiving Grant?` | The published criteria with an aic.sg or moh.gov.sg link; Kin doesn't decide eligibility |
 | 10 | Bot DM | `/demo monday` | Monday 08:00 in the demo family: Siti's morning medicines (the new Metformin dose) and the pill-organiser skill. Tap **Done**: Mei Ling is told |
 | 11 | Bot DM | `/demo admin`, then `/who_saw` and tap Insurance letter | Who was shown what, by name and time; also try `/skills`, `/reminders` and `/revoke` |
 | 12 | Bot DM | `/demo reset` | The family starts over (it also resets nightly) |
