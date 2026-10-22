@@ -66,7 +66,9 @@ def test_a_new_tester_sees_the_demo_intro_and_nothing_else(kin):
 
 def test_one_account_plays_the_whole_family(kin):
     out = cmd(kin, JUDGE, "/demo admin")
-    assert out["reset"] is True and to(kin, JUDGE)[-1].startswith("You're Mei Ling now")
+    claimed = to(kin, JUDGE)[-1]
+    assert out["reset"] is True and claimed.startswith("A fresh demo family is ready. You're Mei")
+    assert "June memo" in claimed  # the tour's next step
     assert "who_saw" in kin.sender.menus[JUDGE] and "demo" in kin.sender.menus[JUDGE]
     assert kin.sender.menus[GROUP] == ["help"]  # /demo works in DMs only
     cmd(kin, JUDGE, "/demo photos")
@@ -107,11 +109,27 @@ def test_demo_monday_runs_once_and_done_reaches_the_admin(kin):
     assert "has already run" in to(kin, JUDGE)[-1]
 
 
-def test_another_tester_takes_over_and_reset_restores_week0(kin):
+def test_each_tester_gets_a_fresh_family_and_nobody_is_cut_off(kin):
     cmd(kin, JUDGE, "/demo admin")
+    week0 = len(kin.store.active_records(["medication"]))
+    send(kin, JUDGE, photo="label-metformin")
+    send(kin, JUDGE, "Confirm")
+    assert len(kin.store.active_records(["medication"])) > week0
+    cmd(kin, OTHER, "/demo family")  # the first tester is still active
+    assert to(kin, OTHER)[-1] == demo.BUSY and kin.store.demo_tester()["telegram_id"] == JUDGE
+    with kin.store._db() as db:  # ...until they have been quiet for longer than IDLE
+        db.execute("UPDATE demo_accounts SET at='2026-01-01T00:00:00+00:00'")
     cmd(kin, OTHER, "/demo family")
-    assert "signed out" in to(kin, OTHER)[-1]
+    assert to(kin, OTHER)[-1].startswith("A fresh demo family is ready. You're Wei Jie")
+    assert len(kin.store.active_records(["medication"])) == week0  # back to Week 0
+    assert to(kin, JUDGE)[-1] == demo.SIGNED_OUT  # told, not left talking to silence
     assert send(kin, JUDGE, "hello")["reason"] == "unknown sender"
+    cmd(kin, OTHER, "/demo carer")  # the same tester switching role keeps their family
+    assert not to(kin, OTHER)[-1].startswith("A fresh demo family")
+
+
+def test_reset_restores_week0(kin):
+    cmd(kin, OTHER, "/demo family")
     send(kin, OTHER, photo="label-metformin")
     assert to(kin, OTHER)[-1].startswith("In the demo, documents come in as Mei Ling")
     cmd(kin, OTHER, "/demo admin")

@@ -4,16 +4,17 @@ Only with KIN_DEMO=true, on a store that holds the synthetic fixture. `/demo adm
 gives the sender's Telegram account every member's seat and picks who they speak as. Messages Kin
 sends to any member then arrive in that account's DM, labelled ("For Mei Ling (Admin):") when they
 are for someone other than the member being played, and a tap on any of their buttons answers
-for whoever was asked. The next tester to claim the seats signs the previous one out. A role
-switch resets the tester's Hermes conversations, so nothing said as one member carries into
-another. Reminders don't follow the clock in the demo (a judge abroad would get them at night):
-`/demo monday` runs Monday 08:00 on the fixture's demo day.
+for whoever was asked. Each new tester starts with a fresh Week 0 family; while a tester is
+active (anything within IDLE) nobody else can take the seats, and a tester signed out after going
+quiet is told why. A role switch resets the tester's Hermes conversations, so nothing said as one
+member carries into another. Reminders don't follow the clock in the demo (a judge abroad would
+get them at night): `/demo monday` runs Monday 08:00 on the fixture's demo day.
 """
 
 from __future__ import annotations
 
 from dataclasses import replace
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -24,30 +25,50 @@ from kin.fixtures import load_expected
 from kin.members import Roster, account_of
 from kin.seed import load_week0
 
+IDLE = timedelta(minutes=10)
 ROLE_NAMES = {"admin": "Admin", "family": "Family", "carer": "Carer", "viewer": "Viewer"}
-ABOUT = {
-    "admin": "the daughter who keeps the family's records",
-    "family": "her brother, overseas",
-    "carer": "the live-in helper",
-}
-NEXT = {
-    "admin": "Try /demo photos and send them back to me here. /reminders, /who_saw, /revoke and "
-    "/skills work in this chat.",
-    "family": "In the group, try “Kin, what did Dr Tan change at the last visit?” or “Kin, has "
-    "the insurance claim gone through?”",
-    "carer": "Try /demo monday for Siti's reminders, or ask me “What are the morning medicines "
-    "now?”",
+# Who each role is, what they see, and what to try next (the README's 5-minute tour).
+ROLES = {
+    "admin": (
+        "the daughter who keeps the family's records. You see everything, and nothing reaches "
+        "anyone else without your say.",
+        "Next: /demo photos, then send both pages back to me here. Then ask me “What did Dr Tan "
+        "write in the June memo?”",
+    ),
+    "family": (
+        "her brother overseas. You see the medicines, appointments and care instructions, not her "
+        "clinical notes or the family's finances.",
+        "Ask me what you asked as Mei Ling and compare. Then in the group: “Kin, has the "
+        "insurance claim gone through?”",
+    ),
+    "carer": (
+        "the live-in helper. You see her schedule and care instructions.",
+        "Try /demo monday for Siti's Monday morning, or ask me “What are the morning medicines "
+        "now?”",
+    ),
 }
 INTRO = (
-    "This is Kin's judge demo: a made-up family, so nothing here is real. Your Telegram account "
-    "can play all of them:\n"
-    "/demo admin: Mei Ling, who keeps the family's records\n"
-    "/demo family: Wei Jie, her brother overseas\n"
-    "/demo carer: Siti, the live-in helper\n"
-    "/demo photos: sample documents to send me as Mei Ling\n"
+    "Welcome to Kin's judge demo. The family is made up: Mdm Tan Siew Lan (“Ah Ma”, 78) is home "
+    "after a hospital stay. Her daughter Mei Ling keeps the records, her son Wei Jie lives "
+    "overseas, and Siti is the live-in helper. Kin already remembers the family's history: "
+    "Dr Tan's clinic memo from June, a pharmacy label, an insurance letter and a weekly skill.\n\n"
+    "Your Telegram account can play each of them:\n"
+    "/demo admin: Mei Ling (start here)\n"
+    "/demo family: Wei Jie\n"
+    "/demo carer: Siti\n"
+    "/demo photos: the discharge papers to send me as Mei Ling\n"
     "/demo monday: run Monday 08:00 (reminders and the weekly skill)\n"
-    "/demo reset: start the family over\n"
-    "Messages for someone you aren't playing are labelled with their name."
+    "/demo reset: start the family over\n\n"
+    "Messages for someone you aren't playing are labelled with their name. The 5-minute tour is "
+    "in the project README, under “Try it”."
+)
+BUSY = (
+    "Someone else is trying the demo right now. It frees up after 10 quiet minutes; please try "
+    "again then."
+)
+SIGNED_OUT = (
+    "Another tester started the demo after you'd been quiet for a while, so the family was reset "
+    "for them. Send /demo admin to start again."
 )
 PHOTOS = [
     ("discharge-summary-p1.jpg", "Discharge summary, page 1"),
@@ -93,14 +114,21 @@ def command(ctx, account: str, args: str) -> tuple[str, bool]:
         return "Signed out of the demo. /demo admin, family or carer to come back.", True
     member = _member_for(ctx, word)
     if member is not None and member.role:
-        took = store.demo_claim(account, member.id)
+        current = store.demo_tester()
+        fresh = current is None or current["telegram_id"] != account
+        if current is not None and fresh and _active(current["at"]):
+            return BUSY, False
+        if fresh:  # a new tester gets the family as it was at Week 0
+            store.reset()
+            load_week0(store, tz=ctx.tz)
+        signed_out = store.demo_claim(account, member.id)
         apply(ctx)
         admin.install_menus(ctx)
-        text = f"You're {member.short} now, {ABOUT.get(member.role, member.role)}."
-        text += " " + NEXT.get(member.role, "")
-        if took:
-            text += "\n(Another tester was using the demo and has been signed out.)"
-        return text, True
+        for other in signed_out:
+            ctx.sender.send(other, SIGNED_OUT)
+        who, next_step = ROLES.get(member.role, ("", ""))
+        text = ("A fresh demo family is ready. " if fresh else "") + f"You're {member.short} now, "
+        return text + who + "\n\n" + next_step, True
     if not held:
         return "Start with /demo admin, /demo family or /demo carer.", False
     if word == "reset":
@@ -136,6 +164,10 @@ def command(ctx, account: str, args: str) -> tuple[str, bool]:
             False,
         )
     return "I don't know that one.\n\n" + INTRO, False
+
+
+def _active(at: str) -> bool:
+    return datetime.now(timezone.utc) - datetime.fromisoformat(at) < IDLE
 
 
 class DemoSender:

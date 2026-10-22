@@ -81,6 +81,8 @@ def decide(ctx: Context, msg: Inbound, bot_username: str = "") -> Decision:
     except Refused as exc:
         return Decision("skip", f"refused: {exc}")
     member = principal.member
+    if ctx.demo and str(msg.caller.user_id) in ctx.roster.acting:
+        store.demo_touch(str(msg.caller.user_id))  # the demo stays theirs while they're active
     if ctx.demo and msg.text.startswith("/"):
         name = msg.text.strip().partition(" ")[0].lstrip("/").split("@", 1)[0].lower()
         if name == "demo" and principal.chat_type != "dm":

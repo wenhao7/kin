@@ -508,18 +508,32 @@ class Store:
             rows = db.execute("SELECT telegram_id, acting FROM demo_accounts")
             return {r["telegram_id"]: r["acting"] for r in rows}
 
-    def demo_claim(self, telegram_id: str, acting: str) -> bool:
-        """Give this account every seat, acting as `acting`; True if another tester lost them."""
+    def demo_tester(self) -> sqlite3.Row | None:
+        """The account holding the demo's seats, with its role and last activity (`at`)."""
         with self._db() as db:
-            others = db.execute(
-                "DELETE FROM demo_accounts WHERE telegram_id<>?", (telegram_id,)
-            ).rowcount
+            return db.execute("SELECT * FROM demo_accounts ORDER BY at DESC LIMIT 1").fetchone()
+
+    def demo_claim(self, telegram_id: str, acting: str) -> list[str]:
+        """Give this account every seat, acting as `acting`; returns the accounts signed out."""
+        with self._db() as db:
+            others = [
+                r["telegram_id"]
+                for r in db.execute(
+                    "SELECT telegram_id FROM demo_accounts WHERE telegram_id<>?", (telegram_id,)
+                )
+            ]
+            db.execute("DELETE FROM demo_accounts WHERE telegram_id<>?", (telegram_id,))
             db.execute(
                 "INSERT INTO demo_accounts VALUES (?,?,?) ON CONFLICT(telegram_id)"
                 " DO UPDATE SET acting=excluded.acting, at=excluded.at",
                 (telegram_id, acting, now()),
             )
-        return others > 0
+        return others
+
+    def demo_touch(self, telegram_id: str) -> None:
+        """The tester did something: the demo stays theirs for another idle period."""
+        with self._db() as db:
+            db.execute("UPDATE demo_accounts SET at=? WHERE telegram_id=?", (now(), telegram_id))
 
     def demo_release(self, telegram_id: str) -> None:
         with self._db() as db:
