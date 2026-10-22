@@ -15,6 +15,10 @@ lookup_allow_domains:
   - chas.sg
   - gov.sg
 
+# Dated pages left out of lookups: a press release describes a scheme as announced, often with
+# eligibility figures that have since changed (the scheme's own page is current).
+lookup_skip_paths: [/newsroom/, /news/, /press-release, /media-release]
+
 # Public schemes Kin can look up (`kin_lookup`). The Tavily query is built from the scheme's name
 # alone; whatever else the asker or the model wrote never leaves Kin. Aliases only help matching.
 lookup_topics:

@@ -14,8 +14,10 @@ from urllib.parse import urlparse
 
 LOOKUP_RULES = (
     "Say what these public pages say about the scheme, in plain words, with the link. Don't say "
-    "whether anyone in the family qualifies: the agency decides, so say how to apply or check. "
-    "If the pages don't answer the question, say so."
+    "whether anyone in the family qualifies: the agency decides, so say how to apply or check, "
+    "and don't offer to check the family's records. If pages give different figures, use the "
+    "scheme's own page and say the agency confirms current amounts. If the pages don't answer "
+    "the question, say so."
 )
 
 
@@ -43,12 +45,17 @@ def allowed(url: str, domains: list[str]) -> bool:
 
 
 def search(client: Any, locale: dict[str, Any], topic: dict[str, Any]) -> list[dict[str, str]]:
+    """Allow-listed results, without dated pages such as press releases (`lookup_skip_paths`):
+    they describe a scheme as announced, often with figures since changed."""
     domains = list(locale.get("lookup_allow_domains") or [])
+    skip = [s.lower() for s in locale.get("lookup_skip_paths") or []]
     res = client.search(
-        query_for(topic), max_results=3, include_domains=domains, search_depth="basic"
+        query_for(topic), max_results=5, include_domains=domains, search_depth="basic"
     )
-    return [
+    kept = [
         {"title": r.get("title", ""), "url": r["url"], "content": (r.get("content") or "")[:800]}
         for r in res.get("results", [])
         if allowed(r.get("url", ""), domains)
+        and not any(s in (urlparse(r["url"]).path or "").lower() for s in skip)
     ]
+    return kept[:3]
