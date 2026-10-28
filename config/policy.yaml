@@ -14,7 +14,7 @@ share_request_on_none: [finance, legal]
 # question is the same whether or not a matching record exists.
 share_keywords:
   finance: [insurance, insurer, claim, claims, bill, bills, invoice, payment, payments, paid, premium, cost, costs, money, reimburse, reimbursement, medisave]
-  legal: [lpa, will, power of attorney, deputy, legal, lawyer]
+  legal: [lpa, her will, the will, a will, last will, testament, power of attorney, deputy, legal, lawyer]
 
 matrix:
   medical:
