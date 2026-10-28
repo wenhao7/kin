@@ -40,6 +40,7 @@ class InboundIn(BaseModel):
     kind: str
     text: str = ""
     reply_to_kin: bool = False
+    reply_to_bot: str = ""  # username of the bot the message replies to, if any
     file_b64: str | None = None
     filename: str | None = None
 
@@ -96,7 +97,9 @@ def create_app(ctx: Context, token: str) -> FastAPI:
             kind=body.kind,
             text=body.text,
             message_id=body.caller.message_id,
-            reply_to_kin=body.reply_to_kin,
+            reply_to_kin=body.reply_to_kin
+            or bool(body.reply_to_bot)
+            and body.reply_to_bot.lower() == sender.username().lower(),
             content=content,
             filename=body.filename,
         )

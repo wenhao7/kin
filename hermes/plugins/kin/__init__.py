@@ -114,7 +114,28 @@ NOTE_SCHEMA = {
 }
 
 
-def inbound_payload(event: Any) -> dict[str, Any] | None:
+def inbound_payloads(event: Any) -> list[dict[str, Any]]:
+    """One payload per photo or file (Hermes merges an album, or photos sent together, into one
+    event); the text goes with the first. Empty for non-Telegram events."""
+    first = inbound_payload(event)
+    if first is None:
+        return []
+    count = len(list(getattr(event, "media_urls", None) or []))
+    rest = [inbound_payload(event, i) for i in range(1, count)] if "file_b64" in first else []
+    for p in rest:
+        p["text"] = ""
+    return [first, *[p for p in rest if p and "file_b64" in p]]
+
+
+def _reply_to_bot(event: Any) -> str:
+    """The username of the bot a message replies to, from the Telegram message itself ("" if
+    none): Hermes' own reply flag isn't set by its Telegram adapter."""
+    reply = getattr(getattr(event, "raw_message", None), "reply_to_message", None)
+    author = getattr(reply, "from_user", None)
+    return str(getattr(author, "username", "") or "") if getattr(author, "is_bot", False) else ""
+
+
+def inbound_payload(event: Any, media_index: int = 0) -> dict[str, Any] | None:
     """What the kin service needs from a gateway MessageEvent; None for non-Telegram events."""
     source = getattr(event, "source", None)
     platform = getattr(getattr(source, "platform", None), "value", getattr(source, "platform", ""))
@@ -132,10 +153,11 @@ def inbound_payload(event: Any) -> dict[str, Any] | None:
         "kind": kind,
         "text": getattr(event, "text", "") or "",
         "reply_to_kin": bool(getattr(event, "reply_to_is_own_message", False)),
+        "reply_to_bot": _reply_to_bot(event),
     }
     media = list(getattr(event, "media_urls", None) or [])
-    if kind in ("photo", "document") and media:
-        path = Path(media[0])
+    if kind in ("photo", "document") and len(media) > media_index:
+        path = Path(media[media_index])
         if path.is_file() and path.stat().st_size <= MAX_UPLOAD:
             payload["file_b64"] = base64.b64encode(path.read_bytes()).decode()
             payload["filename"] = path.name
@@ -145,11 +167,13 @@ def inbound_payload(event: Any) -> dict[str, Any] | None:
 async def pre_gateway_dispatch(
     event: Any, gateway: Any = None, session_store: Any = None, **_: Any
 ):
-    payload = inbound_payload(event)
-    if payload is None:
+    payloads = inbound_payloads(event)
+    if not payloads:
         return None
-    result = await asyncio.to_thread(post, "/inbound", payload)
-    if result.get("reset"):
+    payload = payloads[0]
+    results = [await asyncio.to_thread(post, "/inbound", p) for p in payloads]
+    result = next((r for r in results if "error" in r), results[0])
+    if any(r.get("reset") for r in results):
         _reset_sessions(session_store, payload["caller"]["user_id"])
     if result.get("action") == "pass":
         return {"action": "allow"}
