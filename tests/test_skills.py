@@ -43,7 +43,7 @@ def test_monday_skill_fires_once_after_a_restart_and_done_reaches_the_admin(kin)
     assert to(kin, CARER)[-1] == "Thanks, I've told Mei Ling."
     done = "Siti has done it: Refill the pill organiser for the week."
     assert to(kin, ADMIN)[-1].startswith(done)
-    assert send(kin, CARER, "Done")["action"] == "pass"  # answered once; now ordinary chat
+    assert send(kin, CARER, "Done")["reason"] == "stale button"  # answered once already
     send(kin, ADMIN, "/skills", kind="command")
     assert "last run: Mon 26 Oct" in to(kin, ADMIN)[-1]
     assert schedule.tick(restart(kin), MONDAY.replace(day=27)) == 1  # Tuesday: medicines only

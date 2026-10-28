@@ -38,6 +38,8 @@ def run_intake(ctx: Context, document_id: str) -> None:
     """Background task after the Admin sends a photo: extract, draft, ask."""
     admin = _admin(ctx)
     doc = ctx.store.document(document_id)
+    if doc is None:  # cleared while it was being read (judge demo reset)
+        return
     path = ctx.store.originals_dir / (doc["storage_ref"] or "")
     mime = MIME.get(Path(path).suffix.lower())
     if mime is None or not path.is_file():
@@ -66,6 +68,8 @@ def run_intake(ctx: Context, document_id: str) -> None:
 
 
 def send_draft(ctx: Context, draft: dict) -> None:
+    if intake.refresh_issues(ctx.store, draft):
+        ctx.store.save_draft(draft)
     question, options = intake.next_question(draft)
     text = intake.render_draft(draft, ctx.household, ctx.roster) + "\n\n" + question
     _ask_admin(ctx, "draft", draft["id"], text, options)
@@ -83,8 +87,32 @@ def handle_prompt(ctx: Context, member, text: str) -> str | None:
     if reply:
         idle = ctx.store.current_prompt(member.id) is None and not ctx.store.has_queued(member.id)
         ctx.sender.send(member.telegram_id, reply, remove_keyboard=idle)
-    prompts.advance(ctx.store, ctx.sender, member)
+    prompts.advance(ctx.store, ctx.sender, member, redraft=lambda ref: _redraft(ctx, ref))
     return None if reply is None else ""
+
+
+def _redraft(ctx: Context, draft_id: str) -> None:
+    draft = ctx.store.draft(draft_id)
+    if draft is not None and draft["status"] == "open":
+        send_draft(ctx, draft)
+
+
+def is_option(ctx: Context, member, text: str) -> bool:
+    """Whether text is one of the buttons of the member's open question (typed values are not)."""
+    prompt = ctx.store.current_prompt(member.id)
+    if prompt is None:
+        return False
+    options = [o.lower() for o in json.loads(prompt["options"])]
+    return text.strip().rstrip(".!").lower() in options
+
+
+def was_option(ctx: Context, member, text: str) -> bool:
+    """Whether text is a button of the member's last answered question: a tap on old buttons
+    (checked after the open question, if any, turned it down)."""
+    prompt = ctx.store.last_answered(member.id)
+    if prompt is None:
+        return False
+    return text.strip().lower() in [o.lower() for o in json.loads(prompt["options"])]
 
 
 def _answer(ctx: Context, member, prompt, text: str) -> str | None:
@@ -126,6 +154,10 @@ def _answer(ctx: Context, member, prompt, text: str) -> str | None:
             ctx.store.open_prompt(admin.id, "draft", draft["id"], [])
             return "Type the correct value."
         if outcome == "confirm":
+            if intake.refresh_issues(ctx.store, draft):  # something filed meanwhile clashes
+                ctx.store.save_draft(draft)
+                send_draft(ctx, draft)
+                return ""
             ctx.store.close_prompt(prompt["id"])
             return confirm(ctx, draft)
         send_draft(ctx, draft)  # resolved: show the next question
@@ -141,13 +173,16 @@ def confirm(ctx: Context, draft: dict) -> str:
     view = intake.household_view(ctx.policy, ctx.store.member_roles(), rows)
     title = intake.source_of(draft["doc_type"], draft["fields"])
     en = intake.group_summary(view, title, _admin(ctx).short)
-    lines = [f"Filed {len(result['records'])} records from the {title}."]
+    lines = [f"Filed {_count(len(result['records']), 'record')} from the {title}."]
     if result["superseded"]:
         lines.append(
-            f"Replaced {len(result['superseded'])} older medicine records; their reminders stop."
+            f"Replaced {_count(len(result['superseded']), 'older medicine record')}; "
+            "their reminders stop."
         )
     if result["events"]:
-        lines.append(f"{len(result['events'])} reminders scheduled (/reminders shows them).")
+        lines.append(
+            f"{_count(len(result['events']), 'reminder')} scheduled (/reminders shows them)."
+        )
     if en:
         drugs = [json.loads(r["fields"]).get("drug", "") for r in rows if r is not None]
         zh = (
@@ -177,6 +212,10 @@ def confirm(ctx: Context, draft: dict) -> str:
 def _names(ctx: Context) -> list[str]:
     """People's names stay as written in the Mandarin post, like medicine names."""
     return [n for m in ctx.roster.members for n in (m.short, m.name) if n]
+
+
+def _count(n: int, noun: str) -> str:
+    return f"{n} {noun}" + ("" if n == 1 else "s")
 
 
 def _needs_mandarin(ctx: Context) -> bool:

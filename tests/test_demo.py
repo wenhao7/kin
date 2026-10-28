@@ -54,8 +54,11 @@ def cmd(kin, user, text):
 def test_a_new_tester_sees_the_demo_intro_and_nothing_else(kin):
     assert cmd(kin, JUDGE, "/start")["reason"] == "/start (demo)"
     assert to(kin, JUDGE)[-1] == demo.INTRO
-    assert send(kin, JUDGE, "What medicines is she on?")["reason"] == "unknown sender"
-    assert send(kin, JUDGE, "Kin, what medicines?", chat_type="group")["reason"] == "unknown sender"
+    assert send(kin, JUDGE, "What medicines is she on?")["reason"] == "demo: no seat"
+    assert to(kin, JUDGE)[-1] == demo.START  # a pointer, not silence
+    assert send(kin, JUDGE, "Kin, what medicines?", chat_type="group")["reason"] == "demo: no seat"
+    assert to(kin, GROUP)[-1] == demo.START_GROUP
+    assert send(kin, JUDGE, "lunch?", chat_type="group")["reason"] == "unknown sender"
     assert cmd(kin, JUDGE, "/demo monday")["reason"] == "/demo"
     assert to(kin, JUDGE)[-1].startswith("Start with /demo admin")
     assert send(kin, JUDGE, "/demo admin", kind="command", chat_type="group")["reason"] == (
@@ -123,7 +126,9 @@ def test_each_tester_gets_a_fresh_family_and_nobody_is_cut_off(kin):
     assert to(kin, OTHER)[-1].startswith("A fresh demo family is ready. You're Wei Jie")
     assert len(kin.store.active_records(["medication"])) == week0  # back to Week 0
     assert to(kin, JUDGE)[-1] == demo.SIGNED_OUT  # told, not left talking to silence
-    assert send(kin, JUDGE, "hello")["reason"] == "unknown sender"
+    assert kin.sender.menus[JUDGE] == ["demo", "help"]  # the Admin menu no longer applies
+    assert send(kin, JUDGE, "hello")["reason"] == "demo: no seat"
+    assert to(kin, JUDGE)[-1] == demo.BUSY  # the new tester is active: told to wait
     cmd(kin, OTHER, "/demo carer")  # the same tester switching role keeps their family
     assert not to(kin, OTHER)[-1].startswith("A fresh demo family")
 

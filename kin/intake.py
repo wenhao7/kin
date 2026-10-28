@@ -477,6 +477,24 @@ def new_draft(
     return draft
 
 
+def refresh_issues(store: Store, draft: dict[str, Any]) -> bool:
+    """Re-check a draft against what is filed now (a document confirmed while this draft
+    waited can clash with it); adds new questions, keeps answered ones. True if any were added."""
+    known = {i["id"] for i in draft["issues"]}
+    found = find_issues(store, draft["doc_type"], draft["fields"], [])
+    new = [i for i in found if i["id"] not in known]
+    draft["issues"] += new
+    return bool(new)
+
+
+def missing_sections(draft: dict[str, Any]) -> list[str]:
+    """Headings of a multi-page document not seen on any page so far."""
+    from kin.extract import SECTION_GATES
+
+    gates = SECTION_GATES.get(draft["doc_type"], {})
+    return sorted({h for k, h in gates.items() if not draft["fields"].get(k)})
+
+
 def render_draft(draft: dict[str, Any], household: dict[str, Any], roster) -> str:
     f, t = draft["fields"], draft["doc_type"]
     lines = [f"Draft from the {source_of(t, f)} — please check before anything is filed:"]
@@ -508,6 +526,12 @@ def render_draft(draft: dict[str, Any], household: dict[str, Any], roster) -> st
     who = roster.by_id(household.get("medicines_by", "")) if household.get("medicines_by") else None
     if who and any(r.get("kind") == "schedule" for r in records_for(t, f, household)):
         lines.append(f"Medicine reminders go to {who.short} at the times shown.")
+    missing = missing_sections(draft)
+    if missing:
+        lines.append(
+            f"Not on the pages so far: {', '.join(missing)}. If there's another page, send it "
+            "before confirming."
+        )
     return "\n".join(lines)
 
 

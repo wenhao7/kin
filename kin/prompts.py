@@ -12,7 +12,15 @@ from __future__ import annotations
 
 import json
 
-WAITING = "One more question is waiting. I'll ask it once you've answered this one."
+WAITING = "One more question is waiting. First, finish the open one ({what})."
+OPEN = {
+    "draft": "the document you're checking",
+    "summary": "whether to post the update to the group",
+    "share": "a request to share something",
+    "who_saw": "which document",
+    "revoke": "which share to end",
+    "skill": "this week's task",
+}
 
 
 def ask(
@@ -34,13 +42,23 @@ def ask(
         sender.send(member.telegram_id, text, keyboard=options or None)
         return
     store.open_prompt(member.id, kind, ref, options, text, queued=True)
-    sender.send(member.telegram_id, WAITING)
+    # Name the open question and give its buttons back, so it is clear what to answer first.
+    open_options = json.loads(current["options"])
+    note = WAITING.format(what=OPEN.get(current["kind"], "the one above"))
+    if not open_options:
+        note += " I'm waiting for the value you were typing."
+    sender.send(member.telegram_id, note, keyboard=open_options or None)
 
 
-def advance(store, sender, member) -> None:
-    """Send the next waiting question if none is open."""
+def advance(store, sender, member, redraft=None) -> None:
+    """Send the next waiting question if none is open. A waiting draft is shown afresh through
+    `redraft(draft id)`: what was filed meanwhile can raise a new question (a time clash)."""
     if store.current_prompt(member.id) is not None:
         return
     row = store.next_queued(member.id)
-    if row is not None:
-        sender.send(member.telegram_id, row["text"], keyboard=json.loads(row["options"]) or None)
+    if row is None:
+        return
+    if row["kind"] == "draft" and redraft is not None:
+        redraft(row["ref"])
+        return
+    sender.send(member.telegram_id, row["text"], keyboard=json.loads(row["options"]) or None)

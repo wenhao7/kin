@@ -356,6 +356,14 @@ class Store:
             )
             return int(cur.lastrowid)
 
+    def last_answered(self, member: str) -> sqlite3.Row | None:
+        """The member's most recently closed question (its buttons may still be on screen)."""
+        with self._db() as db:
+            return db.execute(
+                "SELECT * FROM prompts WHERE member=? AND status='done' ORDER BY id DESC LIMIT 1",
+                (member,),
+            ).fetchone()
+
     def requeue(self, prompt_id: int) -> None:
         """Put an open question back in the queue; its age keeps it first in line."""
         with self._db() as db:

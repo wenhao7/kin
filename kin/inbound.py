@@ -88,11 +88,17 @@ def decide(ctx: Context, msg: Inbound, bot_username: str = "") -> Decision:
         if name == "demo" and principal.chat_type != "dm":
             return Decision("skip", "/demo in group", "Send /demo to me in a direct message.")
         if name == "demo":
-            reply, reset = demo.command(ctx, str(msg.caller.user_id), msg.text.partition(" ")[2])
-            return Decision("skip", "/demo", reply, reset_sessions=reset)
+            args = msg.text.partition(" ")[2]
+            reply, reset = demo.command(ctx, str(msg.caller.user_id), args)
+            wiped = args.strip().lower() == "reset"  # its questions are gone: so are their buttons
+            return Decision("skip", "/demo", reply, reset_sessions=reset, remove_keyboard=wiped)
         if member.role is None and name in ("start", "help") and principal.chat_type == "dm":
             return Decision("skip", f"/{name} (demo)", demo.INTRO)
     if member.role is None:
+        if ctx.demo and principal.chat_type == "dm":  # a newcomer, or a tester signed out
+            return Decision("skip", "demo: no seat", demo.no_seat(ctx, str(msg.caller.user_id)))
+        if ctx.demo and addressed_to_kin(msg.text, bot_username) and msg.kind == "text":
+            return Decision("skip", "demo: no seat", demo.START_GROUP)
         return Decision("skip", "unknown sender")
     admin = next((m for m in roster.members if m.role == "admin"), None)
     admin_name = admin.short if admin else "the family admin"
@@ -135,11 +141,18 @@ def decide(ctx: Context, msg: Inbound, bot_username: str = "") -> Decision:
     if not in_dm and not (msg.reply_to_kin or addressed_to_kin(msg.text, bot_username)):
         return Decision("skip", "group chatter not addressed to Kin")
     if in_dm:
-        for seat in roster.seats(member):  # in the demo one account answers for every member
+        # In the demo one account answers for every member, but only by tapping their buttons:
+        # a typed value goes to the member being played.
+        for seat in roster.seats(member):
+            if seat.id != member.id and not flows.is_option(ctx, seat, msg.text):
+                continue
             handled = flows.handle_prompt(ctx, seat, msg.text)
             if handled is not None:
                 return Decision("skip", "prompt answer", handled or None)
-        if msg.text.strip().lower() in STALE_BUTTONS:  # a tap on an old keyboard: never the model's
+        stale = msg.text.strip().lower() in STALE_BUTTONS or any(
+            flows.was_option(ctx, seat, msg.text) for seat in roster.seats(member)
+        )
+        if stale:  # a tap on an old keyboard: never the model's
             return Decision("skip", "stale button", ANSWERED, remove_keyboard=True)
     category = share.blocked_category(ctx.policy, member, msg.text)
     if category and in_dm and share.granted(store, member, category):

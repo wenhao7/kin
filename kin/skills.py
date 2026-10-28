@@ -105,8 +105,9 @@ def done(ctx, member, prompt: Any) -> str:
     when = datetime.now(ZoneInfo(ctx.tz))
     result = {"ok": False}
     if to is not None and to.telegram_id:
+        stamp = "" if getattr(ctx, "demo", False) else f" ({when:%a %H:%M})"  # demo: not "now"
         result = ctx.sender.send(
-            to.telegram_id, f"{member.short} has done it: {f.get('message', '')} ({when:%a %H:%M})"
+            to.telegram_id, f"{member.short} has done it: {f.get('message', '')}{stamp}"
         )
     ctx.store.audit(
         principal=member.id,

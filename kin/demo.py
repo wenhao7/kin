@@ -70,6 +70,16 @@ SIGNED_OUT = (
     "Another tester started the demo after you'd been quiet for a while, so the family was reset "
     "for them. Send /demo admin to start again."
 )
+START = "To try the demo, send /demo admin. /demo on its own explains it."
+START_GROUP = "To try the demo, open a direct message with me and send /demo admin."
+NEWCOMER_MENU = [("demo", "Judge demo: start or switch role"), ("help", "What Kin does")]
+
+
+def no_seat(ctx, account: str) -> str:
+    """The reply to someone without a seat: start, or wait for the tester using it."""
+    tester = ctx.store.demo_tester()
+    busy = tester is not None and tester["telegram_id"] != account and _active(tester["at"])
+    return BUSY if busy else START
 PHOTOS = [
     ("discharge-summary-p1.jpg", "Discharge summary, page 1"),
     ("discharge-summary-p2.jpg", "Discharge summary, page 2"),
@@ -126,6 +136,7 @@ def command(ctx, account: str, args: str) -> tuple[str, bool]:
         admin.install_menus(ctx)
         for other in signed_out:
             ctx.sender.send(other, SIGNED_OUT)
+            ctx.sender.set_commands(NEWCOMER_MENU, other)  # their Admin menu no longer works
         who, next_step = ROLES.get(member.role, ("", ""))
         text = ("A fresh demo family is ready. " if fresh else "") + f"You're {member.short} now, "
         return text + who + "\n\n" + next_step, True
@@ -144,17 +155,21 @@ def command(ctx, account: str, args: str) -> tuple[str, bool]:
     if word == "monday":
         day = load_expected(FIXTURES)["demo_day"]
         now = datetime.fromisoformat(f"{day}T08:00:20").replace(tzinfo=ZoneInfo(ctx.tz))
+        before = _skill_runs(ctx)
         sent = schedule.tick(ctx, now)
+        skill = _skill_runs(ctx) != before
         if not sent:
             return (
                 f"{now:%A %d %b}, 08:00 has already run in this demo. /demo reset starts over.",
                 False,
             )
-        return (
-            f"It's {now:%A %d %b}, 08:00 in the demo family: Siti got the morning medicines and "
-            "the weekly pill-organiser skill (above). Tap Done on it to tell Mei Ling.",
-            False,
+        got = (
+            "the morning medicines and the weekly pill-organiser skill (above). Tap Done on it to "
+            "tell Mei Ling."
+            if skill
+            else "the morning medicines (above)."
         )
+        return f"It's {now:%A %d %b}, 08:00 in the demo family: Siti got {got}", False
     if word == "photos":
         for name, caption in PHOTOS:
             ctx.sender.send_photo(account, FIXTURES / "photos" / name, caption)
@@ -164,6 +179,10 @@ def command(ctx, account: str, args: str) -> tuple[str, bool]:
             False,
         )
     return "I don't know that one.\n\n" + INTRO, False
+
+
+def _skill_runs(ctx) -> list:
+    return [e["last_sent"] for e in ctx.store.active_events() if e["kind"] == "weekly"]
 
 
 def _active(at: str) -> bool:
