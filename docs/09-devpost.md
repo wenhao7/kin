@@ -58,7 +58,7 @@ Visit debriefs from after-visit summaries, teach-by-chat skills, a weekly digest
 
 - Bot: `@KinAgentBot`. Group: join with this invite link: `<invite link>`.
 - Follow "Try it (judges)" in the README. One Telegram account plays the whole made-up family through `/demo`; nothing is real and no API key is needed.
-- One tester at a time; `/demo reset` starts over, and the demo resets nightly at 04:00 SGT. Available until 16 Dec 2026, 04:00 SGT.
+- Each tester starts with a fresh family. If someone else is mid-tour, Kin says so, and the demo frees up after 10 quiet minutes. `/demo reset` starts over; the demo also resets nightly at 04:00 SGT. Available until 16 Dec 2026, 04:00 SGT.
 
 ## Feedback
 
