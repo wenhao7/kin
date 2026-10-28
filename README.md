@@ -137,7 +137,7 @@ make measure           # the table above (spends a few cents)
 make tick AT=2026-10-26T08:00   # send what's due at that time now (video takes)
 ```
 
-Judge demo: set `KIN_DEMO=true` and `TELEGRAM_ALLOW_ALL_USERS=true` in `.env`, run `make up`, then `make demo-reset`. Reset it nightly with cron, e.g. `0 4 * * * cd /path/to/kin && make demo-reset >> data/demo-reset.log 2>&1`. Use the demo only with the synthetic fixture.
+Judge demo: set `KIN_DEMO=true` and `TELEGRAM_ALLOW_ALL_USERS=true` in `.env`, run `make up`, then `make demo-reset`. Reset it daily with cron at an hour your testers are asleep, giving the full path to `uv` (cron's PATH rarely has it), e.g. `0 15 * * * cd /path/to/kin && make demo-reset UV=/path/to/uv >> data/demo-reset.log 2>&1`. Use the demo only with the synthetic fixture.
 
 ## Layout
 
