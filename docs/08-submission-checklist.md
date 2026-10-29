@@ -8,7 +8,7 @@ Rules: [00-hackathon.md](00-hackathon.md). Unchecked boxes are unverified.
 - [x] Chosen photo extractor works and is named (model ID; dedicated or public).
 - [x] Identity and policy enforced before retrieval and delivery; minimum privacy and safety tests pass.
 - [x] Intake requires Admin confirmation before a schedule activates; no diagnosis, dosing, interaction inference or silent conflict resolution.
-- [ ] Self-service synthetic demo lets a judge complete both Admin and Family steps without the entrant.
+- [x] Self-service synthetic demo lets a judge complete both Admin and Family steps without the entrant.
 - [ ] Public Apache-2.0 repo with required source, verified setup README, description, track, feedback.
 - [ ] Public YouTube video (target 2:50) showing working minimum features; Mandarin output shown with English.
 - [ ] Eligibility and Representative confirmed; Upgradient entry substantially different.
@@ -19,7 +19,7 @@ Rules: [00-hackathon.md](00-hackathon.md). Unchecked boxes are unverified.
 - [x] Every tester opened a DM with the bot; IDs and roles verified before restricted data is available.
 - [x] Judge fixture isolated; `/demo` cannot grant roles outside the fixture (`KIN_DEMO` only; `tests/test_demo.py`).
 - [x] Only synthetic data; no raw documents, audit queries or paths exposed to lower roles.
-- [ ] README and video state what leaves the host (Telegram, Nebius inference, Tavily topics). README done; video at D9.
+- [x] README and video state what leaves the host (Telegram, Nebius inference, Tavily topics).
 - [x] Tavily runtime lookup with a public-only query and the locale allow-list.
 - [ ] City selected only if a Builders & Brews event was attended.
 - [x] Audio, teach-by-chat, digests, viewer expiry, OpenShell and data map claimed only if their gates passed.

@@ -81,7 +81,8 @@ Fixed during validation: lost Admin questions (`kin/prompts.py`), follow-ups und
 - [x] README separates implemented from planned; "How we use Nebius and NVIDIA" filled with measured values. Evidence: README "What works" and "Not built"; `make measure` on 19 Oct (intake of two photos USD 0.0026, an answer about USD 0.002), live turn times from the gateway log.
 - [ ] Self-service synthetic demo: judge joins a disposable fixture, uses `/demo` to act as Admin or Family, follows the test script (intake photo supplied, confirm, recall, share, `/skills`); `make demo-reset` (nightly during judging) isolates sessions. Repo public. Entrant-funded. Note:
   - Built: `/demo admin|family|carer|photos|monday|reset` (`kin/demo.py`, `tests/test_demo.py`), `make demo-reset`, and the README test script.
-  - Still open: the invite link and the nightly cron (owner).
+  - Validated 29 Oct by the owner from a clean account, with the review fixes in: the README tour, the off-script paths and a second tester being turned away.
+  - Still open: the invite link and the daily cron at 15:00 SGT (owner).
   - The repo goes public at the end, by the owner.
 - [x] Devpost text and feedback drafted; access verified from a clean session. Evidence: drafts in `docs/09-devpost.md`. On 22 Oct an unmapped account ran the README's judge script end to end with `/demo`: intake from the sample photos, the group post, recall, the share request, the fixed reply for an original, the lookup, `/demo monday`, `/who_saw` and `/demo reset`; a second account's `/demo` then signed it out. The run led to three answer fixes: excerpts in the reply's order, no credit to an unnamed doctor, and no press releases in lookups.
 
@@ -105,7 +106,7 @@ Fixed during validation: lost Admin questions (`kin/prompts.py`), follow-ups und
 
 ## D9 · Video and submission
 
-- [ ] 2:50 script recorded from the real minimum: intake and confirmation, reminder, recall, sharing, skill, data flow. Note: script, setup and narration in `docs/10-video-script.md`; `make tick` sends Monday 08:00 on demand for the reminder scene.
+- [x] 2:50 script recorded from the real minimum: intake and confirmation, reminder, recall, sharing, skill, data flow. Evidence: recorded 29 Oct in family mode with Telegram Web, narrated live; edited to 2:50 (`kin-video.mp4`, kept out of git). For the recording the Admin was named Wenhao and Wei Jie took the pill-organiser task; the demo keeps Mei Ling and Siti. Script and setup: `docs/10-video-script.md`.
 - [ ] Public YouTube upload; Devpost fields, feedback, city declaration; judge access through 16 Dec, 04:00 SGT.
 
 **Done when:** Devpost confirms submission. Start recording no later than the final working burst.
