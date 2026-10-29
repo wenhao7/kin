@@ -19,6 +19,11 @@ LOOKUP_RULES = (
     "scheme's own page and say the agency confirms current amounts. If the pages don't answer "
     "the question, say so."
 )
+# The group reads every word: the scheme in brief, not every criterion.
+LOOKUP_GROUP_RULE = (
+    " This reply goes to the whole family group: at most four short lines (what it gives, the "
+    "main conditions, how to apply), then the link."
+)
 
 
 def topics(locale: dict[str, Any]) -> list[dict[str, Any]]:

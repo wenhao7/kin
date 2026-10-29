@@ -168,7 +168,7 @@ def create_app(ctx: Context, token: str) -> FastAPI:
             return {"error": "The lookup failed. Try again later."}
         sources = [{"title": r["title"], "url": r["url"]} for r in results]
         ctx.turns.add(body.caller.to_caller(), sources=sources)
-        rules = lookup.LOOKUP_RULES + (answer.GROUP_RULE if p.chat_type == "group" else "")
+        rules = lookup.LOOKUP_RULES + (lookup.LOOKUP_GROUP_RULE if p.chat_type == "group" else "")
         return {"scheme": topic["name"], "results": results, "rules": rules}
 
     @app.post("/outbound", dependencies=[Depends(authorised)])

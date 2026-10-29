@@ -441,7 +441,7 @@ def _time_conflicts(store: Store, doc_type: str, fields: dict[str, Any]) -> list
                             "kind": "conflict",
                             "path": path,
                             "question": f"{show_date(d)}: this says {here}, "
-                            f"the {src} says {there}. "
+                            f"the {src.split(',')[0]} says {there}. "
                             "Which time is right?",
                             "options": [
                                 f"{here} (this document)",
@@ -537,9 +537,8 @@ def render_draft(draft: dict[str, Any], household: dict[str, Any], roster) -> st
                 f" ({g('pharmacy')})"
             )
         elif r["category"] == "appointments":
-            lines.append(
-                f"• Appointment: {g('department')}, {g('date')}, {g('time')} ({g('clinic')})"
-            )
+            where = f" ({g('clinic')})" if g("clinic") else ""
+            lines.append(f"• Appointment: {g('department')}, {g('date')}, {g('time')}{where}")
         elif r["category"] == "medical":
             for key in ("summary", "diagnoses", "follow_up"):
                 if rf.get(key):
@@ -549,9 +548,17 @@ def render_draft(draft: dict[str, Any], household: dict[str, Any], roster) -> st
             lines.append(f"• Observations ({g('date')}): " + "; ".join(rf["observations"]))
         elif r["category"] == "finance":
             lines.append(f"• {g('insurer')} claim {g('claim_ref')}: {g('status')} ({g('amount')})")
+    kinds = {r.get("kind") for r in records_for(t, f, household)}
     who = roster.by_id(household.get("medicines_by", "")) if household.get("medicines_by") else None
-    if who and any(r.get("kind") == "schedule" for r in records_for(t, f, household)):
+    if who and "schedule" in kinds:
         lines.append(f"Medicine reminders go to {who.short} at the times shown.")
+    by = (
+        roster.by_id(household.get("appointments_by", ""))
+        if household.get("appointments_by")
+        else None
+    )
+    if by and "appointment" in kinds:
+        lines.append(f"{by.short} is reminded the evening before the appointment.")
     missing = missing_sections(draft)
     if missing:
         lines.append(
