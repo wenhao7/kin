@@ -26,3 +26,6 @@ hermes/home/
 .vscode/
 .idea/
 .DS_Store
+
+# Screen recordings and video exports stay out of the repo
+*.mp4
