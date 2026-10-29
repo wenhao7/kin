@@ -43,7 +43,7 @@ The bot and the group invite link are in the Devpost submission's testing instru
 |---|---|---|---|
 | 1 | Bot DM | Start, then `/demo admin` | You are Mei Ling, who sees everything |
 | 2 | Bot DM | `/demo photos`, then send both pages back (forward them together, or save and send) | "Reading it now…" (about 10 s a page), then a draft from the Discharge summary, 23 Oct 2026. Answer Kin's question if it asks one, then tap **Confirm** |
-| 3 | Bot DM | Tap **Post to group** | The group gets the update in English and Mandarin: Metformin 500 mg, Glipizide stopped, Emergency Department advice, no diagnosis. A copy of Siti's new schedule arrives, labelled for her |
+| 3 | Bot DM | Tap **Post to group** | The group gets the update in English and Mandarin: Metformin 500 mg, Glipizide stopped, the 2 Nov follow-up with Dr Tan, Emergency Department advice, no diagnosis. A copy of Siti's new schedule arrives, labelled for her |
 | 4 | Bot DM | `What happened at Ah Ma's June review with Dr Tan?` | As Mei Ling: blood pressure 152/88, no chest pain, kidney tests in 4 weeks, review in 4 months, and Losartan started |
 | 5 | Bot DM | `/demo family`, then the same question | As Wei Jie: the review with Dr Tan and the Losartan plan, nothing more. **The clinical notes stay with Mei Ling**: same question, different answer, decided in code before the model sees anything |
 | 6 | Group chat | `Kin, has the insurance claim gone through?` | The group sees only "I've asked Mei Ling to share that." Your DM gets "For Mei Ling (Admin): Wei Jie asked…" with buttons. Tap **Just this once**: Wei Jie gets the insurer's words, without the amount or claim number |
@@ -54,6 +54,7 @@ The bot and the group invite link are in the Devpost submission's testing instru
 | Where | Send | Expect |
 |---|---|---|
 | Group chat (as Wei Jie) | `Kin, what did Dr Tan change at the last visit?` | Losartan 50 mg, Clinic memo 26 Jun 2026, with the quoted plan line |
+| Group chat (as Wei Jie) | `Kin, when will Ah Ma see the doctor next?` | 2 Nov 2026, 9:30 am at the Cardiology Clinic, quoted from the discharge summary (10:30 am once the appointment slip is filed) |
 | Group chat | `Kin, is Ah Ma eligible for the Home Caregiving Grant?` | The scheme's published criteria and a government link (Tavily); Kin never decides eligibility |
 | Bot DM | `/demo monday` | Monday 08:00 in the family: Siti's morning medicines (after the intake, the new Metformin dose) and the pill-organiser skill. Tap **Done** and Mei Ling is told; `/skills` shows the last run |
 | Bot DM (as Wei Jie) | `Please send me the discharge letter.` | Originals never leave Kin: a fixed reply, not the model's |

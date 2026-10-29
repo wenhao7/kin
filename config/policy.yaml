@@ -68,8 +68,8 @@ matrix:
 # `read`/`write` level without one shows every field.
 projections:
   medical:
-    family: [summary, care_instructions, source]
-    carer: [care_instructions, source]
+    family: [summary, medication_changes, care_instructions, source]
+    carer: [medication_changes, care_instructions, source]
     viewer: [care_instructions, source]
   medication:
     carer: [drug, strength, directions, change, times, source]

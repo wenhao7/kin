@@ -22,6 +22,7 @@ WITHHELD = "I can't share that here."
 MARKERS = re.compile(r"\s*【[^】]*】|\s*\[\{\s*\"id\"\s*:\s*\"[^\"]*\"\s*\}\]")
 MAX_EXCERPTS = 3
 ANCHORS = ("drug", "department", "clinic", "title", "insurer")
+MONTH_YEAR = re.compile(r"\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* (\d{4})\b")
 ANSWER_RULES = (
     "Answer only from these records, which are all this person may see in this chat. "
     "Name the source (document and date) for every statement. If nothing here answers the "
@@ -83,11 +84,29 @@ def _words(text: str) -> set[str]:
     return set(re.findall(r"[a-z]{5,}", norm(text)))
 
 
+def _anchors(fields: dict[str, Any]) -> list[str]:
+    """The names a record goes by: its own, and those in a list like a memo's medication changes."""
+    items = [fields] + [i for v in fields.values() if isinstance(v, list) for i in v]
+    return [
+        v
+        for i in items
+        if isinstance(i, dict)
+        for k in ANCHORS
+        if isinstance(v := i.get(k), str) and v
+    ]
+
+
+def _months(text: str) -> set[tuple[str, str]]:
+    """The months a text names ("26 Jun 2026", "June 2026"), as (Jun, 2026)."""
+    plain = re.sub(r"\s+", " ", text)  # models write dates with no-break spaces too
+    return {(m.group(1), m.group(2)) for m in MONTH_YEAR.finditer(plain)}
+
+
 def mention(text: str, record: dict[str, Any]) -> int | None:
     """Where a reply first names this record, or None when it isn't about it. A reply that only
     shares words with the record's excerpt counts too, after every named record."""
     low = norm(text)
-    names = [norm(v) for k in ANCHORS if isinstance(v := record["fields"].get(k), str) and v]
+    names = [norm(v) for v in _anchors(record["fields"])]
     found = [m.start() for n in names if (m := re.search(rf"\b{re.escape(n)}\b", low))]
     if found:
         return min(found)
@@ -127,6 +146,11 @@ def finish(ctx, caller: Caller, principal: Principal, text: str) -> tuple[str, s
     cited = sorted(  # excerpts follow the reply's order: the main point first
         (r for r in cited if mention(text, r) is not None), key=lambda r: mention(text, r)
     )
+    # A reply that dates what it says ("Clinic memo, 26 Jun 2026") is about those documents:
+    # a medicine it mentions in passing doesn't bring in a quote from another document.
+    named = _months(text)
+    from_named = [r for r in cited if _months(str(r["fields"].get("source", ""))) & named]
+    cited = from_named or cited
     lines, used = [], set()
     for r in cited:
         for e in r["excerpts"]:

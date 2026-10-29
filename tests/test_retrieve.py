@@ -53,7 +53,12 @@ def test_family_gets_summary_and_medication_never_finance(env):
     res = ask(env, FAMILY)
     cats = by_category(res)
     assert "finance" not in cats
-    assert field_names(res, "medical") <= {"summary", "care_instructions", "source"}
+    assert field_names(res, "medical") <= {
+        "summary",
+        "medication_changes",
+        "care_instructions",
+        "source",
+    }
     assert "diagnoses" not in json.dumps(res.records)
     memo = next(
         r for r in cats["medication"] if r["fields"].get("drug") == "Losartan" and r["excerpts"]
@@ -65,7 +70,7 @@ def test_carer_gets_schedule_care_instructions_and_own_notes(env):
     res = ask(env, CARER)
     cats = by_category(res)
     assert "finance" not in cats
-    assert field_names(res, "medical") <= {"care_instructions", "source"}
+    assert field_names(res, "medical") <= {"medication_changes", "care_instructions", "source"}
     assert field_names(res, "medication") <= {
         "drug",
         "strength",
@@ -77,8 +82,9 @@ def test_carer_gets_schedule_care_instructions_and_own_notes(env):
     assert "pharmacy" not in field_names(res, "medication")
     assert [r["fields"]["date"] for r in cats["observations"]] == ["Sun 25/10"]  # authored by Siti
     advice = [e["text"] for r in cats["medical"] for e in r["excerpts"]]
-    assert advice == [
-        "Return to the Emergency Department if breathless, chest pain or fever above 38.5°C"
+    assert sorted(advice) == [
+        "Plan: start losartan 50 mg once a day in the morning.",  # the memo's, not its notes
+        "Return to the Emergency Department if breathless, chest pain or fever above 38.5°C",
     ]
 
 
@@ -102,10 +108,18 @@ def test_group_answers_suit_every_member(env):
     res = ask(env, ADMIN, chat_type="group")  # even the Admin is capped in the group
     cats = by_category(res)
     assert "finance" not in cats and "observations" not in cats
-    assert field_names(res, "medical") <= {"care_instructions", "source"}  # carer is in the group
+    assert field_names(res, "medical") <= {
+        "medication_changes",
+        "care_instructions",
+        "source",
+    }  # carer is in the group
     assert all(not r["excerpts"] or r["category"] != "finance" for r in res.records)
     family = ask(env, FAMILY, chat_type="group")
-    assert field_names(family, "medical") <= {"care_instructions", "source"}  # not the summary
+    assert field_names(family, "medical") <= {
+        "medication_changes",
+        "care_instructions",
+        "source",
+    }  # not the summary
     shared = {e["id"] for r in family.records for e in r["excerpts"]}
     assert shared == {"clinic-memo#plan", "discharge-summary#return-advice"}  # approved for all
 

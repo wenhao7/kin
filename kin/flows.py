@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import threading
 from pathlib import Path
 
@@ -21,6 +22,7 @@ from kin.translate import to_mandarin
 
 logger = logging.getLogger("kin.flows")
 POST, SKIP = "Post to group", "Don't post"
+REPLACED = {"medication": "older medicine record", "appointments": "earlier appointment"}
 # Pages sent back to back are extracted in parallel; drafts are created or merged one at a time.
 _DRAFTS = threading.Lock()
 MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
@@ -175,10 +177,13 @@ def confirm(ctx: Context, draft: dict) -> str:
     en = intake.group_summary(view, title, _admin(ctx).short)
     lines = [f"Filed {_count(len(result['records']), 'record')} from the {title}."]
     if result["superseded"]:
-        lines.append(
-            f"Replaced {_count(len(result['superseded']), 'older medicine record')}; "
-            "their reminders stop."
+        kinds = {ctx.store.record(rid)["category"] for rid in result["superseded"]}
+        noun = (
+            REPLACED.get(next(iter(kinds)), "older record") if len(kinds) == 1 else "older record"
         )
+        n = len(result["superseded"])
+        stops = "its reminder stops" if n == 1 else "their reminders stop"
+        lines.append(f"Replaced {_count(n, noun)}; {stops}.")
     if result["events"]:
         lines.append(
             f"{_count(len(result['events']), 'reminder')} scheduled (/reminders shows them)."
@@ -186,7 +191,7 @@ def confirm(ctx: Context, draft: dict) -> str:
     if en:
         drugs = [json.loads(r["fields"]).get("drug", "") for r in rows if r is not None]
         zh = (
-            to_mandarin(ctx.client, ctx.model_super, en, drugs + _names(ctx))
+            to_mandarin(ctx.client, ctx.model_super, en, drugs + _names(ctx, en))
             if _needs_mandarin(ctx) and ctx.client
             else None
         )
@@ -209,9 +214,11 @@ def confirm(ctx: Context, draft: dict) -> str:
     return "\n".join(lines)
 
 
-def _names(ctx: Context) -> list[str]:
-    """People's names stay as written in the Mandarin post, like medicine names."""
-    return [n for m in ctx.roster.members for n in (m.short, m.name) if n]
+def _names(ctx: Context, text: str = "") -> list[str]:
+    """People's names stay as written in the Mandarin post, like medicine names: the family's,
+    and doctors named in the post."""
+    doctors = re.findall(r"\bDr\.? [A-Z][a-z]+(?: [A-Z][a-z]+)*", text)
+    return [n for m in ctx.roster.members for n in (m.short, m.name) if n] + doctors
 
 
 def _count(n: int, noun: str) -> str:

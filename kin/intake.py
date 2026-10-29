@@ -152,6 +152,28 @@ def records_for(
                     "quote": ["care_instructions"],
                 }
             )
+        # A dated follow-up is an appointment: the family may read it, and it gets a reminder.
+        for item in fields.get("follow_up") or []:
+            when, m = _date_times(item), DATE_RE.search(item)
+            if not when or m is None or "emergency" in item.lower():
+                continue
+            out.append(
+                {
+                    "category": "appointments",
+                    "kind": "appointment",
+                    "fields": {
+                        "department": item[: m.start()].strip(" :,-"),
+                        "date": show_date(when[0][0]),
+                        "time": _ampm(when[0][1]),
+                        "follow_up": item,
+                        "source": src,
+                    },
+                    "assignee": household.get("appointments_by"),
+                    "from_follow_up": True,
+                    "excerpts": [],
+                    "quote": ["follow_up"],
+                }
+            )
         for m in fields.get("medications_after") or []:
             out.append(
                 {
@@ -233,9 +255,16 @@ def records_for(
                     + (f" with {clinician}" if clinician else "")
                     + f", {memo_date}.",
                     "notes": fields.get("notes", []),
+                    # Also here, not only in the schedule below: a later document's "Unchanged"
+                    # replaces that schedule, but what was decided at the review stays true.
+                    **(
+                        {"medication_changes": fields["medication_changes"]}
+                        if fields.get("medication_changes")
+                        else {}
+                    ),
                     "source": src,
                 },
-                "excerpts": [],
+                "excerpts": ["plan"],
             }
         )
         for c in fields.get("medication_changes") or []:
@@ -397,13 +426,10 @@ def _time_conflicts(store: Store, doc_type: str, fields: dict[str, Any]) -> list
     else:
         return []
     issues = []
-    for row in store.active_records(["appointments", "medical"]):
-        text = json.dumps(json.loads(row["fields"]), ensure_ascii=False)
-        theirs = _date_times(text)
-        if row["category"] == "appointments":
-            f = json.loads(row["fields"])
-            d2, t2 = parse_date(str(f.get("date", ""))), parse_time(str(f.get("time", "")))
-            theirs = [(d2, t2)] if d2 and t2 else []
+    for row in store.active_records(["appointments"]):  # a summary's dated follow-ups are here
+        f = json.loads(row["fields"])
+        d2, t2 = parse_date(str(f.get("date", ""))), parse_time(str(f.get("time", "")))
+        theirs = [(d2, t2)] if d2 and t2 else []
         for d, t, path, _shown in mine:
             for d2, t2 in theirs:
                 if d == d2 and t != t2:
@@ -582,7 +608,9 @@ def _evening_before(d: date, household: dict[str, Any]) -> str:
 
 def _appointment_label(fields: dict[str, Any], time_text: str) -> str:
     notes = "; ".join(fields.get("instructions") or [])
-    where = f"{fields.get('department', '')} ({fields.get('clinic', '')})"
+    where = fields.get("department", "") + (
+        f" ({fields['clinic']})" if fields.get("clinic") else ""
+    )
     return f"Tomorrow {time_text}: {where}. {notes}".strip()
 
 
@@ -627,6 +655,16 @@ def activate(
     }
     created, superseded, events = [], [], []
     for r in records_for(t, f, household, set(active)):
+        same_day = []
+        if r.get("kind") == "appointment":  # one appointment a day: the slip is the newer word
+            day = parse_date(str(r["fields"].get("date", "")))
+            same_day = [
+                row
+                for row in store.active_records(["appointments"])
+                if day and parse_date(str(json.loads(row["fields"]).get("date", ""))) == day
+            ]
+            if same_day and r.get("from_follow_up"):
+                continue  # already on file; a clash in time was asked about in the draft
         texts, names = quotes(r)
         audience = excerpt_audience(policy, r["category"], names)
         excerpt_ids = [
@@ -648,6 +686,9 @@ def activate(
             assignee=r.get("assignee"),
         )
         created.append(rid)
+        for old in same_day:
+            store.supersede(old["id"], rid)
+            superseded.append(old["id"])
         rf = r["fields"]
         if r.get("kind") == "schedule":
             old = active.get(rf.get("drug", "").lower())

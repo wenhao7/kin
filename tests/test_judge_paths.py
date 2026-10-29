@@ -1,14 +1,17 @@
 """Paths a judge (or a family) can take off the script: each one once went wrong."""
 
+import json
 from types import SimpleNamespace
 
 from kin import flows
+from kin.intake import parse_date
 from tests.test_api import (
     ADMIN,
     CARER,
     FAMILY,
     GROUP,
     api,  # noqa: F401
+    caller,
 )
 from tests.test_demo import JUDGE, cmd
 from tests.test_demo import kin as demo_kin  # noqa: F401
@@ -68,8 +71,8 @@ def test_old_buttons_never_reach_the_model(kin):  # noqa: F811
 
 def test_a_draft_says_when_a_page_is_missing(kin):  # noqa: F811
     send(kin, ADMIN, photo="p1")
-    assert "Not on the pages so far: Follow-up, Medications before admission." in (
-        to(kin, ADMIN)[-1]
+    assert (
+        "Not on the pages so far: Follow-up, Medications before admission." in (to(kin, ADMIN)[-1])
     )
     send(kin, ADMIN, photo="p2")
     assert "Not on the pages so far" not in to(kin, ADMIN)[-1]
@@ -97,3 +100,61 @@ def test_demo_monday_says_what_it_sent(demo_kin):  # noqa: F811
     send(demo_kin, JUDGE, "Don't post")
     cmd(demo_kin, JUDGE, "/demo monday")  # the new schedule's 08:00 medicines, no second skill
     assert to(demo_kin, JUDGE)[-1].endswith("Siti got the morning medicines (above).")
+
+
+def _file(kin, photos, pick="(this document)"):  # noqa: F811
+    """Send the pages, answer each question (the name check, or a clash with `pick`), confirm."""
+    for p in photos:
+        send(kin, ADMIN, photo=p)
+    while (options := kin.sender.keyboards[-1]) != ["Confirm", "Discard"]:
+        send(kin, ADMIN, next(o for o in options if o == "Glipizide" or o.endswith(pick)))
+    send(kin, ADMIN, "Confirm")
+    send(kin, ADMIN, "Don't post")
+
+
+def _ask(kin, user, question):  # noqa: F811
+    body = {"caller": caller(user), "question": question}
+    return kin.client.post("/tools/ask", json=body).json()["records"]
+
+
+def _visits(kin):  # noqa: F811
+    rows = [json.loads(r["fields"]) for r in kin.store.active_records(["appointments"])]
+    return [(str(parse_date(f["date"])), f["time"]) for f in rows]
+
+
+def test_the_june_plan_outlives_the_discharge_summary(kin):  # noqa: F811
+    _file(kin, ["p1", "p2"])  # its "Losartan · Unchanged" replaces the memo's schedule
+    memo = next(
+        r
+        for r in _ask(kin, FAMILY, "What happened at Ah Ma's June review with Dr Tan?")
+        if r["category"] == "medical" and r["fields"]["source"].startswith("Clinic memo")
+    )
+    assert memo["fields"]["medication_changes"][0]["drug"] == "Losartan"
+    assert "notes" not in memo["fields"]  # the clinical notes stay with the Admin
+    reply = "Dr Tan started Losartan 50 mg at the review (Clinic memo, 26 Jun 2026)."
+    text = kin.client.post("/outbound", json={"caller": caller(FAMILY), "text": reply}).json()
+    assert "“Plan: start losartan 50 mg once a day in the morning.” (Clinic memo" in text["text"]
+    assert "Discharge summary" not in text["text"]  # not a quote from another document
+    _ask(kin, ADMIN, "What happened at Ah Ma's June review with Dr Tan?")
+    reply = (
+        "In June\u202f2026 her blood pressure was 152/88 on amlodipine 5 mg; Losartan was started."
+    )
+    text = kin.client.post("/outbound", json={"caller": caller(ADMIN), "text": reply}).json()
+    assert "Amlodipine · 5 mg" not in text["text"] and "Plan: start losartan" in text["text"]
+
+
+def test_a_follow_up_is_an_appointment_the_family_can_see(kin):  # noqa: F811
+    _file(kin, ["p1", "p2"])
+    seen = [r["fields"] for r in _ask(kin, FAMILY, "When is the next appointment?")]
+    assert [(f["date"], f["time"]) for f in seen if "follow_up" in f] == [("2 Nov 2026", "9:30 am")]
+    _file(kin, ["appointment-slip"])  # 10:30 am, the slip's own time
+    assert "Replaced 1 earlier appointment; its reminder stops." in "\n".join(to(kin, ADMIN))
+    assert _visits(kin) == [("2026-11-02", "10:30 am")]  # one visit, not two
+    reminders = [e["label"] for e in kin.store.active_events() if e["label"].startswith("Tomorrow")]
+    assert len(reminders) == 1 and "10:30 am" in reminders[0]
+
+
+def test_a_summary_after_the_slip_adds_no_second_appointment(kin):  # noqa: F811
+    _file(kin, ["appointment-slip"])
+    _file(kin, ["p1", "p2"], pick="(Appointment slip)")  # keep the slip's 10:30 am
+    assert _visits(kin) == [("2026-11-02", "10:30 am")]
