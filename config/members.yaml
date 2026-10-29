@@ -46,5 +46,5 @@ household:
   refill_days_ahead: 3
 
 # Unknown senders get no role and see nothing (fail closed). The disposable judge fixture assigns
-# roles with `/demo` instead (docs/07-demo-plan.md). Language for anyone not listed:
+# roles with `/demo` instead (README, "Try it"). Language for anyone not listed:
 default_language: en

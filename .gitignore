@@ -29,3 +29,6 @@ hermes/home/
 
 # Screen recordings and video exports stay out of the repo
 *.mp4
+
+# Planning notes (roadmap, kickoff, hackathon and submission drafts) stay local
+planning/

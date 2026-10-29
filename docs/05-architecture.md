@@ -1,106 +1,107 @@
 # 05 · Architecture
 
-Implemented through D4: the Hermes gateway with the Kin plugin, the kin service (store, policy enforcement, intake, sharing, reminders, the reply check, lookup and the Monday skill). Optional and not built: OpenShell/NemoClaw isolation, teach-by-chat, visit debrief, the Serverless digest.
-
-## Components
+Two containers in one Docker Compose project. The **Hermes gateway** (Hermes Agent v0.21.7) polls Telegram and runs the model. The **kin service** owns the records, the policy, intake, sharing, the scheduler and the reply check. They meet in a small Hermes plugin.
 
 ```mermaid
 flowchart TB
-    TG[Telegram group and DMs] <--> GW[Hermes gateway + Kin plugin:<br/>verified sender, chat, role]
-    GW --> IN[Private intake: extract, classify, draft, confirm]
-    GW --> RET[retrieve: scoped records and permitted history]
-    IN --> DB[(Kin store: versioned records, restricted originals, events, grants, audit)]
-    RET <--> PE[Policy: matrix, field projection, grants]
-    PE <--> DB
-    RET --> AG[Hermes runtime · Nemotron via Token Factory]
-    AG --> OUT[Reply check: destination, excerpts, sources]
-    OUT --> GW
-    DB --> EV[Confirmed events and reminders]
-    EV --> OUT
-    IN <--> VX[Vision extractor on Token Factory]
-    AG --> TV[Tavily, locale allow-list]
+    TG[Telegram group and DMs] <--> GW[Hermes gateway + Kin plugin:<br/>verified sender and chat]
+    GW -->|photos, commands, button taps| IN[Kin: handled before any model runs]
+    GW --> AG[Hermes agent · Nemotron 3 Super<br/>tools: kin_ask, kin_note, kin_lookup]
+    AG --> RET[retrieve: role × category,<br/>field limits, grants]
+    RET <--> DB[(Kin store: versioned records,<br/>restricted originals, events, audit)]
+    IN <--> DB
+    IN <--> VX[MiniCPM-V on Token Factory]
+    AG --> OUT[Reply check: withhold,<br/>add excerpts and sources]
+    OUT --> TG
+    DB --> EV[Scheduler: reminders, weekly skill] --> TG
+    AG --> TV[Tavily: allow-listed sites]
 ```
 
-Hermes supplies the runtime and the Telegram gateway; Kin owns domain memory, policy, scheduling and the skill, reached through a Kin plugin inside Hermes (below). OpenShell/NemoClaw isolation and a Serverless digest service are optional.
+## The Kin plugin
 
-## Hermes ↔ Kin
+`hermes/plugins/kin` is a plugin rather than an MCP server because Hermes passes no caller identity to MCP tools, and every Kin decision depends on who is asking.
 
-Hermes is the conversation runtime and the only Telegram poller. The kin service holds records, intake, policy and the scheduler. The two meet in one small Hermes plugin (`hermes/plugins/kin`, mounted read-only into the Hermes container, enabled with `plugins.enabled: [kin]`). It is a plugin rather than MCP because Hermes passes no caller identity to MCP servers: tool calls carry only the model's arguments.
+- **Identity.** The plugin reads the sender, chat and chat type from the gateway's session and attaches them to every call to the kin API, together with a shared `KIN_API_TOKEN`. Kin's tools take no identity arguments. Unknown senders, and chats other than the family group or the sender's own private chat, get nothing.
+- **Before the model** (`pre_gateway_dispatch` → `POST /inbound`, `kin/inbound.py`). Kin handles these itself, and the model never runs:
+  - photos (filed only from the admin's private chat)
+  - answers to Kin's open question (Confirm, Post to group, Just this once…)
+  - finance and legal questions (they become share requests)
+  - `/commands`
+  - requests for an original document
+  - taps on old buttons
+  - voice notes
+  - group messages not addressed to Kin
 
-**Identity.** For tools the plugin reads the sender's Telegram user ID, the chat ID and the chat type (`dm` or `group`) from the gateway's per-turn session context; for the hook it takes them from the message's source. It attaches them as `caller` to every request to the kin API, which also checks a shared `KIN_API_TOKEN`. Kin's tools take no identity arguments. Kin resolves the caller against the roster (`config/members.yaml`, IDs from `.env`); unknown senders get nothing, and a chat that is neither the family group (`TELEGRAM_HOME_CHANNEL`) nor the sender's own DM is refused. The hook skips both silently, so Hermes never runs for them. Everyone in the family group should be on the roster: the group's level is computed from the roster's roles.
+  Everything else becomes an agent turn. If Kin is unreachable, the message is dropped (fails closed).
+- **Tools.** `kin_ask(question)` returns the records and approved excerpts this caller may see in this chat, with answering rules. `kin_note(text)` saves the caller's own note. `kin_lookup(topic)` searches a public scheme.
+- **Reply check** (`transform_llm_output` → `POST /outbound`, `kin/answer.py`). Every final reply goes back to Kin before it is sent:
+  - **Withheld:** a reply holding anything this chat may not see now ("I can't share that here.").
+  - **Otherwise:** Kin appends the approved excerpts of the records the reply cites, plus the lookup's source link.
+  - **Kin unreachable:** the reply becomes "Kin is restarting".
 
-**Message hook.** The plugin's `pre_gateway_dispatch` hook forwards every Telegram message (with the file for photos and documents) to `POST /inbound`; Kin decides, sends any reply itself and answers `pass` or `skip`. If kin is unreachable the hook skips (fails closed). Before the model runs:
+  Streaming is off, so no model text skips the check.
 
-| Inbound | Handling | Agent turn |
-|---|---|---|
-| Photo in the Admin's DM | Kin stores the original as restricted, extracts it in the background and replies with the draft (PDFs: not yet) | Skipped |
-| Photo elsewhere (group, other DMs) | Not ingested; Kin replies that documents go to the Admin by DM | Skipped |
-| An answer to the open question: the Admin's (a draft issue, Confirm / Discard, Post to group / Don't post, Yes / No / Just this once) or a skill's Done from its assignee | Kin applies it and asks the next question, activates, posts, grants or refuses, or tells the Admin the task is done | Skipped |
-| A question about `finance`/`legal` from someone without access (`share_keywords`) | Share request to the Admin; the asker gets the same neutral reply whether or not a record exists | Skipped |
-| Voice note or audio | Fixed reply: Kin can't listen yet, please type it | Skipped |
-| `/demo …` in DM, judge demo only (`KIN_DEMO`): also from unknown senders, with `/start` and `/help` | Kin assigns the tester every seat and a role, sends sample photos, runs Monday 08:00 or resets the fixture (docs/07-demo-plan.md); a role switch resets the tester's Hermes conversations | Skipped |
-| A request for a document or photo itself ("send me the discharge letter") | Fixed reply: originals stay private; ask what you'd like to know from it | Skipped |
-| A tap on an old button ("Post to group", "Just this once"…) with no question open | Fixed reply: already answered; the keyboard is removed | Skipped |
-| Any `/command`: `/help`, `/start`, `/skills` (in DM, the skills this member may see), and for the Admin in DM `/roles`, `/who_saw`, `/reminders`, `/revoke`, `/export`; `/demo` in the judge fixture. `/who_saw` and `/revoke` offer documents or active shares as buttons (`kin/admin.py`); Kin sets each chat's command menu at start, which outranks the menus Hermes registers | Handled by Kin; other commands, including Hermes' own (`/model`, `/new`…), get "Try /help" | Skipped |
-| Group text that doesn't say "Kin", @mention the bot or reply to one of Kin's messages | Ignored | Skipped |
-| Any other text | — | Runs, with Kin's tools |
+## Kin service
 
-**Tools** (each call carries the caller from the session context):
+- **Retrieval** (`kin/retrieve.py`) loads only the categories the role may see, keeps only the fields `config/policy.yaml` allows, and attaches only excerpts approved for the reader. In the group, the reader is every roster role at once. Originals never leave the store. Every call is audited.
+- **Outbound.** Kin sends its own messages (drafts, reminders, share requests, group posts) through the Bot API. Decisions use one-time reply keyboards. Each person has one open question at a time, and later ones wait their turn (`kin/prompts.py`).
+- **Store.** SQLite and files on the `data/` volume:
+  - members
+  - versioned records (draft → active → superseded)
+  - restricted originals with approved excerpts
+  - events with stable IDs
+  - grants
+  - the audit log
 
-| Tool | Does |
-|---|---|
-| `kin_ask(question)` | `retrieve(query, principal)`: permitted fields and approved excerpts for this caller in this chat, with fixed answering rules (sources, "I don't know", no advice); from D3 a blocked `finance`/`legal` question starts the share flow |
-| `kin_note(text)` | Saves a note the caller owns (refused for roles without `write` on notes) |
-| `kin_lookup(topic)` | Public scheme pages via Tavily. Kin matches a scheme named in the locale pack (`lookup_topics`) and builds the query from its name alone, so nothing else the model wrote leaves Kin; `include_domains` is the locale allow-list and results from other domains are dropped. Returned with the rule not to decide eligibility; other topics are refused |
-| `kin_teach(instruction)` | Admin only, optional (D6): a structured skill with a confirmed trigger and recipients |
+## Flows
 
-**Reply check.** The plugin's `transform_llm_output` hook posts every final Telegram reply, with the caller from the session, to `POST /outbound` before Hermes stores or sends it (`kin/answer.py`). Kin re-checks the destination: a reply that contains anything this chat may not see now (a hidden field, another member's record, an excerpt not approved for every reader) is replaced by "I can't share that here.", whatever the model picked up earlier in the session. The asker's own words don't count, so echoing a question can't reveal whether a hidden record holds them. Otherwise Kin appends the approved excerpts of the records this turn's `kin_ask` returned and the reply cites (by name, or by words shared with the excerpt), and the source of a `kin_lookup` the reply didn't link. If kin can't be reached, or a Telegram reply arrives without a caller, the hook sends "Kin is restarting" instead (fails closed). Gateway streaming and interim messages are off for Telegram, so no model text skips the check.
-
-**Outbound.** Messages Kin starts — drafts, confirmed summaries, reminders, share requests, private answers' excerpts — are sent by the kin container through the Bot API (`sendMessage`). Only Hermes polls `getUpdates`; sending with the same token alongside it is allowed. Decisions use one-time reply keyboards, whose taps arrive as ordinary DM text for the hook to resolve, so no callback handling is needed. Each person has one open question at a time; a later one waits (they are told one is waiting) and is sent when the open one is answered (`kin/prompts.py`). When Telegram refuses a DM (the member never opened one), Kin asks the member in the group to tap Start.
-
-**Retrieval.** `retrieve` loads only the categories the principal may see (filtered in SQL), drops rows an `own` qualifier excludes, keeps only the fields in `config/policy.yaml` `projections` (a `summary` level shows nothing without one) and attaches only excerpts whose approved audience includes the reader. In the group the reader is every roster role: categories are capped at the group's level, and fields (each role's projection at its own level) and excerpts must suit every role. Originals never leave the store. Every call, empty and refused ones included, is written to the audit log that `/who_saw` reads.
+- **Intake.** The admin sends a photo in a private chat, and the original is stored as restricted.
+  - **Reading:** MiniCPM-V classifies the page, detects its section headings and transcribes them. Pages of one document sent within 20 minutes join one draft.
+  - **Checks in code:** an unknown medicine name, a time that clashes with a filed appointment, unreadable fields. Kin asks one question at a time.
+  - **On Confirm:** records go active, superseded medicines' reminders stop, new reminders are set at the household's times, and a dated follow-up becomes an appointment.
+  - **Afterwards:** the helper gets the new schedule, and the admin approves the group post.
+- **Ask.** Super calls `kin_ask`, composes the answer, and the reply check withholds it or adds excerpts.
+- **Sharing.** A neutral reply goes to the group. The admin gets a private request (Yes / No / Just this once), and the answer goes privately to the asker as approved excerpts.
+- **Skill.** A confirmed weekly event. When it fires, Kin re-checks the recipient against the policy, sends a Done button and reports Done to the admin. Hermes cron is off, because its jobs run without a caller identity.
+- **Lookup.** The query is the name of a scheme listed in `locale/sg/locale.yaml`, searched only on its allow-listed domains.
+- **Mandarin.** Super translates the approved English post. Medicine and people's names are masked during translation, and the Mandarin is dropped if any name or number is lost.
 
 ## Models
 
 | Task | Model |
 |---|---|
-| Photo extraction: fields and source spans | MiniCPM-V 4.5 (`openbmb/MiniCPM-V-4_5`), the public image-capable model chosen at D0 (`KIN_MODEL_VISION`); Nano Omni is dedicated-only. Hermes uses the same model (`auxiliary.vision`) for any image it sees directly |
-| Category classification, bounded structured tasks | Nemotron 3 Nano (`nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B`) or Nemotron 3.5 Lightning |
-| Grounded answers, summaries, skill interpretation | Nemotron 3 Super |
-| Non-clinical hard cases (optional, capped) | Nemotron 3 Ultra |
+| Conversation turns, answers, Mandarin posts | Nemotron 3 Super (`nvidia/nemotron-3-super-120b-a12b`) |
+| Photo reading | MiniCPM-V 4.5 (`openbmb/MiniCPM-V-4_5`); Nano Omni is dedicated-only on Token Factory |
 
-Structured outputs are schema-checked; malformed or empty outputs are retried within a bound, then reported. On extraction failure the draft is kept and no event is created. Credits are per account and shared with Upgradient; a judge-period reserve is kept.
-
-## Data
-
-SQLite plus a private file store on the `data/` volume: members, versioned records (extracted → confirmed → active → superseded), restricted originals with approved excerpts, events (stable ID, record version, assignee, due time, status), grants, skills (a `tasks` record plus a weekly event), audit. Fields are listed in [03-privacy-boundaries.md](03-privacy-boundaries.md).
-
-## Flows
-
-**Intake:** hook verifies the sender is Admin in DM → original stored as restricted → the extractor classifies the document, detects which section headings the page shows, and transcribes only those sections (asked for a section on the other page, it copies a table it can see) → pages of one discharge summary sent within 20 minutes join one draft → code checks the draft: a medicine name that matches no known record ("Glibpizide" → Glipizide?), a date with two different times across documents, fields the model marked unreadable → one question at a time with reply-keyboard answers ("I'll type it" for a typed correction) → Confirm → records active, same-drug records superseded and their reminders cancelled, reminders created at the household times the draft showed, refills computed, appointment reminder the evening before → the carer gets the new schedule by DM → the Admin approves the group post (English, plus Mandarin when a roster member prefers `zh`) → posted. Medicine names are masked while Super translates and restored after; the Mandarin is dropped if any name or number is missing.
-
-**Ask:** text addressed to Kin → Super calls `kin_ask` (caller from the session) → `retrieve(query, principal)` → permitted fields and excerpts → Super composes → reply check: withheld if it holds anything this chat may not see now, else the cited records' approved excerpts appended → delivered and audited.
-
-**Sharing:** neutral group acknowledgment → Admin DM with requester, record, excerpt and a Yes / No / Just this once keyboard → hook → private answer to the requester's DM → audit.
-
-**Skill:** the Admin-confirmed instruction is a `tasks` record with a weekly event → Kin's scheduler (locale timezone) claims it once per day → the recipient is re-authorised against the roster and policy (anyone who lost access gets nothing, and the Admin is told) → DM with a Done button → the assignee's Done goes to the Admin → last run on the event and in the audit; `/skills` lists it for those who may see it. Hermes cron stays off: its jobs run as agent turns without a caller identity.
-
-**Lookup:** `kin_lookup` → a scheme from the locale pack, or refused → Tavily with that scheme's name only and `include_domains` from the locale pack → public pages to Super, the query audited → reply check adds the source link if the reply has none.
+Nemotron 3 Nano passed structured-output checks but is not on a live path: no policy decision depends on a model's classification. Thinking mode is off for Kin's calls.
 
 ## Hermes hardening
 
-`hermes/config.yaml` (seeded on first start, re-applied by `make hermes-config`) sets the Nebius provider and Super, routes images to the extractor, and turns off everything that would bypass Kin or reach the host: native memory and user profile, session search (unscoped across users and chats), skills, cron, terminal, code execution, browser, file, delegation and web search; voice transcription is off. `hermes/SOUL.md` is Kin's persona. Group sessions are keyed per chat and user. Installed version and tool inventory: Hermes v0.21.7; Telegram turns expose only Kin's tools (`kin_ask`, `kin_note`, `kin_lookup`). Secrets stay in the environment, never in prompts or logs.
+`hermes/config.yaml` (applied with `make hermes-config`) sets the Nebius provider and Super. It turns off everything that could bypass Kin or reach the host:
+- native memory and user profiles
+- session search
+- skills and cron
+- terminal, code, browser, file and web tools
+- voice transcription
+
+`hermes/SOUL.md` is Kin's persona; boundaries never depend on it.
 
 ## Deployment
 
-Kin runs as the `kin` compose project (kin service + Hermes gateway) on a host shared with other deployments, including a separate Hermes stack:
+- **Own compose project:** its own images, network, bot token and keys, on a host shared with other services.
+- **No published ports:** Telegram is outbound polling, and the kin API is reachable only from the Hermes container.
+- **Caps:** limited memory, CPU and process count, with rotated logs.
+- **Not a network sandbox:** containers can still reach host ports bound to all interfaces. OpenShell/NemoClaw would close that, but isn't deployed.
 
-- Own compose project, default network and images (`kin:dev`, `kin-hermes:dev`); no fixed container names.
-- Own credentials: Kin's Telegram bot token (Telegram allows one poller per token), Nebius and Tavily keys.
-- No published ports: Telegram is outbound polling, and kin is reachable only from the Hermes container (`http://kin:8765`).
-- Capped resources and rotated logs (`mem_limit`, `cpus`, `pids_limit`, `local` log driver); `TZ` matches the locale's timezone.
-- Hermes is installed into `./hermes/home` inside its container; nothing is installed on the host. Containers can still open connections to host ports bound to all interfaces; OpenShell/NemoClaw (D7) is the network-level control.
+## Code map
 
-## External data flow
-
-Telegram carries messages and media; the Kin store is self-hosted; approved context and images go to Nebius Token Factory; Tavily sees validated public topics. The README and video state these crossings and the isolation actually deployed.
+| Path | What it holds |
+|---|---|
+| `kin/api.py` | The HTTP API the plugin calls |
+| `kin/inbound.py`, `flows.py`, `prompts.py` | Routing before the model; intake, sharing and group-post flows; the one-question queue |
+| `kin/retrieve.py`, `answer.py`, `policy.py` | Policy enforcement, the reply check, policy loading |
+| `kin/intake.py`, `extract.py`, `translate.py` | Drafts and checks, photo reading, Mandarin posts |
+| `kin/schedule.py`, `skills.py`, `share.py`, `lookup.py` | Reminders, the weekly skill, grants, Tavily |
+| `kin/admin.py`, `demo.py`, `store.py` | Admin commands, the judge demo, SQLite |
+| `hermes/` | Config template, persona, the Kin plugin |
+| `config/`, `locale/sg/`, `fixtures/`, `tests/` | Policy and roster, locale pack, synthetic documents, tests |

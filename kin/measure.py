@@ -15,7 +15,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
-# List prices per 1M input / output tokens (docs/00-hackathon.md, Platform facts; 14 Oct 2026).
+# List prices per 1M input / output tokens (Token Factory price list, 14 Oct 2026).
 PRICES = {
     "openbmb/MiniCPM-V-4_5": (0.66, 1.11),
     "nvidia/nemotron-3-super-120b-a12b": (0.30, 0.90),

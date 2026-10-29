@@ -1,4 +1,4 @@
-"""Synthetic fixture: ground-truth documents rendered to HTML, PDF and PNG (ROADMAP D1).
+"""Synthetic fixture: ground-truth documents rendered to HTML, PDF and PNG.
 
 Each `fixtures/documents/<id>.json` holds the fields a correct transcription should read (they
 double as source spans: every value is printed verbatim), approved excerpts, categories and the

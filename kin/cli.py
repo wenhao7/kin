@@ -1,7 +1,7 @@
 """Kin command-line interface.
 
-`serve` (the kin API used by the Hermes plugin, plus the scheduler) is implemented in ROADMAP D2;
-until then it exits with code 2.
+`serve` runs the kin API used by the Hermes plugin, plus the scheduler; the other commands seed,
+measure, tick and check the deployment (`kin --help`).
 """
 
 from __future__ import annotations

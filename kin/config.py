@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     # The family group Kin serves (Hermes' home channel); other chats are refused.
     group_chat_id: str = Field(default="", alias="TELEGRAM_HOME_CHANNEL")
 
-    # Models (Token Factory IDs). Vision = photo/document extractor, chosen at D0 from `kin models`:
+    # Models (Token Factory IDs). Vision = photo/document extractor, chosen from `kin models`:
     # Nano Omni is dedicated-only on Token Factory, so a public image-capable model stands in
     # (docs/05-architecture.md, Models). Empty disables the vision tier.
     model_vision: str = Field(default="openbmb/MiniCPM-V-4_5", alias="KIN_MODEL_VISION")
@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     members_file: Path = Field(default=Path("./config/members.yaml"), alias="KIN_MEMBERS_FILE")
     api_host: str = Field(default="127.0.0.1", alias="KIN_API_HOST")
     api_port: int = Field(default=8765, alias="KIN_API_PORT")
-    # Judge demo (docs/07-demo-plan.md): synthetic fixture only; anyone may take the family's
+    # Judge demo (README, "Try it"): synthetic fixture only; anyone may take the family's
     # seats with /demo, and reminders run on /demo monday instead of the clock.
     demo: bool = Field(default=False, alias="KIN_DEMO")
     # Shared secret between the Kin plugin in Hermes and the kin API; empty refuses every call.

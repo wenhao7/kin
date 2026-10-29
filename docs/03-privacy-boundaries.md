@@ -1,47 +1,52 @@
 # 03 · Privacy boundaries
 
-`config/policy.yaml` holds the matrix and `config/members.yaml` the roster; `kin/policy.py` and `kin/members.py` validate their shape and compute the group's level; enforcement is implemented at D2. The compose and Hermes templates do not establish isolation by themselves.
+Who sees what is data (`config/policy.yaml`, `config/members.yaml`) enforced in code. Kin's persona prompt never decides it.
 
-## Minimum boundary (D2)
+## Where it is enforced
 
-- **Identity** comes from the gateway's authenticated Telegram sender, chat and roster. Kin's Hermes plugin reads the sender, chat and chat type from the gateway session and attaches them to every call to the kin API; the model never supplies a principal, and Kin's tools take no identity arguments. Forwarded messages, display names and unknown or expired members carry no authority.
-- **Retrieval** goes through one function, `retrieve(query, principal)`, which applies the matrix and field projection before any text reaches the model. Unknown category or qualifier fails closed.
-- **Hermes isolation**: native memory and user profile, session search (unscoped across users and chats), skills, cron and file/terminal tools are disabled (`hermes/config.yaml`); group and DM contexts are built separately. Instructing Hermes to "use Kin retrieval" is not isolation.
-- **Delivery**: restricted answers go to the requester's DM; the group receives only Admin-confirmed summaries, limited to what every current group member may see (`Policy.group_level`: per category, the lowest level among the members; qualified levels count as `none`). Destination permission is re-checked immediately before sending: every model reply passes Kin's reply check (`kin/answer.py`), which withholds it if it contains a value or excerpt this chat may not see now, even one the model saw earlier in the session; reminders and skills re-authorise their recipient when they fire; group posts and their translations hold only group-visible fields.
-- **Sharing**: a grant is per record and per grantee. Yes = standing until revoked; Just this once = one answer. Decisions and deliveries are audited; `/who_saw` is Admin-only. Refusals do not reveal whether a hidden record exists.
-- **Documents**: a mixed original stays Admin-only; derived records reference approved excerpts; an excerpt that includes adjacent restricted text is replaced by a source card. A confirmed intake files the record's own printed lines as its excerpts (care instructions, a table row, the insurer's status line), with the audience the policy gives those fields.
-- **Public lookups** send Tavily only the name of a scheme listed in the locale pack, limited to its allow-listed domains; the audit records the exact query.
-- **kin API** is reachable only from the Hermes container on the compose network (not published on the host) and checks a shared `KIN_API_TOKEN`. Kin uses a Hermes plugin rather than MCP because Hermes passes no caller identity to MCP servers.
+- **Identity** comes from the authenticated Telegram sender and chat, read by the Kin plugin from the gateway session. The model never supplies a principal. Forwarded messages, display names and unknown members carry no authority.
+- **Retrieval** goes through one function, `retrieve(query, principal)`, which applies the matrix and field limits before any text reaches the model. An unknown category or qualifier fails closed.
+- **Delivery.** Every model reply passes the reply check (`kin/answer.py`), which withholds it if it holds anything this chat may not see now, even something the model saw earlier in the session. Reminders and the weekly skill re-check their recipient when they fire.
+- **The group** sees only what every member may see: per category, the lowest level among the roster's roles. It receives only admin-approved posts and short answers; restricted answers go to private chats.
+- **Sharing** is per record and per person. **Yes** stands until `/revoke`; **Just this once** covers one answer. Every decision and delivery is audited and reported by `/who_saw`. A refusal never reveals whether a hidden record exists.
+- **Documents.** Originals stay with the admin. Other roles see the confirmed fields and approved excerpts: the document's own printed lines, approved for the roles that may read those fields.
+- **Hermes** has its memory, session search, skills, cron and file and terminal tools turned off, so nothing outside Kin carries data between people.
+- **Lookups** send Tavily only the name of a scheme listed in the locale pack, limited to its allow-listed domains. The exact query is audited.
+- **The kin API** is reachable only from the Hermes container and checks a shared token.
 
-## Matrix and field constraints
+## Matrix
 
-| Category | Admin | Family | Carer | Viewer (optional) |
+| Category | Admin | Family | Carer | Viewer |
 |---|---|---|---|---|
-| medical | read/write | confirmed summary | care instructions | none |
-| medication | read/write | read | confirmed schedule | confirmed schedule |
-| appointments | read/write | read | read | none |
-| tasks | read/write | read | assigned | assigned |
-| observations | read | read | own | own |
-| finance | read/write | none → share request | none | none |
-| legal | read/write | none → share request | none | none |
-| admin | read/write | contacts and logistics | emergency contacts | emergency contacts |
-| notes | read/write | own | own | none |
+| medical | all | summary, medicine plan, care instructions | medicine plan, care instructions | none |
+| medication | all | read | schedule | schedule |
+| appointments | all | read | read | none |
+| tasks | all | read | assigned to them | assigned to them |
+| observations | read | read | their own | their own |
+| finance | all | none → share request | none | none |
+| legal | all | none → share request | none | none |
+| admin | all | read | emergency contacts | emergency contacts |
+| notes | all | their own | their own | none |
 
-`own` = assigned to (tasks) or authored by (observations, notes) the principal; `emergency_contacts` = the emergency-contact records in `admin`. Notes are private to their author and the Admin; anything meant for everyone goes to the group or its category. `summary` is the Admin-confirmed overview plus care instructions and permitted excerpts, not a model paraphrase of the whole record. The YAML level sets the ceiling; field projections (`projections` in `config/policy.yaml`) narrow it to named fields. Appointments stay readable by the Carer: they reach the group, which includes the Carer.
+The matrix sets each role's ceiling. `projections` in `config/policy.yaml` narrow it to named fields; for example, Family sees a medical record's summary and medication changes but never its clinical notes.
 
-## Data fields
+## Tested
 
-- Member: family ID, Telegram ID, role, language, DM opened, optional expiry.
-- Record: ID and version, category, status (extracted → confirmed → active → superseded), permitted fields, creator/assignee, approved excerpt, timestamps, superseded-by.
-- Document: restricted storage reference, categories, approved excerpts.
-- Event: stable ID, record version, assignee, due time and timezone, status.
-- Grant: record and version, grantee, scope (once | standing), approver, consumed/revoked.
-- Audit: principal, chat, records and fields exposed, decision, destination, delivery outcome, time.
+`tests/` covers:
+- a forged principal
+- unknown senders in the group and in private chats
+- family asking about finance (neutral reply, share request, denial)
+- revoked and one-time grants
+- a carer asking for an original
+- restricted fields in a translation or a group post
+- another role's data reaching an answer
+- family data in a Tavily query
 
-## Minimum tests (D2, through the real gateway path)
+Live runs confirmed the same cases in Telegram.
 
-Forged principal in a tool call; direct store access from a model tool; Hermes memory or session recall of another role's data; unknown sender in group and DM; Family asking for finance (neutral reply, share flow, denial); revoked grant; mixed original requested by Carer; translation of a restricted field; family data in a Tavily query.
+## Not built
 
-## Hardening (D7, optional)
-
-Grants bound to record version, projection and destination; transactional one-shot consumption under concurrency; cache and context invalidation on policy change; delivery reconciliation for uncertain Telegram sends; viewer expiry at retrieval and delivery; deletion across files, extracted text, records, indexes and history; OpenShell network and credential isolation.
+- grants bound to a record version
+- viewer expiry
+- deletion across every copy
+- network isolation with OpenShell

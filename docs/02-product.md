@@ -1,52 +1,49 @@
 # 02 · Product
 
-Target specification. Today the code loads configuration and policy and runs setup checks; serving, storage, retrieval and delivery are not implemented.
-
 ## Scope
 
-**Minimum:** one synthetic family and care recipient; verified Admin, Family and Carer Telegram identities; private photo intake with Admin confirmation; confirmed medication/appointment records; reminders; Admin-confirmed group summaries in English and Mandarin; grounded recall; scoped sharing with audit; one reusable scheduled skill; one public-only lookup.
-
-**Optional:** visit debrief from a photographed after-visit summary, teach-by-chat skills, weekly digest, viewer expiry, full six-month fixture, data-map page, OpenShell isolation.
-
-**Out:** audio (no public audio-capable model on Token Factory; voice notes get a fixed reply), multiple care recipients, WhatsApp, clinic/pharmacy/EHR integrations, wearables, payments, clinical advice, arbitrary ACL editing.
+- **In:**
+  - one family and care recipient, with verified admin, family and carer accounts
+  - private photo intake with the admin's confirmation
+  - reminders
+  - bilingual group posts
+  - role-scoped answers with sources
+  - sharing with an audit trail
+  - one weekly skill
+  - a public-scheme lookup
+- **Out:**
+  - audio (voice notes get a fixed reply)
+  - several care recipients
+  - WhatsApp
+  - clinic or pharmacy integrations
+  - payments
+  - clinical advice
 
 ## Roles
 
-| Role | Demo member | Permitted view | Actions |
+| Role | Demo member | Sees | Does |
 |---|---|---|---|
-| Admin | Mei Ling (daughter) | All records | Assign roles, confirm intake and schedules, approve shares |
-| Family | Wei Jie (son, overseas), Bee Lian (aunt) | Confirmed medical summary, medication, appointments, own notes | Ask, add own notes, request sharing |
-| Carer | Siti (helper) | Confirmed schedule, assigned tasks, care instructions, emergency contacts | Confirm own tasks, submit observations |
-| Viewer (optional) | Respite carer | Schedule and assigned tasks while valid | Confirm assigned tasks |
+| Admin | Mei Ling (daughter) | Everything | Files documents, approves posts and shares |
+| Family | Wei Jie (son, overseas), Bee Lian (aunt) | Medical summary, medicines, appointments, their own notes | Asks, adds notes, requests shares |
+| Carer | Siti (helper) | Schedule, assigned tasks, care instructions, emergency contacts | Confirms assigned tasks |
+| Viewer | Respite carer (not in the demo) | Schedule and assigned tasks | Confirms assigned tasks |
 
-Roles and languages come from `config/members.yaml`, bound to verified Telegram user IDs in `.env`; `/roles` shows the roster to the Admin. A member without a Telegram account can stay in the roster (Bee Lian in the demo): their language still shapes group summaries. Every member opens a DM with the bot first (bots cannot start one). Unknown senders get nothing; in the disposable judge fixture, `/demo` assigns the judge a role.
+Roles and languages come from `config/members.yaml`, bound to Telegram IDs in `.env`. A member without Telegram can stay on the roster: Bee Lian's Mandarin still shapes group posts. Every member must open a private chat with the bot first, because bots can't start one.
 
-## Records
+## Flows
 
-Categories: `medical`, `medication`, `appointments`, `tasks`, `observations`, `finance`, `legal`, `admin`, `notes`. A record has a version, category, permitted field projection, source excerpt, creator and timestamps. A document may hold several categories; its original stays Admin-only and derived records reference approved excerpts. The matrix in [03-privacy-boundaries.md](03-privacy-boundaries.md) sets the maximum access; fields narrow it.
-
-## Minimum flows
-
-**Private intake.** Admin sends a photo to Kin in DM. The extractor proposes fields and source spans; Nano/Lightning classifies. Kin shows a draft with uncertain fields marked. Admin confirms category, details, assignee, timezone and whether to post a summary. Only confirmed records create events. (Uploading to the group would expose the original to everyone; group intake is limited to deliberately shared updates.) A photo posted in the group or in another member's DM is not ingested; Kin replies once that documents go to the Admin by DM.
-
-**Schedule and reminders.** Times and assignees come from the confirmed record; Kin never infers doses or times. Conflicts block activation. Superseding a record cancels its future events. Reminders go to the assignee's DM with the source excerpt; restart and retry reuse event IDs so nothing duplicates.
-
-**Group summary.** After confirmation, Kin posts the Admin-approved summary to the group in English and Mandarin. The group never receives finance, legal or raw documents.
-
-**Recall.** The gateway supplies the verified sender and chat. Retrieval returns only the records and fields that role may see; Super composes the answer; Kin attaches the approved excerpt and re-checks the destination before sending. No permitted source → "I don't know", without revealing whether a hidden record exists.
-
-**Sharing.** A finance/legal question in the group gets a neutral acknowledgment. Admin receives a DM naming the requester, the record and the excerpt, with Yes (standing grant for that record), No, or Just this once (one answer). The answer goes to the requester's DM; the decision is audited. Grants are per record, never per category.
-
-**Reusable skill.** One preconfigured, Admin-confirmed instruction survives restart: "Every Monday 08:00, remind Siti to refill the pill organiser and tell Mei Ling when done." Recipients are re-authorised at execution; `/skills` shows permitted descriptions.
-
-**Public lookup.** Public scheme rules (e.g. Home Caregiving Grant, CHAS) via Tavily: the query is the name of a scheme listed in the locale pack, searched on the locale's allow-listed sites, so family names, IDs and record text never enter it. Kin returns the public source and does not decide eligibility.
+- **Intake.** Documents go to Kin in the admin's private chat; a photo sent anywhere else is not filed. Kin drafts the records and asks about doubtful fields one at a time. Nothing is filed or scheduled until the admin confirms.
+- **Reminders.** Times and assignees come from the confirmed record; Kin never infers a dose or time. A superseded medicine's reminders stop. Restarts never send a reminder twice.
+- **Group post.** After confirming, the admin approves one update, posted in English and Mandarin, holding only what every member may see.
+- **Answers.** Answers come from the records the asker may see, with the quoted source. No permitted source means "I don't know", without hinting whether a hidden record exists.
+- **Sharing.** A finance or legal question gets a neutral reply. The admin chooses **Yes** (standing), **No** or **Just this once**, and the answer goes to the asker's private chat.
+- **Weekly skill.** "Every Monday 08:00, remind Siti to refill the pill organiser and tell Mei Ling when done." It survives restarts; `/skills` shows it to those who may see it.
+- **Lookup.** Public scheme rules (Home Caregiving Grant, CHAS…) from government sites, with the link. Kin never decides eligibility.
 
 ## Chat conventions
 
-- One clarifying question at a time; short group posts; detail and anything restricted in DM.
-- Every personal answer and reminder carries a dated, permitted excerpt.
-- Mandarin variants use the same confirmed fields; translation adds no facts: medicine names stay in English as on the label, and a translation missing any name or number is not posted.
-- Admin commands: `/roles`, `/who_saw`, `/reminders`, `/revoke`, `/export` (Telegram commands allow only letters, digits and `_`), answered only in the Admin's DM. `/who_saw` and `/revoke` need no IDs: on their own they offer the documents or the active shares as buttons. `/who_saw` reports, by name and local time, who was shown what (answers, shared excerpts, reminders, group posts). Each chat's "/" menu lists only the commands that work there. Every slash command is Kin's; Hermes' own commands are not reachable from the family chats. `/skills` is role-filtered. `/demo` role switch exists only in the disposable judge fixture.
-- In the group, Kin answers text only when addressed: its name, an @mention, or a reply to one of its messages. Family members can talk among themselves without Kin chiming in.
-- Voice notes are not processed; Kin replies that it can't listen yet and asks for text.
-- Group privacy mode is off (or the bot is a group admin) so Kin sees group messages; identity and policy are enforced on every message regardless.
+- **In the group:** Kin answers only when addressed, by "Kin", an @mention or a reply to one of its messages, and keeps posts short. Detail and anything restricted go to private chats.
+- **Sources:** every personal answer quotes its dated source.
+- **Mandarin:** it uses the same confirmed fields. Medicine and people's names stay as written, and a translation missing any name or number isn't posted.
+- **Admin commands** (in the admin's private chat): `/roles`, `/reminders`, `/who_saw`, `/revoke`. The last two offer documents or shares as buttons. Everyone has `/skills` and `/help`, and each chat's "/" menu lists only what works there.
+- **Group Privacy** must be off for the bot (or the bot must be a group admin) so Kin sees group messages. Identity and policy apply to every message regardless.

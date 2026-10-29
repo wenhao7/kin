@@ -5,7 +5,7 @@
 # TELEGRAM_HOME_CHANNEL. Reference: https://hermes-agent.nousresearch.com/docs/
 #
 # Kin's records, intake and boundaries live in the kin service, reached through the Kin plugin
-# (hermes/plugins/kin, ROADMAP D2) rather than MCP: Hermes passes no caller identity to MCP
+# (hermes/plugins/kin) rather than MCP: Hermes passes no caller identity to MCP
 # servers, and every Kin decision depends on who is asking (docs/05-architecture.md).
 
 # Kin's bridge plugin (hermes/plugins/kin, mounted read-only by compose).
@@ -97,7 +97,7 @@ platforms:
         priority: [help]
 
 telegram:
-  require_mention: false        # from D2 the Kin plugin gates group text itself (docs/05-architecture.md)
+  require_mention: false        # the Kin plugin gates group text itself (docs/05-architecture.md)
   reply_to_mode: first
 
 terminal:

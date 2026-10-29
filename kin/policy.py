@@ -1,7 +1,7 @@
 """Policy matrix loader and validator (docs/03-privacy-boundaries.md).
 
-Enforcement (`retrieve(query, principal)`) is implemented in ROADMAP D3; this module only
-loads and validates the configuration so `kin check` can catch mistakes early.
+Enforcement lives in `kin/retrieve.py` and `kin/answer.py`; this module loads and validates the
+configuration so `kin check` can catch mistakes early.
 """
 
 from __future__ import annotations

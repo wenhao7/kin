@@ -1,4 +1,4 @@
-"""The judge demo (docs/07-demo-plan.md, Judge access): one person plays the whole family.
+"""The judge demo (README, "Try it"): one person plays the whole family.
 
 Only with KIN_DEMO=true, on a store that holds the synthetic fixture. `/demo admin|family|carer`
 gives the sender's Telegram account every member's seat and picks who they speak as. Messages Kin
