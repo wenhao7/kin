@@ -148,7 +148,10 @@ def test_a_follow_up_is_an_appointment_the_family_can_see(kin):  # noqa: F811
     seen = [r["fields"] for r in _ask(kin, FAMILY, "When is the next appointment?")]
     assert [(f["date"], f["time"]) for f in seen if "follow_up" in f] == [("2 Nov 2026", "9:30 am")]
     _file(kin, ["appointment-slip"])  # 10:30 am, the slip's own time
-    assert "Replaced 1 earlier appointment; its reminder stops." in "\n".join(to(kin, ADMIN))
+    assert (
+        "Replaced 1 earlier appointment; reminders now follow the Appointment slip."
+        in "\n".join(to(kin, ADMIN))
+    )
     assert _visits(kin) == [("2026-11-02", "10:30 am")]  # one visit, not two
     reminders = [e["label"] for e in kin.store.active_events() if e["label"].startswith("Tomorrow")]
     assert len(reminders) == 1 and "10:30 am" in reminders[0]

@@ -182,8 +182,7 @@ def confirm(ctx: Context, draft: dict) -> str:
             REPLACED.get(next(iter(kinds)), "older record") if len(kinds) == 1 else "older record"
         )
         n = len(result["superseded"])
-        stops = "its reminder stops" if n == 1 else "their reminders stop"
-        lines.append(f"Replaced {_count(n, noun)}; {stops}.")
+        lines.append(f"Replaced {_count(n, noun)}; reminders now follow the {title}.")
     if result["events"]:
         lines.append(
             f"{_count(len(result['events']), 'reminder')} scheduled (/reminders shows them)."
